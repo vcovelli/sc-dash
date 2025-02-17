@@ -12,3 +12,4 @@ node_modules/
 # React
 build/
 .parcel-cache/
+airflow_env/
