@@ -2,7 +2,18 @@
 __pycache__/
 *.py[cod]
 .env
+
+# Ignore virtual environments
 venv/
+airflow/airflow.cfg
+airflow/.env
+
+# Ignore database files
+*.sqlite3
+
+# Ignore temp files
+Temp/
+*.log
 
 # Node
 node_modules/
@@ -12,3 +23,7 @@ node_modules/
 # React
 build/
 .parcel-cache/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
