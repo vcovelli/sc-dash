@@ -7,6 +7,7 @@ __pycache__/
 venv/
 airflow/airflow.cfg
 airflow/.env
+venv
 
 # Ignore database files
 *.sqlite3
