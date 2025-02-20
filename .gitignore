@@ -4,13 +4,25 @@ __pycache__/
 .env
 
 # Ignore virtual environments
-venv/
-airflow/airflow.cfg
-airflow/.env
-venv
+backend_venv
+
+airflow_env
+
+# Ignore Airflow logs, PIDs, DB, and configs
+backend/airflow/logs/
+backend/airflow/*.log
+backend/airflow/*.out
+backend/airflow/*.err
+backend/airflow/*.pid
+backend/airflow/airflow.db
+backend/airflow/airflow.cfg
+backend/airflow/webserver_config.py
+backend/airflow_env/
 
 # Ignore database files
 *.sqlite3
+*.csv
+backend/datasets/
 
 # Ignore temp files
 Temp/
@@ -28,4 +40,3 @@ build/
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
-airflow_env/
