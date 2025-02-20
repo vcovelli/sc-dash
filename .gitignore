@@ -6,6 +6,8 @@ __pycache__/
 # Ignore virtual environments
 backend_venv
 
+venv
+
 airflow_env
 
 # Ignore Airflow logs, PIDs, DB, and configs
@@ -18,6 +20,7 @@ backend/airflow/airflow.db
 backend/airflow/airflow.cfg
 backend/airflow/webserver_config.py
 backend/airflow_env/
+standalone_admin_password.txt
 
 # Ignore database files
 *.sqlite3
