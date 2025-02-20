@@ -1,16 +1,24 @@
 import os
 import pandas as pd
 from sqlalchemy import create_engine
+from dotenv import load_dotenv
+from pathlib import Path
+from sqlalchemy.orm import sessionmaker
 
-# Database connection details
-DB_NAME = "supply_chain_db"
-DB_USER = "your_username"
-DB_PASSWORD = "your_password"
-DB_HOST = "localhost"  # Change if your DB is remote
-DB_PORT = "5432"  # Default PostgreSQL port
+# Load .env from the project root
+env_path = Path("/home/vcovelli/projects/supply-chain-dashboard-2025/.env")
+load_dotenv(dotenv_path=env_path, override=True)
+
+
+# Database connection details from .env
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
 
 # Folder where CSV files are placed
-DATA_FOLDER = "datasets/"  # Change to your preferred directory
+DATA_FOLDER = os.getenv("DATA_FOLDER")
 
 # Create database connection
 engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
@@ -36,7 +44,24 @@ def process_csv_files():
 
         try:
             df = pd.read_csv(file_path)
-            df.to_sql("supply_chain_raw", engine, if_exists="append", index=False)
+            # Create a database session
+            Session = sessionmaker(bind=engine)
+            session = Session()
+
+            # Use the engine directly in to_sql()
+            df.to_sql(
+                name="supply_chain_raw",
+                con=engine,  # ✅ Directly use engine, NOT connection!
+                schema="public",
+                if_exists="append",
+                index=False,
+                method="multi"
+            )
+
+            # Commit and close session
+            session.commit()
+            session.close()
+
             print(f"✅ Successfully loaded {file} into supply_chain_raw.")
             
             # Move processed file to an archive folder
