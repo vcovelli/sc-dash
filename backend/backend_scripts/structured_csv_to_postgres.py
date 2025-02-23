@@ -11,17 +11,17 @@ load_dotenv(dotenv_path=env_path, override=True)
 
 
 # Database connection details from .env
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = int(os.getenv("DB_PORT", 5432))
+PG_DATABASE = os.getenv("PG_DATABASE")
+PG_USER = os.getenv("PG_USER")
+PG_PASSWORD = os.getenv("PG_PASSWORD")
+PG_HOST = os.getenv("PG_HOST")
+PG_PORT = int(os.getenv("PG_PORT", 5432))
 
 # Folder where CSV files are placed
 DATA_FOLDER = os.getenv("DATA_FOLDER")
 
 # Create database connection
-engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+engine = create_engine(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}")
 
 def process_csv_files():
     """
@@ -44,34 +44,31 @@ def process_csv_files():
 
         try:
             df = pd.read_csv(file_path)
-            # Create a database session
             Session = sessionmaker(bind=engine)
             session = Session()
 
-            # Use the engine directly in to_sql()
             df.to_sql(
-                name="supply_chain_raw",
-                con=engine,  # ✅ Directly use engine, NOT connection!
+                name="supply_chain_processed",
+                con=engine,
                 schema="public",
                 if_exists="append",
                 index=False,
                 method="multi"
             )
 
-            # Commit and close session
             session.commit()
             session.close()
 
-            print(f"✅ Successfully loaded {file} into supply_chain_raw.")
-            
-            # Move processed file to an archive folder
+            print(f"Successfully loaded {file} into supply_chain_processed.")
+
+            # ✅ Move only after success
             archive_folder = os.path.join(DATA_FOLDER, "archive/")
             os.makedirs(archive_folder, exist_ok=True)
             os.rename(file_path, os.path.join(archive_folder, file))
             print(f"📁 Moved {file} to archive folder.")
 
         except Exception as e:
-            print(f"❌ Error processing {file}: {e}")
+            print(f"Error processing {file}: {e}")
 
 # Run the function
 process_csv_files()
