@@ -1,11 +1,20 @@
-apache-airflow==2.10.5
+# Core backend
 Django==5.1.6
-django-filter==25.1
 djangorestframework==3.15.2
 djangorestframework_simplejwt==5.4.0
-Flask-AppBuilder==4.5.4
-pandas==2.2.3
 python-dotenv==1.0.1
 pymongo==4.11.1
+psycopg2-binary==2.9.10
 SQLAlchemy==2.0.38
-watchdog==6.0.0
+pandas==2.2.3
+
+# Airflow
+apache-airflow==2.10.5
+apache-airflow-providers-sqlite==4.0.0
+apache-airflow-providers-http==5.0.0
+
+# Optional (monitoring, debugging, API docs)
+rich==13.9.4
+requests==2.32.3
+python-dateutil==2.9.0.post0
+PyYAML==6.0.2
