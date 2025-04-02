@@ -4,7 +4,7 @@ __pycache__/
 .env
 
 # Ignore virtual environments
-backend_venv
+backend_env
 
 venv
 
