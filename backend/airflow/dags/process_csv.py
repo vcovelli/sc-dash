@@ -1,6 +1,10 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
+from pathlib import Path
+
+project_root = Path(__file__).resolve().parents[2]
+script_path = project_root / "backend" / "scripts" / "load_csv_to_postgres.py"
 
 default_args = {
     'owner': 'airflow',
@@ -11,18 +15,14 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-dag = DAG(
-    'process_csv_dag',
+with DAG(
+    dag_id='process_csv_dag',
     default_args=default_args,
-    description='A DAG that runs the CSV processing script',
-    schedule_interval='@hourly',  # Adjust schedule as needed
+    description='Run CSV processing script',
+    schedule_interval='@hourly',
     tags=['supply_chain'],
-)
-
-process_csv_task = BashOperator(
-    task_id='run_csv_processing',
-    bash_command='python3 ~/projects/supply-chain-dashboard-2025/backend/scripts/load_csv_to_postgres.py',
-    dag=dag,
-)
-
-process_csv_task
+) as dag:
+    task = BashOperator(
+        task_id='run_csv_processing',
+        bash_command=f'python3 {script_path}'
+    )
