@@ -1,12 +1,12 @@
 # Supply Chain Dashboard
 
-A full-stack supply chain analytics platform built to ingest raw CSV data, transform it, and provide actionable insights via APIs. This system uses MongoDB for raw data storage, Apache Airflow for orchestration, and PostgreSQL for structured, analytics-ready querying.
+A full-stack supply chain analytics platform designed to simulate real-world data workflows. This system ingests raw CSV data, stores it in MongoDB, transforms it into structured formats using Apache Airflow, and loads the processed data into PostgreSQL. The data is then exposed via a Django REST API for analytics and integration with external systems.
 
 ---
 
 ## Overview
 
-This project simulates a real-world supply chain data pipeline:
+This project simulates an end-to-end supply chain data pipeline:
 - **Data Ingestion:** CSV datasets are imported into MongoDB.
 - **Data Transformation:** Apache Airflow DAGs clean and normalize data.
 - **Data Storage:** Normalized data is stored in PostgreSQL.
@@ -17,22 +17,23 @@ This project simulates a real-world supply chain data pipeline:
 ## Architecture
 
 1. **Raw Data Ingestion:**
-   - CSV files are placed into a monitored folder.
+   - CSVs placed in the datasets/ folder are automatically picked up.
 2. **Apache Airflow DAG:**
-   - Detects new CSV files.
-   - Loads data into MongoDB.
-   - Transforms data and pushes structured records to PostgreSQL.
+   - ingest_csv_to_mongo_dag loads raw data into MongoDB.
+   - transform_mongo_to_postgres_dag transforms and loads structured data into PostgreSQL.
+   - Additional DAGs can be added for automation and monitoring.
 3. **Data Storage:**
-   - **MongoDB:** Holds raw CSV data.
-   - **PostgreSQL:** Stores the cleaned, normalized data.
+   - **MongoDB:** stores raw CSV records.
+   - **PostgreSQL:** stores cleaned and normalized records.
 4. **Django API:**
-   - Provides authenticated endpoints for accessing supply chain data.
+   - Django + Django REST Framework serve the processed data securely.
 
 ---
 
 ## Technologies Used
 
-- **Python** + **Pandas**
+- **Python 3.10+** 
+- **Pandas**
 - **Apache Airflow**
 - **MongoDB**
 - **PostgreSQL**
@@ -41,18 +42,38 @@ This project simulates a real-world supply chain data pipeline:
 
 ---
 
-## Setup
+## Project Setup
 
 ### Prerequisites
 
 - Python 3.10+
 - Docker & Docker Compose
 
-### Clone and Install
+### Local Setup
 
+**Clone & Install**
 ```
-git clone https://github.com/yourusername/supply-chain-dashboard.git
-cd supply-chain-dashboard
+git clone https://github.com/vcovelli/supply-chain-dashboard.git
+```
+**Navigate to Project Directory**
+```
+cd ~/supply-chain-dashboard
+```
+**Activate Virtual Environment***
+```
+source backend_env/bin/activate
+```
+**Run Setup Script***
+```
+./scripts/linux/setup.sh
+```
+**Start All Services***
+```
+./scripts/linux/start.sh
+```
+**Stop All Services***
+```
+./scripts/linux/stop.sh
 ```
 ---
 
@@ -60,11 +81,14 @@ cd supply-chain-dashboard
 1. **Drop a CSV:** 
     - Place your CSV file into the datasets/ folder.
 
-2. **Airflow Processing:** 
-    - Airflow detects the file, loads raw data into MongoDB, cleans it, and pushes the structured data to PostgreSQL.
+2. **Ingestion to MongoDB:**
+    - Airflow detects new CSVs and ingests raw data into MongoDB.
 
-3. **API Access:** 
-    - Use the Django API to search, filter, and view the supply chain data.
+3. **Transformation:**
+   - Another DAG transforms the raw data and inserts it into PostgreSQL.
+
+4. **API Access:** 
+    - Data is accessible via authenticated Django REST endpoints.
 
 ---
 
