@@ -10,7 +10,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 # Import the script
-from backend_scripts.ingest_csv_to_mongo_script import ingest_csv_to_mongo
+from backend.backend_scripts.manual_ingest_csv_to_mongo import ingest_csv_to_mongo
 
 # Default DAG arguments
 default_args = {
