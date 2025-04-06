@@ -14,13 +14,23 @@ This project simulates an end-to-end supply chain data pipeline:
 
 ---
 
+## Airflow DAGs Overview
+
+- `ingest_csv_to_mongo_dag`: Manually imports a specific CSV file into MongoDB.
+- `transform_mongo_to_postgres_dag`: Transforms raw MongoDB data and loads it into PostgreSQL.
+- `watch_and_ingest_to_mongodb.py`: (Standalone script) Watches `datasets/` for new CSV files and auto-loads them into MongoDB.
+
+---
+
 ## Architecture
 
 1. **Raw Data Ingestion:**
-   - CSVs placed in the datasets/ folder are automatically picked up.
+   - `watch_and_ingest_to_mongodb.py` watches the datasets/ folder and loads raw data into MongoDB.
+
+   - `ingest_csv_to_mongo_dag` is for manual/scheduled ingestion from a known CSV path.
 2. **Apache Airflow DAG:**
-   - ingest_csv_to_mongo_dag loads raw data into MongoDB.
-   - transform_mongo_to_postgres_dag transforms and loads structured data into PostgreSQL.
+   - `ingest_csv_to_mongo_dag` loads raw data into MongoDB.
+   - `transform_mongo_to_postgres_dag` transforms and loads structured data into PostgreSQL.
    - Additional DAGs can be added for automation and monitoring.
 3. **Data Storage:**
    - **MongoDB:** stores raw CSV records.
@@ -33,12 +43,14 @@ This project simulates an end-to-end supply chain data pipeline:
 ## Technologies Used
 
 - **Python 3.10+** 
-- **Pandas**
-- **Apache Airflow**
-- **MongoDB**
-- **PostgreSQL**
-- **Docker & Docker Compose**
-- **Django** + **Django REST Framework**
+- **Pandas** (for cleaning and transforming CSV data)
+- **Watchdog** (for real-time file ingestion)
+- **Apache Airflow** (for DAG-based automating of ingestion and transformation)
+- **SQLAlchemy** (used for PostgreSQL ingestion via Pandas)
+- **MongoDB** (NoSQL DB for raw data)
+- **PostgreSQL** (Relational DB for structured data)
+- **Docker & Docker Compose** (Containerization & Orchestration)
+- **Django** + **Django REST Framework** (for RESTful APIs)
 
 ---
 
@@ -82,7 +94,7 @@ source backend_env/bin/activate
     - Place your CSV file into the datasets/ folder.
 
 2. **Ingestion to MongoDB:**
-    - Airflow detects new CSVs and ingests raw data into MongoDB.
+    - CSVs are either watched and loaded automatically via a watchdog script, or manually ingested using an Airflow DAG (`ingest_csv_to_mongo_dag`).
 
 3. **Transformation:**
    - Another DAG transforms the raw data and inserts it into PostgreSQL.
