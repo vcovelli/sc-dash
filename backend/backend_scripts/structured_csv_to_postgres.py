@@ -6,8 +6,8 @@ from pathlib import Path
 from sqlalchemy.orm import sessionmaker
 
 # Load .env from the project root
-env_path = Path("/home/vcovelli/projects/supply-chain-dashboard-2025/.env")
-load_dotenv(dotenv_path=env_path, override=True)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)
 
 
 # Database connection details from .env
@@ -61,7 +61,7 @@ def process_csv_files():
 
             print(f"Successfully loaded {file} into supply_chain_processed.")
 
-            # ✅ Move only after success
+            # Move only after success
             archive_folder = os.path.join(DATA_FOLDER, "archive/")
             os.makedirs(archive_folder, exist_ok=True)
             os.rename(file_path, os.path.join(archive_folder, file))

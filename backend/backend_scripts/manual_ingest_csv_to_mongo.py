@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Load .env file from the project root
-env_path = Path("/home/vcovelli/projects/supply-chain-dashboard-2025/.env")
-load_dotenv(dotenv_path=env_path, override=True)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)
 
 # MongoDB Config
 MONGO_URI = os.getenv("MONGO_URI")

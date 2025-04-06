@@ -2,14 +2,22 @@ import os
 import shutil
 import time
 import pandas as pd
+from dotenv import load_dotenv
+from pathlib import Path
 from pymongo import MongoClient
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)
+
 # MongoDB Connection
-client = MongoClient("mongodb://localhost:27017/")
-db = client["supply_chain_db"]
-collection = db["supply_chain_raw"]
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI)
+MONGO_DATABASE = os.getenv("MONGO_DATABASE")
+MONGO_COLLECTION_RAW = os.getenv("MONGO_COLLECTION_RAW")
+db = client[MONGO_DATABASE]
+collection = db[MONGO_COLLECTION_RAW]
 
 # Directories
 DATASETS_DIR = os.path.abspath("../datasets")
