@@ -1,71 +1,95 @@
-version: "3.8"
-
 services:
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      
   postgres:
     image: postgres:13
     env_file:
       - .env
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
     volumes:
       - pg_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $PG_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000"
+    entrypoint: /app/scripts/linux/docker/backend_entrypoint.sh
     volumes:
       - ./backend:/app
+      - ./scripts:/app/scripts
+      - ./.env:/app/.env 
     ports:
       - "8000:8000"
     depends_on:
       - postgres
+      - mongo
     env_file:
       - .env
 
   airflow-webserver:
-    image: apache/airflow:2.7.3
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     env_file:
       - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@postgres/${DB_NAME}
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres/${PG_DATABASE}
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+    entrypoint: /opt/airflow/airflow_entrypoint.sh
     volumes:
-      - ./backend/airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/plugins:/opt/airflow/plugins
       - ./backend/backend_scripts:/opt/airflow/backend_scripts
+      - ./scripts:/opt/airflow/scripts
+      - ./.env:/app/.env
+      - ./airflow/airflow-requirements.txt:/opt/airflow/airflow-requirements.txt
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-    command: >
-      bash -c "airflow db init &&
-               airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin &&
-               airflow webserver"
+      postgres:
+        condition: service_healthy
 
   airflow-scheduler:
-    image: apache/airflow:2.7.3
+    build:
+      context: ./airflow
+      dockerfile: Dockerfile
     restart: always
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@postgres/${DB_NAME}
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres/${PG_DATABASE}
     volumes:
-      - ./backend/airflow/dags:/opt/airflow/dags
-      - ./backend/airflow/logs:/opt/airflow/logs
-      - ./backend/airflow/plugins:/opt/airflow/plugins
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
       - ./backend/backend_scripts:/opt/airflow/backend_scripts
+      - ./airflow/airflow-requirements.txt:/opt/airflow/airflow-requirements.txt
     command: scheduler
 
 volumes:
+  mongo_data:
   pg_data:
+  airflow_logs:
