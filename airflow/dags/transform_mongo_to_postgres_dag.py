@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 # Dynamically resolve the scripts folder
 dag_dir = Path(__file__).resolve().parent
-project_root = dag_dir.parents[2]  # /backend/airflow/dags → back to project root
+project_root = dag_dir.parents[1]  # dag_dir = airflow/dags → project root is one level up
 scripts_folder = project_root / "backend" / "backend_scripts"
 
 # Add to sys.path
@@ -30,7 +30,7 @@ with DAG(
     dag_id='transform_mongo_to_postgres_dag',
     default_args=default_args,
     description='Transform MongoDB data and load to PostgreSQL',
-    schedule='@daily',
+    schedule_interval='@daily',
     catchup=False,
     tags=['supply_chain'],
 ) as dag:
