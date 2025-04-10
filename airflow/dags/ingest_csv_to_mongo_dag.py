@@ -4,13 +4,15 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
-# Dynamically add root project directory to Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+env = os.getenv("ENV", "LOCAL")
+
+if env == "DOCKER":
+    sys.path.append('/opt/airflow/backend_scripts')
+else:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts")))
 
 # Import the script
-from backend.backend_scripts.manual_ingest_csv_to_mongo import ingest_csv_to_mongo
+from manual_ingest_csv_to_mongo import ingest_csv_to_mongo
 
 # Default DAG arguments
 default_args = {

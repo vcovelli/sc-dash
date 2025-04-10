@@ -1,16 +1,16 @@
 import sys
+import os
 from pathlib import Path
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 
-# Dynamically resolve the scripts folder
-dag_dir = Path(__file__).resolve().parent
-project_root = dag_dir.parents[1]  # dag_dir = airflow/dags → project root is one level up
-scripts_folder = project_root / "backend" / "backend_scripts"
+env = os.getenv("ENV", "LOCAL")
 
-# Add to sys.path
-sys.path.insert(0, str(scripts_folder))
+if env == "DOCKER":
+    sys.path.append('/opt/airflow/backend_scripts')
+else:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts")))
 
 # Import transformation script
 try:
