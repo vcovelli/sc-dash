@@ -73,19 +73,19 @@ cd ~/supply-chain-dashboard
 ```
 **Activate Virtual Environment***
 ```
-source backend_env/bin/activate
+source sc_env/bin/activate
 ```
 **Run Setup Script***
 ```
-./scripts/linux/setup.sh
+./scripts/linux/local/setup.sh
 ```
 **Start All Services***
 ```
-./scripts/linux/start.sh
+./scripts/linux/local/start.sh
 ```
 **Stop All Services***
 ```
-./scripts/linux/stop.sh
+./scripts/linux/local/stop.sh
 ```
 ---
 

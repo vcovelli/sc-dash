@@ -1,19 +1,35 @@
 #!/bin/bash
 echo "Initial Setup Script"
 
-cd "$(dirname "$0")/../.." || { echo "Project root not found!"; exit 1; }
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR/../../.." || { echo "Project root not found!"; exit 1; }
 
 # Activate virtualenv
-if [ -d "backend_env" ]; then
+if [ -d "sc_env" ]; then
   echo "Activating virtual environment..."
-  source backend_env/bin/activate
+  source sc_env/bin/activate
+else
+  echo "Virtual environment not found!"
+  exit 1
 fi
 
 # Load environment variables
 if [ -f ".env" ]; then
-  export $(grep -v '^#' .env | xargs)
+  echo "Loading environment variables..."
+  set -a
+  source .env
+  set +a
 else
   echo ".env file not found!"
+  exit 1
+fi
+
+# Export Airflow DAGs folder from .env
+if [ -n "$AIRFLOW__CORE__DAGS_FOLDER" ]; then
+  export AIRFLOW__CORE__DAGS_FOLDER
+  echo "DAGs folder set to: $AIRFLOW__CORE__DAGS_FOLDER"
+else
+  echo "AIRFLOW__CORE__DAGS_FOLDER not set in .env!"
   exit 1
 fi
 
@@ -44,6 +60,7 @@ airflow users create \
 
 # Run Django migrations
 cd backend || exit
+echo "Running Django migrations..."
 python manage.py migrate
 
-echo "Setup complete. Use ./scripts/linux/start.sh to start everything."
+echo "Setup complete. Use ./scripts/linux/local/start.sh to start everything."
