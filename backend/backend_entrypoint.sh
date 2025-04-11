@@ -12,5 +12,16 @@ until nc -z "$PG_HOST" "$PG_PORT"; do
   sleep 2
 done
 
+# Apply database migrations
 python manage.py migrate
+
+
+# Create Django superuser if it doesn't exist
+echo "from django.contrib.auth import get_user_model; \
+User = get_user_model(); \
+User.objects.filter(username='admin').exists() or \
+User.objects.create_superuser('admin', 'admin@example.com', 'admin')" \
+| python manage.py shell
+
+# Start server
 exec python manage.py runserver 0.0.0.0:8000
