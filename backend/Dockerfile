@@ -16,10 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY backend-requirements.txt ./requirements.txt
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
 EXPOSE 8000
+
+COPY backend_entrypoint.sh /app/backend_entrypoint.sh
+RUN chmod +x /app/backend_entrypoint.sh
+ENTRYPOINT ["/app/backend_entrypoint.sh"]
+
