@@ -6,7 +6,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - mongo:/data/db
       
   postgres:
     image: postgres:13
@@ -28,9 +28,9 @@ services:
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    entrypoint: /app/scripts/linux/docker/backend_entrypoint.sh
+    entrypoint: /app/backend_entrypoint.sh
     volumes:
       - ./backend:/app
       - ./scripts:/app/scripts
@@ -90,6 +90,6 @@ services:
     command: scheduler
 
 volumes:
-  mongo_data:
+  mongo:
   pg_data:
   airflow_logs:
