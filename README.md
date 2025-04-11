@@ -87,6 +87,24 @@ source sc_env/bin/activate
 ```
 ./scripts/linux/local/stop.sh
 ```
+
+### Docker Setup
+**Clone & Install**
+```
+git clone https://github.com/vcovelli/supply-chain-dashboard.git
+```
+**Navigate to Project Directory**
+```
+cd ~/supply-chain-dashboard
+```
+**Activate Virtual Environment***
+```
+source sc_env/bin/activate
+```
+**Run Docker Compose**
+```
+docker compose up -d --build
+```
 ---
 
 ## Data Flow
