@@ -89,7 +89,32 @@ services:
       - ./airflow/airflow-requirements.txt:/opt/airflow/airflow-requirements.txt
     command: scheduler
 
+  spark:
+    image: bitnami/spark:latest
+    container_name: spark
+    ports:
+      - "7077:7077"     # Spark master port
+      - "8081:8080"     # Spark web UI
+    environment:
+      - SPARK_MODE=master
+    volumes:
+      - spark-data:/bitnami/spark
+    networks:
+      - default
+
+  spark-worker:
+    image: bitnami/spark:latest
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+    depends_on:
+      - spark
+    networks:
+      - default
+
 volumes:
   mongo:
   pg_data:
   airflow_logs:
+  spark-data:
