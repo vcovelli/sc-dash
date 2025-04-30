@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     SupplierViewSet, WarehouseViewSet, ProductViewSet, InventoryViewSet,
-    CustomerViewSet, OrderViewSet, OrderItemViewSet, ShipmentViewSet
+    CustomerViewSet, OrderViewSet, OrderItemViewSet, ShipmentViewSet, create_table_for_client
 )
 
 # Using a router for automatic URL routing
@@ -18,4 +18,5 @@ router.register(r'shipments', ShipmentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('create-table/', create_table_for_client, name='create-table-for-client'),
 ]
