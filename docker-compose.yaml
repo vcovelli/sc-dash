@@ -35,8 +35,9 @@ services:
       - ./backend:/app
       - ./scripts:/app/scripts
       - ./.env:/app/.env 
+      - ./user_schemas:/app/user_schemas
     ports:
-      - "8000:8000"
+      - "8000:8000" # Django port
     depends_on:
       - postgres
       - mongo
@@ -63,7 +64,7 @@ services:
       - ./.env:/app/.env
       - ./airflow/airflow-requirements.txt:/opt/airflow/airflow-requirements.txt
     ports:
-      - "8080:8080"
+      - "8080:8080" # Airflow webserver port
     depends_on:
       postgres:
         condition: service_healthy
