@@ -11,6 +11,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MASTER_TEMPLATE = os.path.join(BASE_DIR, "../datasets/master_template.csv")
 SCHEMA_CONFIG_DIR = os.path.join(BASE_DIR, "../user_schemas")
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+TEMPLATE_OUTPUT_DIR = os.path.join(BASE_DIR, "../datasets/templates")
 
 # Basic mapping of keywords to data types
 def infer_postgres_type(column_name):
@@ -55,13 +56,33 @@ def save_schema_config(user_id, selected_columns):
             writer.writerow(col)
     print(f"\nSchema saved to: {filepath}")
 
+# Generate blank data template
+def generate_template_csv(client_name, output_dir=TEMPLATE_OUTPUT_DIR):
+    schema_path = os.path.join(SCHEMA_CONFIG_DIR, f"{client_name}_schema.csv")
+    output_path = os.path.join(output_dir, f"{client_name}_data_template.csv")
+
+    if not os.path.exists(schema_path):
+        raise FileNotFoundError(f"Schema not found: {schema_path}")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(schema_path, mode='r', newline='') as file:
+        reader = csv.DictReader(file)
+        headers = [row['column_name'] for row in reader]
+
+    with open(output_path, mode='w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+        writer.writeheader()
+
+    print(f"Template CSV generated at: {output_path}")
+
 def trigger_table_creation(user_id):
     try:
         response = requests.post(
             f"{API_BASE_URL}/api/create-table/",
             json={"client_name": user_id}
         )
-        if response.status_code == 200:
+        if response.status_code == (200, 201):
             print(f"✅ Table created successfully for `{user_id}`.")
         else:
             print(f"❌ Table creation failed: {response.status_code} - {response.text}")
@@ -75,6 +96,7 @@ def main():
     if selected_columns:
         save_schema_config(user_id, selected_columns)
         trigger_table_creation(user_id)
+        generate_template_csv(user_id)
     else:
         print("No columns selected. Schema not saved.")
 
