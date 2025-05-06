@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 env = os.getenv("ENV", "LOCAL")
 
 if env == "DOCKER":
-    sys.path.append('/opt/airflow/backend_scripts')
+    sys.path.append('/opt/airflow/backend_scripts/airflow_tasks')
 else:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts/airflow_tasks")))
 

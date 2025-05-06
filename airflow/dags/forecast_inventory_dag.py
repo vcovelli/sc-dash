@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 env = os.getenv("ENV", "LOCAL")
 
 if env == "DOCKER":
-    sys.path.append('/opt/airflow/backend_scripts')
+    sys.path.append('/opt/airflow/backend_scripts/forecasting')
 else:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts")))
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts/forecasting")))
 
 # Import forecasting script
 from forecast_inventory import forecast_inventory
