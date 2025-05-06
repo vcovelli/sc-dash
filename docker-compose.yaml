@@ -61,6 +61,7 @@ services:
       - ./airflow/plugins:/opt/airflow/plugins
       - ./backend/backend_scripts:/opt/airflow/backend_scripts
       - ./scripts:/opt/airflow/scripts
+      - ./datasets:/opt/airflow/datasets
       - ./.env:/app/.env
       - ./airflow/airflow-requirements.txt:/opt/airflow/airflow-requirements.txt
     ports:
@@ -87,6 +88,7 @@ services:
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./backend/backend_scripts:/opt/airflow/backend_scripts
+      - ./datasets:/opt/airflow/datasets
       - ./airflow/airflow-requirements.txt:/opt/airflow/airflow-requirements.txt
     command: scheduler
 
