@@ -9,10 +9,10 @@ env = os.getenv("ENV", "LOCAL")
 if env == "DOCKER":
     sys.path.append('/opt/airflow/backend_scripts')
 else:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts")))
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts/airflow_tasks")))
 
 # Import the script
-from manual_ingest_csv_to_mongo import ingest_csv_to_mongo
+from ingest_from_folder_once import ingest_from_folder_once
 
 # Default DAG arguments
 default_args = {
@@ -27,7 +27,7 @@ default_args = {
 dag = DAG(
     'ingest_csv_to_mongo_dag',
     default_args=default_args,
-    description='Import CSV data to MongoDB and archive the file',
+    description='Scan datasets folder and ingest CSVs to MongoDB by client',
     schedule_interval='@daily',
     catchup=False,
     tags=['supply_chain'],
@@ -36,6 +36,6 @@ dag = DAG(
 # Define the task
 task_import_csv = PythonOperator(
     task_id='ingest_csv_to_mongo',
-    python_callable=ingest_csv_to_mongo,
+    python_callable=ingest_from_folder_once,
     dag=dag,
 )
