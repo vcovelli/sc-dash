@@ -7,7 +7,7 @@ source /app/.env
 set +a
 
 # Set dataset permissions so Airflow can read the CSVs
-chmod -R a+r /opt/airflow/datasets
+chmod -R a+rw /opt/airflow/datasets
 
 # Set log folder permissions
 chown -R airflow: /opt/airflow/logs
