@@ -14,8 +14,8 @@ MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 
 # Directories
-DATASETS_DIR = os.path.abspath(BASE_DIR / "datasets")
-ARCHIVE_DIR = os.path.abspath(BASE_DIR / "archive")
+DATASETS_DIR = os.getenv("DATASET_DIR", "/opt/airflow/datasets")
+ARCHIVE_DIR = os.getenv("ARCHIVE_DIR", "/opt/airflow/datasets/archive")
 os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
 def ingest_from_folder_once():
