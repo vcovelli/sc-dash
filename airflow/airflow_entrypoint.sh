@@ -6,7 +6,10 @@ set -a
 source /app/.env
 set +a
 
-# Fix log folder permissions
+# Set dataset permissions so Airflow can read the CSVs
+chmod -R a+r /opt/airflow/datasets
+
+# Set log folder permissions
 chown -R airflow: /opt/airflow/logs
 
 # Wait for PostgreSQL
