@@ -1,6 +1,10 @@
 import csv
 import os
 import requests
+import uuid
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from openpyxl.utils import get_column_letter
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -8,7 +12,7 @@ load_dotenv()
 
 # Resolve paths relative to the current file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MASTER_TEMPLATE = os.path.join(BASE_DIR, "../datasets/master_template.csv")
+MASTER_TEMPLATE = os.path.join(BASE_DIR, "../datasets/master/master_template.csv")
 SCHEMA_CONFIG_DIR = os.path.join(BASE_DIR, "../user_schemas")
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 TEMPLATE_OUTPUT_DIR = os.path.join(BASE_DIR, "../datasets/templates")
@@ -57,24 +61,50 @@ def save_schema_config(user_id, selected_columns):
     print(f"\nSchema saved to: {filepath}")
 
 # Generate blank data template
-def generate_template_csv(client_name, output_dir=TEMPLATE_OUTPUT_DIR):
+def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows=10):
     schema_path = os.path.join(SCHEMA_CONFIG_DIR, f"{client_name}_schema.csv")
-    output_path = os.path.join(output_dir, f"{client_name}_data_template.csv")
+    output_path = os.path.join(output_dir, f"{client_name}_data_template.xlsx")
 
     if not os.path.exists(schema_path):
         raise FileNotFoundError(f"Schema not found: {schema_path}")
 
     os.makedirs(output_dir, exist_ok=True)
 
+    # Read schema to get column names
     with open(schema_path, mode='r', newline='') as file:
         reader = csv.DictReader(file)
-        headers = [row['column_name'] for row in reader]
+        columns = [row['column_name'] for row in reader]
 
-    with open(output_path, mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=headers)
-        writer.writeheader()
+    # Create workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"{client_name}_data"
 
-    print(f"Template CSV generated at: {output_path}")
+    # Freeze top row
+    ws.freeze_panes = "A2"
+
+    # Write header
+    for col_idx, col_name in enumerate(columns, start=1):
+        cell = ws.cell(row=1, column=col_idx, value=col_name)
+        cell.font = Font(bold=True)
+
+    # Add placeholder rows with UUIDs
+    for row_idx in range(2, num_rows + 2):  # Start at row 2
+        for col_idx, col_name in enumerate(columns, start=1):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            if col_name == 'id':
+                cell.value = str(uuid.uuid4())
+            else:
+                cell.value = ""
+
+    # Autosize column widths
+    for col_idx, col_name in enumerate(columns, start=1):
+        col_letter = get_column_letter(col_idx)
+        max_length = max(len(col_name), 36 if col_name == 'id' else 10)
+        ws.column_dimensions[col_letter].width = max_length
+
+    wb.save(output_path)
+    print(f"Excel template with formulas saved at: {output_path}")
 
 def trigger_table_creation(user_id):
     try:
@@ -83,20 +113,22 @@ def trigger_table_creation(user_id):
             json={"client_name": user_id}
         )
         if response.status_code == (200, 201):
-            print(f"✅ Table created successfully for `{user_id}`.")
+            print(f"Table created successfully for `{user_id}`.")
         else:
-            print(f"❌ Table creation failed: {response.status_code} - {response.text}")
+            print(f"Table creation failed: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"⚠️ Error contacting backend: {e}")
+        print(f"Error contacting backend: {e}")
 
 def main():
     user_id = input("Enter a unique name for this schema (e.g., company name): ").strip()
     headers = read_master_template()
     selected_columns = prompt_user_for_schema(headers)
     if selected_columns:
+        if not any(col['column_name'] == 'id' for col in selected_columns):
+            selected_columns.insert(0, {"column_name": "id", "data_type": "TEXT"})
         save_schema_config(user_id, selected_columns)
         trigger_table_creation(user_id)
-        generate_template_csv(user_id)
+        generate_template_xlsx(user_id)
     else:
         print("No columns selected. Schema not saved.")
 
