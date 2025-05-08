@@ -20,8 +20,12 @@ standalone_admin_password.txt
 
 # Ignore database files
 *.sqlite3
-*.csv
-backend/datasets/
+/datasets/archive
+/datasets/templates
+/user_schemas/*.csv
+
+!/datasets/master
+!/user_schemas/.gitkeep
 
 # Ignore temp files
 Temp/
