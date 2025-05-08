@@ -12,11 +12,11 @@ if env == "DOCKER":
 else:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../backend/backend_scripts/airflow_tasks")))
 
-# Import transformation script
+# Import script
 try:
-    import transform_mongo_to_postgres
+    import load_mongo_to_postgres_raw
 except ModuleNotFoundError as e:
-    raise ImportError(f"Failed to import transform_mongo_to_postgres: {e}")
+    raise ImportError(f"Failed to import load_mongo_to_postgres: {e}")
 
 default_args = {
     'owner': 'airflow',
@@ -27,14 +27,14 @@ default_args = {
 }
 
 with DAG(
-    dag_id='transform_mongo_to_postgres_dag',
+    dag_id='load_mongo_to_postgres_dag',
     default_args=default_args,
-    description='Transform MongoDB data and load to PostgreSQL',
+    description='Load MongoDB data into PostgreSQL raw table',
     schedule_interval='@daily',
     catchup=False,
     tags=['supply_chain'],
 ) as dag:
     task = PythonOperator(
-        task_id='transform_mongo_to_postgres',
-        python_callable=transform_mongo_to_postgres.transform_mongo_to_postgres
+        task_id='load_mongo_to_postgres_raw',
+        python_callable=load_mongo_to_postgres_raw.load_mongo_to_postgres_raw
     )
