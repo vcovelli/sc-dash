@@ -6,7 +6,7 @@ from .serializers import (
     InventorySerializer, CustomerSerializer, OrderSerializer,
     OrderItemSerializer, ShipmentSerializer
 )
-from backend.backend_scripts.forecasting.create_forecast_table import create_forecast_table
+from backend_scripts.forecasting.create_forecast_table import create_forecast_table
 import logging
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
