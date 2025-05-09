@@ -1,7 +1,6 @@
 import csv
 import os
 import requests
-import uuid
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
@@ -88,15 +87,6 @@ def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows
         cell = ws.cell(row=1, column=col_idx, value=col_name)
         cell.font = Font(bold=True)
 
-    # Add placeholder rows with UUIDs
-    for row_idx in range(2, num_rows + 2):  # Start at row 2
-        for col_idx, col_name in enumerate(columns, start=1):
-            cell = ws.cell(row=row_idx, column=col_idx)
-            if col_name == 'id':
-                cell.value = str(uuid.uuid4())
-            else:
-                cell.value = ""
-
     # Autosize column widths
     for col_idx, col_name in enumerate(columns, start=1):
         col_letter = get_column_letter(col_idx)
@@ -124,8 +114,6 @@ def main():
     headers = read_master_template()
     selected_columns = prompt_user_for_schema(headers)
     if selected_columns:
-        if not any(col['column_name'] == 'id' for col in selected_columns):
-            selected_columns.insert(0, {"column_name": "id", "data_type": "TEXT"})
         save_schema_config(user_id, selected_columns)
         trigger_table_creation(user_id)
         generate_template_xlsx(user_id)
