@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 import pandas as pd
 from pymongo import MongoClient
 from sqlalchemy import create_engine
@@ -64,24 +65,43 @@ def load_mongo_to_postgres_raw():
             continue
 
         collection = db[RAW_COLLECTION]
-        raw_data = list(collection.find({}, {'_id': 0}))
+        raw_data = list(collection.find({"status": {"$ne": "ingested"}}))  # Only fetch unprocessed
+
         if not raw_data:
-            print(f"[=] No data in {db_name}.{RAW_COLLECTION}")
+            print(f"[=] No new data in {db_name}.{RAW_COLLECTION}")
             continue
+
+        # Assign UUIDs and mark ingest status
+        for row in raw_data:
+            row['uuid'] = str(uuid.uuid4())
+            row['ingested_at'] = datetime.now(timezone.utc)
+            row['client_name'] = db_name
 
         df = pd.DataFrame(raw_data)
         df.columns = df.columns.str.lower()
-        df["ingested_at"] = datetime.now(timezone.utc)
         df["client_name"] = db_name
 
         target_pg_db = create_client_database(db_name)
         if not target_pg_db:
             continue
 
+        if '_id' in df.columns:
+            df.drop(columns=['_id'], inplace=True)
+
         try:
             engine = create_engine(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{target_pg_db}")
             df.to_sql(name=RAW_TABLE, con=engine, if_exists='append', index=False)
             print(f"[✓] Inserted {len(df)} rows into {target_pg_db}.{RAW_TABLE}")
+            # Mark each row in Mongo as ingested
+            for row in raw_data:
+                collection.update_one(
+                    {"_id": row["_id"]},  # You need to include _id in initial query for this to work
+                    {"$set": {
+                        "status": "ingested",
+                        "uuid": row["uuid"],
+                        "ingested_at": row["ingested_at"]
+                    }}
+                )
         except Exception as e:
             print(f"[!] Failed to insert into Postgres DB '{target_pg_db}': {e}")
 
