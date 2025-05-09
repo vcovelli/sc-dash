@@ -7,15 +7,6 @@ __pycache__/
 sc_env
 
 # Ignore Airflow logs, PIDs, DB, and configs
-backend/airflow/logs/
-backend/airflow/*.log
-backend/airflow/*.out
-backend/airflow/*.err
-backend/airflow/*.pid
-backend/airflow/airflow.db
-backend/airflow/airflow.cfg
-backend/airflow/webserver_config.py
-backend/airflow_env/
 standalone_admin_password.txt
 
 # Ignore database files
@@ -24,6 +15,7 @@ standalone_admin_password.txt
 /datasets/templates
 /user_schemas/*.csv
 
+# Allow these
 !/datasets/master
 !/user_schemas/.gitkeep
 
@@ -33,7 +25,14 @@ Temp/
 
 # Ignore Logs
 data/mongo
-airflow/logs/
+airflow/logs/dag_id=load_mongo_to_postgres_dag
+airflow/logs/dag_id=transform_mongo_to_postgres_dag
+airflow/logs/dag_processor_manager
+airflow/logs/dag_id=ingest_csv_to_mongo_dag
+airflow/logs/scheduler
+
+# Allow these
+!/airflow/logs/.gitkeep
 
 # Node
 node_modules/
