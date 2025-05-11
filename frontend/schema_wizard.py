@@ -19,14 +19,15 @@ TEMPLATE_OUTPUT_DIR = os.path.join(BASE_DIR, "../datasets/templates")
 # Basic mapping of keywords to data types
 def infer_postgres_type(column_name):
     name = column_name.lower()
-    if any(kw in name for kw in ['date', 'time']):
-        return "TIMESTAMP"
-    elif any(kw in name for kw in ['id', 'quantity', 'amount', 'count']):
-        return "INTEGER"
-    elif any(kw in name for kw in ['price', 'cost', 'rate', 'value']):
-        return "FLOAT"
-    else:
+    if 'date' in name or 'time' in name:
+        return "TIMESTAMP WITH TIME ZONE"
+    if name.endswith('_id') or 'order_id' in name or 'product_id' in name:
         return "TEXT"
+    if any(kw in name for kw in ['quantity', 'amount', 'count']):
+        return "INTEGER"
+    if any(kw in name for kw in ['price', 'cost', 'rate', 'value']):
+        return "FLOAT"
+    return "TEXT"
 
 def read_master_template():
     with open(MASTER_TEMPLATE, mode='r') as file:
@@ -51,12 +52,29 @@ def prompt_user_for_schema(headers):
 
 def save_schema_config(user_id, selected_columns):
     os.makedirs(SCHEMA_CONFIG_DIR, exist_ok=True)
-    filepath = os.path.join(SCHEMA_CONFIG_DIR, f"{user_id}_schema.csv")
+    filepath = os.path.join(SCHEMA_CONFIG_DIR, f"{user_id.lower()}_schema.csv")
+
+    # Ensure required backend columns are present
+    required_backend_columns = [
+        ("order_id", "TEXT"),
+        ("uuid", "UUID"),
+        ("ingested_at", "TIMESTAMP WITH TIME ZONE"),
+        ("version", "INTEGER"),
+        ("client_name", "TEXT")
+    ]
+
+    existing_column_names = {col["column_name"] for col in selected_columns}
+    for name, dtype in required_backend_columns:
+        if name not in existing_column_names:
+            selected_columns.append({"column_name": name, "data_type": dtype})
+
+    # Write schema
     with open(filepath, mode='w', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=['column_name', 'data_type'])
         writer.writeheader()
         for col in selected_columns:
             writer.writerow(col)
+
     print(f"\nSchema saved to: {filepath}")
 
 # Generate blank data template
@@ -72,7 +90,10 @@ def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows
     # Read schema to get column names
     with open(schema_path, mode='r', newline='') as file:
         reader = csv.DictReader(file)
-        columns = [row['column_name'] for row in reader]
+        all_columns = [row['column_name'] for row in reader]
+
+    backend_fields = {"uuid", "version", "client_name", "ingested_at"}
+    visible_columns = ['order_id'] + [col for col in all_columns if col not in backend_fields]
 
     # Create workbook
     wb = Workbook()
@@ -83,12 +104,12 @@ def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows
     ws.freeze_panes = "A2"
 
     # Write header
-    for col_idx, col_name in enumerate(columns, start=1):
+    for col_idx, col_name in enumerate(visible_columns, start=1):
         cell = ws.cell(row=1, column=col_idx, value=col_name)
         cell.font = Font(bold=True)
 
     # Autosize column widths
-    for col_idx, col_name in enumerate(columns, start=1):
+    for col_idx, col_name in enumerate(visible_columns, start=1):
         col_letter = get_column_letter(col_idx)
         max_length = max(len(col_name), 36 if col_name == 'id' else 10)
         ws.column_dimensions[col_letter].width = max_length
