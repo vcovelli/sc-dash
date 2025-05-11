@@ -52,7 +52,18 @@ def ingest_from_minio_once():
             df = pd.read_csv(BytesIO(response['Body'].read()))
 
             if not df.empty:
-                collection.insert_many(df.to_dict(orient="records"))
+                # Add composite key
+                if "order_id" in df.columns and "product_name" in df.columns:
+                    df["composite_key"] = df["order_id"].astype(str) + "_" + df["product_name"].astype(str)
+                else:
+                    raise ValueError("Missing 'order_id' or 'product_name' column needed for composite_key.")
+
+                for record in df.to_dict(orient="records"):
+                    collection.update_one(
+                        {"composite_key": record["composite_key"]},
+                        {"$set": record},
+                        upsert=True
+                    )
                 print(f"Inserted {len(df)} records into '{client_name}.raw_data'")
 
                 # Optionally delete the file after processing
