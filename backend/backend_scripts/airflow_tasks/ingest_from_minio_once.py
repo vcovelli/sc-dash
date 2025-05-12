@@ -59,11 +59,26 @@ def ingest_from_minio_once():
                     raise ValueError("Missing 'order_id' or 'product_name' column needed for composite_key.")
 
                 for record in df.to_dict(orient="records"):
-                    collection.update_one(
-                        {"composite_key": record["composite_key"]},
-                        {"$set": record},
-                        upsert=True
-                    )
+                    existing = collection.find_one({"composite_key": record["composite_key"]})
+
+                    if existing:
+                        # Check for changes in fields (excluding _id and status)
+                        changes = {
+                            k: v for k, v in record.items()
+                            if k != "_id" and existing.get(k) != v
+                        }
+                        if changes:
+                            changes["status"] = "updated"
+                            changes["last_modified"] = pd.Timestamp.utcnow()
+                            collection.update_one(
+                                {"composite_key": record["composite_key"]},
+                                {"$set": changes}
+                            )
+                            print(f"Updated record with composite_key {record['composite_key']}")
+                    else:
+                        record["status"] = "ingested"
+                        record["ingested_at"] = pd.Timestamp.utcnow()
+                        collection.insert_one(record)
                 print(f"Inserted {len(df)} records into '{client_name}.raw_data'")
 
                 # Optionally delete the file after processing
