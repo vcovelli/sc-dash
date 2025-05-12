@@ -23,6 +23,7 @@ PG_DATABASE = os.getenv("PG_DATABASE")
 PG_DB_PREFIX = os.getenv("PG_DB_PREFIX", "clientdata_")
 RAW_COLLECTION = "raw_data"
 RAW_TABLE = "raw_orders"
+LOG_TABLE = "raw_orders_log"
 
 # Load user-defined schema utility
 def load_user_schema_columns(client_name):
@@ -148,11 +149,9 @@ def load_mongo_to_postgres_raw():
             schema_columns = load_user_schema_columns(db_name)
             expected_columns = [name for name, _ in schema_columns]
 
-            # Validate column match before reindexing
             missing_cols = set(expected_columns) - set(df.columns)
             if missing_cols:
                 raise ValueError(f"Missing columns in DataFrame before reindexing: {missing_cols}")
-
             df = df.reindex(columns=expected_columns)
 
             with engine.connect() as conn:
@@ -171,17 +170,55 @@ def load_mongo_to_postgres_raw():
                     );
                     """
                     conn.execute(text(create_stmt))
-
-                    # Add index on composite_key
                     conn.execute(text(
                         f"CREATE INDEX IF NOT EXISTS idx_{RAW_TABLE}_composite_key ON {RAW_TABLE} (composite_key);"
                     ))
+
+                    # Create log table
+                    conn.execute(text(f"""
+                        CREATE TABLE IF NOT EXISTS {LOG_TABLE} (
+                            composite_key TEXT,
+                            old_version INT,
+                            new_version INT,
+                            change_timestamp TIMESTAMPTZ DEFAULT now(),
+                            changed_by TEXT DEFAULT 'auto-pipeline'
+                        );
+                    """))
                 else:
                     print(f"[=] Table {RAW_TABLE} already exists. Skipping creation.")
 
-            # Insert data using pandas
-            df.to_sql(name=RAW_TABLE, con=engine, if_exists='append', index=False, method='multi')
-            print(f"[✓] Inserted {len(df)} rows into {target_pg_db}.{RAW_TABLE}")
+                # Detect existing composite keys and max versions
+                existing = conn.execute(text(
+                    f"SELECT composite_key, MAX(version) as max_version FROM {RAW_TABLE} GROUP BY composite_key"
+                )).fetchall()
+                existing_map = {row[0]: row[1] for row in existing}
+
+                rows_to_insert = []
+                logs_to_insert = []
+                for _, row in df.iterrows():
+                    comp_key = row['composite_key']
+                    if comp_key in existing_map:
+                        current_version = existing_map[comp_key]
+                        row['version'] = current_version + 1
+                        logs_to_insert.append({
+                            'composite_key': comp_key,
+                            'old_version': current_version,
+                            'new_version': row['version'],
+                        })
+                    else:
+                        row['version'] = 1
+                    rows_to_insert.append(row)
+
+                insert_df = pd.DataFrame(rows_to_insert)
+                insert_df.to_sql(name=RAW_TABLE, con=engine, if_exists='append', index=False, method='multi')
+                print(f"[✓] Inserted {len(insert_df)} rows into {target_pg_db}.{RAW_TABLE}")
+
+                if logs_to_insert:
+                    log_df = pd.DataFrame(logs_to_insert)
+                    log_df["change_timestamp"] = datetime.now(timezone.utc)
+                    log_df["changed_by"] = "auto-pipeline"
+                    log_df.to_sql(name=LOG_TABLE, con=engine, if_exists='append', index=False, method='multi')
+                    print(f"[✓] Logged {len(logs_to_insert)} version changes to {LOG_TABLE}")
 
             # Mark each row in Mongo as ingested
             for row, mongo_id in zip(raw_data, mongo_ids):
