@@ -13,6 +13,8 @@ until nc -z "$PG_HOST" "$PG_PORT"; do
 done
 
 # Apply database migrations
+python manage.py makemigrations api
+python manage.py makemigrations accounts
 python manage.py migrate
 
 

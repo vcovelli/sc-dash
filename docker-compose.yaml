@@ -54,6 +54,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres/${PG_DATABASE}
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+      BACKEND_API_URL: http://backend:8000
     entrypoint: /opt/airflow/airflow_entrypoint.sh
     volumes:
       - ./airflow/logs:/opt/airflow/logs
@@ -84,6 +85,7 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres/${PG_DATABASE}
+      BACKEND_API_URL: http://backend:8000
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -101,8 +103,8 @@ services:
       - "${MINIO_PORT:-9000}:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     volumes:
       - minio_data:/data
     command: server --console-address ":9001" /data
