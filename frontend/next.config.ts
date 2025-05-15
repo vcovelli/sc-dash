@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+require("dotenv").config()
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${process.env.BACKEND_URL}/api/:path*`,
+      },
+    ]
+  },
+}
 
-export default nextConfig;
+module.exports = nextConfig
