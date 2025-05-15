@@ -37,5 +37,6 @@ dag = DAG(
 task_import_csv = PythonOperator(
     task_id='ingest_csv_from_minio_to_mongo',
     python_callable=ingest_from_minio_once,
+    provide_context=True,
     dag=dag,
 )
