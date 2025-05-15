@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .env
+.env.local
 
 # Ignore virtual environments
 sc_env
