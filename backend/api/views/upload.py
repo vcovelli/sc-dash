@@ -20,30 +20,31 @@ class UploadCSVView(APIView):
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
     def post(self, request, format=None):
-        csv_file = request.FILES.get("file")
-        if not csv_file:
-            return Response({"error": "No file uploaded."}, status=status.HTTP_400_BAD_REQUEST)
-
-        file_name = csv_file.name
-        if not file_name.endswith(".csv"):
-            return Response({"error": "Only CSV files are allowed."}, status=status.HTTP_400_BAD_REQUEST)
-
-        file_size = csv_file.size
-        if file_size > self.MAX_FILE_SIZE:
-            return Response({"error": "File size exceeds limit."}, status=status.HTTP_400_BAD_REQUEST)
-
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        uid = uuid.uuid4().hex[:8]
-        minio_path = f"{request.user.id}/{timestamp}/{uid}_{file_name}"
-
-        s3 = boto3.client(
-            "s3",
-            endpoint_url=settings.MINIO_ENDPOINT,
-            aws_access_key_id=settings.MINIO_ACCESS_KEY,
-            aws_secret_access_key=settings.MINIO_SECRET_KEY,
-        )
-
         try:
+            csv_file = request.FILES.get("file")
+            if not csv_file:
+                return Response({"error": "No file uploaded."}, status=status.HTTP_400_BAD_REQUEST)
+
+            file_name = csv_file.name
+            if not file_name.endswith(".csv"):
+                return Response({"error": "Only CSV files are allowed."}, status=status.HTTP_400_BAD_REQUEST)
+
+            file_size = csv_file.size
+            if file_size > self.MAX_FILE_SIZE:
+                return Response({"error": "File size exceeds limit."}, status=status.HTTP_400_BAD_REQUEST)
+
+            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            uid = uuid.uuid4().hex[:8]
+            minio_path = f"{request.user.id}/{timestamp}/{uid}_{file_name}"
+
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=settings.MINIO_ENDPOINT,
+                aws_access_key_id=settings.MINIO_ACCESS_KEY,
+                aws_secret_access_key=settings.MINIO_SECRET_KEY,
+            )
+
+            # Upload to MinIO
             s3.upload_fileobj(
                 csv_file,
                 settings.MINIO_BUCKET_NAME,
@@ -51,6 +52,7 @@ class UploadCSVView(APIView):
                 ExtraArgs={"ContentType": "text/csv"}
             )
 
+            # Create DB record
             uploaded_file = UploadedFile.objects.create(
                 user=request.user,
                 file_name=file_name,
@@ -59,30 +61,23 @@ class UploadCSVView(APIView):
                 file_size=file_size
             )
 
-            logger = logging.getLogger(__name__)
-            logger.info(f"User {request.user.username} uploaded file to {minio_path}")
-
-            # Trigger the first DAG in the pipeline (CSV -> Mongo)
+            # Airflow Trigger
             dag_id = "ingest_csv_to_mongo_dag"
             airflow_url = f"{os.getenv('AIRFLOW_API_BASE')}/dags/{dag_id}/dagRuns"
             airflow_user = os.getenv("AIRFLOW_USERNAME", "airflow")
             airflow_pass = os.getenv("AIRFLOW_PASSWORD", "airflow")
 
-            try:
-                airflow_response = requests.post(
-                    airflow_url,
-                    auth=(airflow_user, airflow_pass),
-                    json={"conf": {"file_id": uploaded_file.id}},
-                    timeout=5
-                )
+            airflow_response = requests.post(
+                airflow_url,
+                auth=(airflow_user, airflow_pass),
+                json={"conf": {"file_id": uploaded_file.id}},
+                timeout=10
+            )
 
-                if airflow_response.status_code in [200, 201]:
-                    logger.info("Airflow DAG triggered successfully.")
-                else:
-                    logger.warning(f"Airflow DAG trigger failed: {airflow_response.text}")
-
-            except Exception as dag_err:
-                logger.error(f"Error triggering DAG: {dag_err}")
+            if airflow_response.status_code not in [200, 201]:
+                return Response({
+                    "error": f"Airflow DAG trigger failed: {airflow_response.text}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             return Response({
                 "message": f"Uploaded {file_name} to MinIO!",
@@ -105,12 +100,15 @@ class MarkSuccessView(APIView):
 
     def post(self, request):
         file_id = request.data.get("file_id")
+        row_count = request.data.get("row_count", 0)
+
         if not file_id:
             return Response({"error": "file_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             file_record = UploadedFile.objects.get(id=file_id)
             file_record.status = "success"
+            file_record.row_count = row_count  # store the row count
             file_record.save()
             return Response({"message": "File marked as ingested"}, status=status.HTTP_200_OK)
         except UploadedFile.DoesNotExist:

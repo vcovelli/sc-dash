@@ -68,6 +68,8 @@ def ingest_from_minio_once(**context):
                 df = pd.read_csv(BytesIO(response['Body'].read()))
 
                 if not df.empty:
+                    row_count = len(df)  # Track number of rows
+
                     # Add composite key
                     if "order_id" in df.columns and "product_name" in df.columns:
                         df["composite_key"] = df["order_id"].astype(str) + "_" + df["product_name"].astype(str)
@@ -78,7 +80,6 @@ def ingest_from_minio_once(**context):
                         existing = collection.find_one({"composite_key": record["composite_key"]})
 
                         if existing:
-                            # Check for changes in fields (excluding _id and status)
                             changes = {
                                 k: v for k, v in record.items()
                                 if k != "_id" and existing.get(k) != v
@@ -95,22 +96,22 @@ def ingest_from_minio_once(**context):
                             record["status"] = "ingested"
                             record["ingested_at"] = pd.Timestamp.utcnow()
                             collection.insert_one(record)
-                    print(f"Inserted {len(df)} records into '{client_name}.raw_data'")
 
-                    # Archive & delete the file after processing
+                    print(f"Inserted {row_count} records into '{client_name}.raw_data'")
+
+                    # Archive and delete original file
                     archive_key = f"archive/{key}"
-                    s3.copy_object(
-                        Bucket=bucket_name,
-                        CopySource={'Bucket': bucket_name, 'Key': key},
-                        Key=archive_key
-                    )
+                    s3.copy_object(Bucket=bucket_name, CopySource={'Bucket': bucket_name, 'Key': key}, Key=archive_key)
                     s3.delete_object(Bucket=bucket_name, Key=key)
 
-                    # Notify backend
+                    # Notify backend with row_count
                     try:
                         response = requests.post(
                             f"{BACKEND_API_URL}/api/uploads/mark-success/",
-                            json={"file_id": file_id},
+                            json={
+                                "file_id": file_id,
+                                "row_count": row_count,
+                            },
                             timeout=5
                         )
                         if response.status_code == 200:

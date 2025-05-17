@@ -8,14 +8,17 @@ export default function DashboardPage() {
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
 
   useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
+
     const fetchDashboardData = async () => {
       try {
         const res = await api.get("/api/dashboard-overview");
-
         setFileCount(res.data.total_files);
-        setRecentFiles(res.data.recent_uploads);
+        setRecentFiles(res.data.recent_uploads || []);
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
+        setRecentFiles([]);
       }
     };
 
@@ -30,7 +33,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-sm text-gray-500 mb-2">Total Files Uploaded</h2>
-          <p className="text-2xl font-semibold text-blue-600">{fileCount !== null ? fileCount : "..."}</p>
+          <p className="text-2xl font-semibold text-blue-600">
+            {fileCount !== null ? fileCount : "..."}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-sm text-gray-500 mb-2">Storage Used</h2>
@@ -45,7 +50,7 @@ export default function DashboardPage() {
       {/* Recent Uploads Table */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4 text-gray-800">🕒 Recent Uploads</h2>
-        {recentFiles.length > 0 ? (
+        {Array.isArray(recentFiles) && recentFiles.length > 0 ? (
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="text-gray-500">
@@ -57,9 +62,13 @@ export default function DashboardPage() {
             <tbody>
               {recentFiles.map((file, i) => (
                 <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 font-medium">{file.name}</td>
-                  <td className="px-4 py-2">{file.row_count}</td>
-                  <td className="px-4 py-2">{new Date(file.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-2 font-medium">{file?.file_name || "N/A"}</td>
+                  <td className="px-4 py-2">{file?.row_count ?? "-"}</td>
+                  <td className="px-4 py-2">
+                    {file?.uploaded_at
+                      ? new Date(file.uploaded_at).toLocaleString()
+                      : "Unknown"}
+                  </td>
                 </tr>
               ))}
             </tbody>
