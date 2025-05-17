@@ -55,7 +55,11 @@ def ingest_from_minio_once(**context):
 
                 # Determine client name from filename
                 filename = key.split("/")[-1]
-                client_name = filename.split("_")[0]
+                parts = filename.replace(".csv", "").split("_")
+                if len(parts) < 2:
+                    raise ValueError(f"Filename format invalid: {filename}")
+                uuid_prefix, client_name = parts[0], parts[1]  # Extract client_name (UUID prefix) from filename
+
                 db = client[client_name]
                 collection = db["raw_data"]
 
