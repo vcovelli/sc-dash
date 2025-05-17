@@ -8,10 +8,9 @@ export default function Navbar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    localStorage.clear();
     router.push("/login");
-  };
+    };
 
   return (
     <nav className="w-full px-6 py-4 bg-white shadow-sm border-b border-gray-200">
