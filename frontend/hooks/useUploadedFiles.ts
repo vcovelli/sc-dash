@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import axios from "axios"
+import api from "@/lib/axios";
 import { UploadedFile } from "@/types/global"
 
 export const useUploadedFiles = () => {
@@ -9,11 +9,7 @@ export const useUploadedFiles = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/uploaded-files`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        })
+        const res = await api.get("/api/uploaded-files");
         setFiles(res.data)
       } catch (err) {
         console.error("Failed to fetch uploaded files", err)
