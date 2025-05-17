@@ -14,7 +14,7 @@ from .views.upload import MarkSuccessView
 from .views.onboarding import map_schema_and_create
 from .views.dashboard import DashboardOverviewView
 from .views.schema_wizard import generate_schema
-
+from .views.user_schema import UserSchemaView
 
 # Using a router for automatic URL routing
 router = DefaultRouter()
@@ -36,4 +36,5 @@ urlpatterns = [
     path('map-schema/', map_schema_and_create, name='map-schema-and-create'),
     path('dashboard-overview/', DashboardOverviewView.as_view(), name='dashboard-overview'),
     path('schema-wizard/generate/', generate_schema, name='generate-schema'),
+    path('user-schema/', UserSchemaView.as_view(), name='user-schema'),
 ]
