@@ -1,6 +1,8 @@
 import csv
 import os
 import requests
+from minio import Minio
+from datetime import timedelta
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
@@ -117,6 +119,28 @@ def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows
     wb.save(output_path)
     print(f"Excel template with formulas saved at: {output_path}")
 
+    # Upload to MinIO
+    minio_client = Minio(
+        os.getenv("MINIO_ENDPOINT"),
+        access_key=os.getenv("MINIO_ROOT_USER"),
+        secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
+        secure=False,
+    )
+
+    bucket_name = "templates"
+    minio_filename = f"{client_name}_data_template.xlsx"
+
+    # Ensure the bucket exists
+    if not minio_client.bucket_exists(bucket_name):
+        minio_client.make_bucket(bucket_name)
+
+    minio_client.fput_object(bucket_name, minio_filename, output_path)
+
+    # Generate a 30-minute presigned URL
+    url = minio_client.presigned_get_object(bucket_name, minio_filename, expires=timedelta(minutes=30))
+
+    return url
+
 def trigger_table_creation(user_id):
     try:
         response = requests.post(
@@ -134,10 +158,12 @@ def main():
     user_id = input("Enter a unique name for this schema (e.g., company name): ").strip()
     headers = read_master_template()
     selected_columns = prompt_user_for_schema(headers)
+
     if selected_columns:
         save_schema_config(user_id, selected_columns)
         trigger_table_creation(user_id)
-        generate_template_xlsx(user_id)
+        download_url = generate_template_xlsx(user_id)
+        print(f"\n✅ Excel template uploaded to MinIO.\n📥 Download here: {download_url}\n")
     else:
         print("No columns selected. Schema not saved.")
 
