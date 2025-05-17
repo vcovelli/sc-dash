@@ -8,6 +8,7 @@ class CustomUser(AbstractUser):
         ("admin", "Admin"),
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="client")
+    business_name = models.CharField(max_length=255, blank=True, null=True)
 
     def is_admin(self):
         return self.role == "admin"

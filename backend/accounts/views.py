@@ -1,12 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status
-from django.contrib.auth.hashers import make_password
-from rest_framework.permissions import IsAuthenticated
 from .serializers import SignupSerializer
+
+User = get_user_model()
 
 # Signup API
 class SignupView(APIView):
@@ -24,10 +25,8 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        User = get_user_model()
         username = request.data.get("username")
         password = request.data.get("password")
-
         user = User.objects.filter(username=username).first()
 
         if user and user.check_password(password):
@@ -38,8 +37,9 @@ class LoginView(APIView):
             })
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-# User Profile API
+# Profile API
 class UserProfileView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -48,4 +48,18 @@ class UserProfileView(APIView):
             "username": user.username,
             "email": user.email,
             "role": user.role,
+            "business_name": user.business_name,
         })
+
+    def patch(self, request):
+        business_name = request.data.get("business_name")
+
+        if not business_name or not isinstance(business_name, str):
+            return Response(
+                {"error": "business_name is required and must be a string"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        request.user.business_name = business_name.strip()
+        request.user.save(update_fields=["business_name"])  # more explicit
+        return Response({"message": "Business name updated successfully"}, status=status.HTTP_200_OK)

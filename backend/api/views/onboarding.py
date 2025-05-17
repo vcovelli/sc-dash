@@ -35,11 +35,16 @@ def map_schema_and_create(request):
         return Response({"error": str(e)}, status=500)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_table_for_client(request):
     client_name = request.data.get("client_name")
     if not client_name:
-        return Response({"error": "Missing client_name"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Missing client_name"}, status=400)
 
-    # TODO: Actually invoke schema_wizard logic
+    # Save business name to user profile if not already set
+    if not request.user.business_name:
+        request.user.business_name = client_name
+        request.user.save()
+
     print(f"[onboarding] Creating table for client: {client_name}")
-    return Response({"message": f"Table created for {client_name}"}, status=status.HTTP_201_CREATED)
+    return Response({"message": f"Table created for {client_name}"}, status=201)
