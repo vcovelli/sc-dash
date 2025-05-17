@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Supplier, Warehouse, Product, Inventory, Customer, Order, OrderItem, Shipment, UploadedFile
+from .models import Supplier, Warehouse, Product, Inventory, Customer, Order, OrderItem, Shipment, UploadedFile, UserSchema
 
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,3 +50,8 @@ class UploadedFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UploadedFile
         fields = '__all__'
+
+class UserSchemaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSchema
+        fields = ["expected_headers"]

@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class Supplier(models.Model):
     name = models.CharField(max_length=255)
@@ -25,6 +27,7 @@ class Product(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.IntegerField()
+    client_name = models.CharField(max_length=100, default="")
 
     def __str__(self):
         return self.name
@@ -49,6 +52,7 @@ class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     order_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    client_name = models.CharField(max_length=100, default="")
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
@@ -57,10 +61,18 @@ class OrderItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
 
 class Shipment(models.Model):
+    STATUS_CHOICES = [
+        ('on_time', 'On Time'),
+        ('delayed', 'Delayed'),
+        ('delivered', 'Delivered'),
+    ]
+
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True)
     shipped_date = models.DateTimeField(null=True, blank=True)
     estimated_arrival = models.DateTimeField(null=True, blank=True)
+    client_name = models.CharField(max_length=100, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='on_time')
 
 class UploadedFile(models.Model):
     STATUS_CHOICES = [
@@ -76,7 +88,24 @@ class UploadedFile(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="pending")
     message = models.TextField(blank=True, null=True)  # for error info or notes
-    file_size = models.PositiveIntegerField(null=True) 
+    file_size = models.PositiveIntegerField(null=True)
+    client_name = models.CharField(max_length=100, default="")
+    row_count = models.PositiveIntegerField(default=0)
+
+    def save(self, *args, **kwargs):
+        # Automatically assign client_name from user's business_name if not set
+        if not self.client_name and self.user and hasattr(self.user, 'business_name'):
+            self.client_name = self.user.business_name or ""
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.file_name} - {self.status}"
+
+class UserSchema(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="schema")
+    expected_headers = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Schema for {self.user.email or self.user.username}"
