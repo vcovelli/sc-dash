@@ -22,7 +22,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await axios.post("http://192.168.1.42:8000/auth/signup/", form);
-      setMessage("✅ User created! Redirecting to login...");
+      setMessage("✅ Account created! Redirecting to setup...");
       setTimeout(() => router.push("/login"), 1800);
     } catch (err: any) {
       setMessage(err.response?.data?.error || "❌ Signup failed.");

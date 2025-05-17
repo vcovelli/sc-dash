@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 const requiredFields = ["order_id", "product_name", "uuid", "ingested_at", "version", "client_name"];
 
@@ -16,13 +17,54 @@ const fieldGroups: Record<string, string[]> = {
   "📤 Shipment Info": [
     "shipment_id", "shipment_method", "tracking_number", "shipment_status"
   ],
-  "🛠️ System Metadata (Required)": ["order_id", "product_name", "uuid", "ingested_at", "version", "client_name"]
+  "🛠️ System Metadata (Required)": requiredFields,
 };
 
 export default function StartFreshPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
   const [businessName, setBusinessName] = useState("");
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem("access_token");
+    const refreshToken = localStorage.getItem("refresh_token");
+
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get("http://192.168.1.42:8000/auth/me/", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (res.data?.business_name) {
+          setBusinessName(res.data.business_name);
+        }
+      } catch (err: any) {
+        if (err.response?.status === 401 && refreshToken) {
+          try {
+            const refreshRes = await axios.post("http://192.168.1.42:8000/auth/token/refresh/", {
+              refresh: refreshToken,
+            });
+
+            const newAccess = refreshRes.data.access;
+            localStorage.setItem("access_token", newAccess);
+
+            const profileRes = await axios.get("http://192.168.1.42:8000/auth/me/", {
+              headers: { Authorization: `Bearer ${newAccess}` },
+            });
+
+            if (profileRes.data?.business_name) {
+              setBusinessName(profileRes.data.business_name);
+            }
+          } catch (refreshErr) {
+            console.error("Token refresh failed", refreshErr);
+          }
+        } else {
+          console.error("Failed to fetch profile:", err);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const toggleField = (field: string) => {
     if (requiredFields.includes(field)) return;
@@ -39,34 +81,61 @@ export default function StartFreshPage() {
     return;
   }
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/schema-wizard/generate/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      client_name: businessName.toLowerCase(),
-      columns: [...requiredFields, ...selected],
-    }),
-  });
+  const allSelected = [...requiredFields, ...selected];
+  const token = localStorage.getItem("access_token");
 
-  if (res.ok) {
-    const data = await res.json();
-    const { download_url } = data;
+  try {
+    // Update user's business_name on the backend
+    await axios.patch("http://192.168.1.42:8000/auth/me/", {
+      business_name: businessName,
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    // Trigger browser download from MinIO
-    const link = document.createElement("a");
-    link.href = download_url;
-    link.download = `${businessName}_data_template.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Save schema to backend
+    await axios.post("http://192.168.1.42:8000/api/user-schema/", {
+      expected_headers: allSelected.filter(
+        (field) => !["uuid", "version", "ingested_at"].includes(field)
+      )
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    localStorage.setItem("client_name", businessName.toLowerCase());
-    router.push("/uploads");
-  } else {
-    const error = await res.json();
-    alert(`Failed to generate schema: ${error.message || "Unknown error"}`);
-  }
-};
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/schema-wizard/generate/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_name: businessName.toLowerCase(),
+          columns: allSelected,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const { download_url } = data;
+
+        const link = document.createElement("a");
+        link.href = download_url;
+        link.download = `${businessName}_data_template.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        localStorage.setItem("client_name", businessName.toLowerCase());
+        router.push("/uploads");
+      } else {
+        const error = await res.json();
+        alert(`Failed to generate schema: ${error.message || "Unknown error"}`);
+      }
+    } catch (err) {
+      console.error("Error submitting schema:", err);
+      alert("Unexpected error saving schema.");
+    }
+  };
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-50 to-white px-6 py-16 flex items-center justify-center">

@@ -25,8 +25,21 @@ export default function LoginPage() {
       const { access, refresh } = res.data;
       localStorage.setItem("access_token", access);
       localStorage.setItem("refresh_token", refresh);
+
+      // Fetch user profile to check if they’ve already set up their business name
+      const profileRes = await axios.get("http://192.168.1.42:8000/auth/me/", {
+        headers: { Authorization: `Bearer ${access}` },
+      });
+
+      const businessName = profileRes.data?.business_name;
+      localStorage.setItem("client_name", businessName?.toLowerCase() || "");
+
       setMessage("✅ Logged in!");
-      router.push("/dashboard");
+      if (!businessName) {
+        router.push("/onboarding/setup");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setMessage(err.response?.data?.error || "❌ Login failed.");
     } finally {
