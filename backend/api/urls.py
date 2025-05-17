@@ -11,6 +11,10 @@ from .views.onboarding import create_table_for_client
 from .views.upload import UploadCSVView
 from .views.upload import UploadedFileListView
 from .views.upload import MarkSuccessView
+from .views.onboarding import map_schema_and_create
+from .views.dashboard import DashboardOverviewView
+from .views.schema_wizard import generate_schema
+
 
 # Using a router for automatic URL routing
 router = DefaultRouter()
@@ -29,4 +33,7 @@ urlpatterns = [
     path('ingest-csv/', UploadCSVView.as_view(), name='ingest-csv'),
     path("uploaded-files/", UploadedFileListView.as_view(), name="uploaded-files"),
     path("uploads/mark-success/", MarkSuccessView.as_view(), name="mark-success"),
+    path('map-schema/', map_schema_and_create, name='map-schema-and-create'),
+    path('dashboard-overview/', DashboardOverviewView.as_view(), name='dashboard-overview'),
+    path('schema-wizard/generate/', generate_schema, name='generate-schema'),
 ]
