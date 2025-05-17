@@ -1,8 +1,7 @@
-// app/dashboard/page.tsx
 "use client";
 import { useEffect, useState } from "react";
-import axios from "@/lib/axios"; // if not defined, use plain 'axios'
 import Link from "next/link";
+import api from "@/lib/axios";
 
 export default function DashboardPage() {
   const [fileCount, setFileCount] = useState<number | null>(null);
@@ -11,12 +10,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem("access_token");
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/dashboard-overview`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await api.get("/api/dashboard-overview");
 
         setFileCount(res.data.total_files);
         setRecentFiles(res.data.recent_uploads);
