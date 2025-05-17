@@ -3,6 +3,7 @@ import os
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 env = os.getenv("ENV", "LOCAL")
 
@@ -28,7 +29,7 @@ dag = DAG(
     'ingest_csv_to_mongo_dag',
     default_args=default_args,
     description='Scan MinIO and ingest CSVs to MongoDB by client',
-    schedule_interval='@daily',
+    schedule_interval=None,
     catchup=False,
     tags=['supply_chain'],
 )
@@ -40,3 +41,14 @@ task_import_csv = PythonOperator(
     provide_context=True,
     dag=dag,
 )
+
+# Define the trigger task
+trigger_mongo_to_postgres = TriggerDagRunOperator(
+    task_id="trigger_mongo_to_postgres_dag",
+    trigger_dag_id="load_mongo_to_postgres_dag",
+    wait_for_completion=False,
+    dag=dag,
+)
+
+# Set task dependencies
+task_import_csv >> trigger_mongo_to_postgres

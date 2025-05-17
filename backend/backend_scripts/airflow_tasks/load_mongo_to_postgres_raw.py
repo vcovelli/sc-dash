@@ -79,7 +79,7 @@ def create_client_database(client_name):
         print(f"[!] Error creating DB '{db_name}': {e}")
         return None
 
-def load_mongo_to_postgres_raw():
+def load_mongo_to_postgres_raw(**context):
     try:
         client = MongoClient(MONGO_URI)
         db_names = client.list_database_names()
@@ -93,7 +93,7 @@ def load_mongo_to_postgres_raw():
             continue
 
         collection = db[RAW_COLLECTION]
-        raw_data = list(collection.find({"status": {"$ne": "ingested"}}))  # Only fetch unprocessed
+        raw_data = list(collection.find({"postgres_status": {"$ne": "ingested"}}))
 
         if not raw_data:
             print(f"[=] No new data in {db_name}.{RAW_COLLECTION}")
@@ -220,16 +220,24 @@ def load_mongo_to_postgres_raw():
                     log_df.to_sql(name=LOG_TABLE, con=engine, if_exists='append', index=False, method='multi')
                     print(f"[✓] Logged {len(logs_to_insert)} version changes to {LOG_TABLE}")
 
-            # Mark each row in Mongo as ingested
-            for row, mongo_id in zip(raw_data, mongo_ids):
-                collection.update_one(
-                    {"_id": mongo_id},
-                    {"$set": {
-                        "status": "ingested",
-                        "uuid": row["uuid"],
-                        "ingested_at": row["ingested_at"]
-                    }}
-                )
+                # Only mark as ingested if Postgres insert succeeded
+                for row, mongo_id in zip(raw_data, mongo_ids):
+                    collection.update_one(
+                        {"_id": mongo_id},
+                        {"$set": {
+                            "status": "ingested",
+                            "postgres_status": "ingested",
+                            "uuid": row["uuid"],
+                            "ingested_at": row["ingested_at"]
+                        }}
+                    )
+
+                if insert_df is not None and not insert_df.empty:
+                    print(f"[✓] Pushing client_name to XCom: {db_name}")
+                    context["ti"].xcom_push(key="client_name", value=db_name)
+                else:
+                    print(f"[!] No rows inserted for {db_name}, skipping XCom push.")
+
         except Exception as e:
             print(f"[!] Failed to insert into Postgres DB '{target_pg_db}': {e}")
 
