@@ -15,6 +15,8 @@ from .views.onboarding import map_schema_and_create
 from .views.dashboard import DashboardOverviewView
 from .views.schema_wizard import generate_schema
 from .views.user_schema import UserSchemaView
+from .views.upload import FileDownloadView
+from .views.profile import UserProfileView
 
 # Using a router for automatic URL routing
 router = DefaultRouter()
@@ -37,4 +39,6 @@ urlpatterns = [
     path('dashboard-overview/', DashboardOverviewView.as_view(), name='dashboard-overview'),
     path('schema-wizard/generate/', generate_schema, name='generate-schema'),
     path('user-schema/', UserSchemaView.as_view(), name='user-schema'),
+    path('file-download/<int:file_id>/', FileDownloadView.as_view(), name='file-download'),
+    path('profile/', UserProfileView.as_view(), name='user-profile'),
 ]

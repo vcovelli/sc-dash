@@ -113,3 +113,32 @@ class MarkSuccessView(APIView):
             return Response({"message": "File marked as ingested"}, status=status.HTTP_200_OK)
         except UploadedFile.DoesNotExist:
             return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class FileDownloadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, file_id):
+        try:
+            file_record = UploadedFile.objects.get(id=file_id, user=request.user)
+
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=settings.MINIO_ENDPOINT,
+                aws_access_key_id=settings.MINIO_ACCESS_KEY,
+                aws_secret_access_key=settings.MINIO_SECRET_KEY,
+            )
+
+            url = s3.generate_presigned_url(
+                ClientMethod="get_object",
+                Params={
+                    "Bucket": settings.MINIO_BUCKET_NAME,
+                    "Key": f"archive/{file_record.minio_path}"
+                },
+                ExpiresIn=3600,
+            )
+
+            return Response({"url": url})
+        except UploadedFile.DoesNotExist:
+            return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
