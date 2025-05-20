@@ -14,7 +14,7 @@ const useUserSchema = () => {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     axios
-      .get("http://192.168.1.42:8000/api/user-schema/", {
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-schema/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -41,7 +41,7 @@ export default function UploadsPage() {
     const fetchSchema = async () => {
       const token = localStorage.getItem("access_token");
       try {
-        const response = await axios.get("http://192.168.1.42:8000/api/user-schema/", {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-schema/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setExpectedHeaders(response.data?.expected_headers || []);
@@ -113,7 +113,7 @@ export default function UploadsPage() {
       formData.append("file", file);
 
       const token = localStorage.getItem("access_token");
-      await axios.post("http://192.168.1.42:8000/api/ingest-csv/", formData, {
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/ingest-csv/`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",

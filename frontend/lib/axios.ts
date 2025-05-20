@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://192.168.1.42:8000",
+  baseURL: `${process.env.NEXT_PUBLIC_BACKEND_URL}`,
 });
 
 api.interceptors.request.use(
@@ -27,7 +27,7 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const refreshRes = await axios.post("http://192.168.1.42:8000/auth/token/refresh/", {
+        const refreshRes = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/token/refresh/`, {
           refresh: localStorage.getItem("refresh_token"),
         });
 

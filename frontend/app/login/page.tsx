@@ -21,13 +21,13 @@ export default function LoginPage() {
     setMessage("");
     setLoading(true);
     try {
-      const res = await axios.post("http://192.168.1.42:8000/auth/login/", form);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login/`, form);
       const { access, refresh } = res.data;
       localStorage.setItem("access_token", access);
       localStorage.setItem("refresh_token", refresh);
 
       // Fetch user profile to check if they’ve already set up their business name
-      const profileRes = await axios.get("http://192.168.1.42:8000/auth/me/", {
+      const profileRes = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
         headers: { Authorization: `Bearer ${access}` },
       });
 

@@ -13,7 +13,7 @@ export default function HomePage() {
 
         <div>
           <a
-            href="/signup"
+            href="/onboarding"
             className="inline-block px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300"
           >
             🚀 Get Started Free

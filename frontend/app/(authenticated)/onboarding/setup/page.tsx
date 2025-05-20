@@ -12,7 +12,7 @@ export default function FirstTimeSetupPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    axios.get("http://192.168.1.42:8000/api/user-schema/", {
+    axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-schema/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => {
@@ -27,7 +27,7 @@ export default function FirstTimeSetupPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("access_token");
-      await axios.patch("http://192.168.1.42:8000/auth/me/", { business_name: businessName }, {
+      await axios.patch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, { business_name: businessName }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       router.push("/onboarding/start-fresh");
