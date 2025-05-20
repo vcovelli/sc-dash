@@ -3,7 +3,7 @@ echo "Starting Django Setup"
 
 # Load environment variables
 set -a
-source /app/.env  # Adjust this path based on where .env is in the container
+source /app/.env
 set +a
 
 # Wait for PostgreSQL
@@ -12,18 +12,21 @@ until nc -z "$PG_HOST" "$PG_PORT"; do
   sleep 2
 done
 
-# Apply database migrations
+# Ensure DB exists
+psql -h "$PG_HOST" -U "$APP_DB_USER" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '$APP_DB_NAME'" | grep -q 1 || \
+psql -h "$PG_HOST" -U "$APP_DB_USER" -d postgres -c "CREATE DATABASE $APP_DB_NAME"
+
+# Apply migrations
 python manage.py makemigrations api
 python manage.py makemigrations accounts
 python manage.py migrate
 
-
-# Create Django superuser if it doesn't exist
+# Create superuser if needed
 echo "from django.contrib.auth import get_user_model; \
 User = get_user_model(); \
 User.objects.filter(username='admin').exists() or \
 User.objects.create_superuser('admin', 'admin@example.com', 'admin')" \
 | python manage.py shell
 
-# Start server
+# Start Django
 exec python manage.py runserver 0.0.0.0:8000
