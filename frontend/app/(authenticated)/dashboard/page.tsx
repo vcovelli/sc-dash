@@ -5,6 +5,8 @@ import api from "@/lib/axios";
 
 export default function DashboardPage() {
   const [fileCount, setFileCount] = useState<number | null>(null);
+  const [storageUsed, setStorageUsed] = useState<string | null>(null);
+  const [uptime, setUptime] = useState<string | null>(null);
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
 
   useEffect(() => {
@@ -16,6 +18,8 @@ export default function DashboardPage() {
         const res = await api.get("/api/dashboard-overview");
         setFileCount(res.data.total_files);
         setRecentFiles(res.data.recent_uploads || []);
+        setStorageUsed(res.data.storage_used); // e.g., "1.2 GB"
+        setUptime(res.data.system_uptime);     // e.g., "99.99%"
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
         setRecentFiles([]);
@@ -39,11 +43,15 @@ export default function DashboardPage() {
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-sm text-gray-500 mb-2">Storage Used</h2>
-          <p className="text-2xl font-semibold text-green-600">1.2 GB</p>
+          <p className="text-2xl font-semibold text-green-600">
+            {storageUsed ?? "..."}
+          </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-sm text-gray-500 mb-2">System Uptime</h2>
-          <p className="text-2xl font-semibold text-purple-600">99.99%</p>
+          <p className="text-2xl font-semibold text-purple-600">
+            {uptime ?? "..."}
+          </p>
         </div>
       </div>
 
