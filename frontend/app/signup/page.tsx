@@ -21,7 +21,7 @@ export default function SignupPage() {
     setMessage("");
     setLoading(true);
     try {
-      await axios.post("http://192.0.2.7:8000/auth/signup/", form);
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup/`, form);
       setMessage("✅ Account created! Redirecting to setup...");
       setTimeout(() => router.push("/login"), 1800);
     } catch (err: any) {
