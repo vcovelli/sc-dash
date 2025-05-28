@@ -17,6 +17,7 @@ export default function StartFreshPage() {
   const router = useRouter();
   const [businessName, setBusinessName] = useState("");
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [includeSampleData, setIncludeSampleData] = useState(true);
 
   useEffect(() => {
     const accessToken = localStorage.getItem("access_token");
@@ -36,7 +37,6 @@ export default function StartFreshPage() {
             const refreshRes = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/token/refresh/`, {
               refresh: refreshToken,
             });
-
             const newAccess = refreshRes.data.access;
             localStorage.setItem("access_token", newAccess);
 
@@ -84,21 +84,25 @@ export default function StartFreshPage() {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/schema-wizard/generate/`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           client_name: businessName.toLowerCase(),
           features: selectedFeatures,
+          include_sample_data: includeSampleData,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        const { download_url } = data;
+        const { download_url, grist_view_url } = data;
 
-        window.open(download_url, "_blank");
+        // Open both tabs
+        if (grist_view_url) window.open(grist_view_url, "_blank");
+        if (download_url) window.open(download_url, "_blank");
+
         localStorage.setItem("client_name", businessName.toLowerCase());
         router.push("/uploads");
       } else {
@@ -154,6 +158,18 @@ export default function StartFreshPage() {
                 </label>
               ))}
             </div>
+          </div>
+
+          <div className="pt-4">
+            <label className="flex items-center gap-3 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={includeSampleData}
+                onChange={() => setIncludeSampleData(!includeSampleData)}
+                className="form-checkbox h-4 w-4 text-blue-600"
+              />
+              Include sample data in template
+            </label>
           </div>
 
           <div className="pt-6">
