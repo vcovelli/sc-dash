@@ -49,24 +49,6 @@ services:
     env_file:
       - .env
 
-  noco:
-    image: nocodb/nocodb:latest
-    container_name: nocodb
-    restart: unless-stopped
-    ports:
-      - "8089:8080"
-    environment:
-      NC_DB_CLIENT: "pg"
-      NC_DB_HOST: "postgres"
-      NC_DB_PORT: "5432"
-      NC_DB_USER: "${APP_DB_USER}"
-      NC_DB_PASSWORD: "${APP_DB_PASSWORD}"
-      NC_DB_DATABASE: "${APP_DB_NAME}"
-    depends_on:
-      - postgres
-    env_file:
-      - .env
-
   airflow-webserver:
     build:
       context: ./airflow
@@ -168,3 +150,4 @@ volumes:
   airflow_logs:
   spark-data:
   minio_data:
+  grist_data:

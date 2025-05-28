@@ -15,8 +15,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)
 
 MONGO_URI = os.getenv("MONGO_URI")
-PG_USER = os.getenv("PG_USER")
-PG_PASSWORD = os.getenv("PG_PASSWORD")
+PG_USER = os.getenv("APP_DB_USER")
+PG_PASSWORD = os.getenv("APP_DB_PASSWORD")
 PG_HOST = os.getenv("PG_HOST")
 PG_PORT = os.getenv("PG_PORT")
 PG_DATABASE = os.getenv("PG_DATABASE")

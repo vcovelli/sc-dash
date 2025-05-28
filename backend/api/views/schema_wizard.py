@@ -1,22 +1,15 @@
-import os
-import uuid
-import random
-import json
-import re
-import csv
+import json, re, csv, os, random, uuid
 from pathlib import Path
 from datetime import datetime, timedelta
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Protection
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.table import Table
 from minio import Minio
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from api.views.table_creation import create_table_for_client
 from api.models import UserSchema
-from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 load_dotenv()
@@ -27,7 +20,10 @@ SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
 SCHEMA_FEATURES = {
     "orders": {
         "sheet": "MASTER_Orders",
-        "columns": ["order_id", "order_date", "product_id", "product_name", "customer_id", "warehouse_id", "shipment_id", "quantity"]
+        "columns": [
+            "order_id", "order_date", "product_id", "product_name", "customer_id",
+            "warehouse_id", "shipment_id", "quantity", "order_status", "expected_delivery_date"
+        ]
     },
     "products": {
         "sheet": "Products",
@@ -54,11 +50,13 @@ SCHEMA_FEATURES = {
 REQUIRED_KEYS = ["order_id", "product_id", "order_date"]
 INTERNAL_COLUMNS = ["version", "uuid", "ingested_at", "client_name"]
 
+
 def style_header(cell):
     cell.font = Font(bold=True)
     cell.alignment = Alignment(horizontal="center")
     cell.fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
     cell.protection = Protection(locked=True)
+
 
 def generate_sample_row(columns, client_name):
     row = []
@@ -97,6 +95,10 @@ def generate_sample_row(columns, client_name):
             row.append(random.randint(1, 100))
         elif col == "order_date":
             row.append((datetime.today() - timedelta(days=random.randint(1, 30))).strftime("%Y-%m-%d"))
+        elif col == "expected_delivery_date":
+            row.append((datetime.today() + timedelta(days=random.randint(1, 14))).strftime("%Y-%m-%d"))
+        elif col == "order_status":
+            row.append(random.choice(["Pending", "Processing", "Delivered"]))
         elif col == "uuid":
             row.append(str(uuid.uuid4()))
         elif col == "version":
@@ -127,7 +129,7 @@ def write_sheet(wb, sheet_name, columns, client_name, num_rows=10):
             elif "price" in columns[col_idx-1]:
                 cell.number_format = '"$"#,##0.00'
 
-def generate_full_workbook(client_name, selected_features):
+def generate_full_workbook(client_name, selected_features, include_sample_data=True):
     from openpyxl.formula.translate import Translator
 
     file_path = SCHEMA_DIR / f"{client_name}_full_template.xlsx"
@@ -157,10 +159,11 @@ def generate_full_workbook(client_name, selected_features):
         cell = ws_master.cell(row=1, column=col_idx, value=col_name)
         style_header(cell)
 
-    for row_num in range(2, 12):
-        row_data = generate_sample_row(master_fields, client_name)
-        for col_idx, value in enumerate(row_data, start=1):
-            cell = ws_master.cell(row=row_num, column=col_idx, value=value)
+    if include_sample_data:
+        for row_num in range(2, 12):
+            row_data = generate_sample_row(master_fields, client_name)
+            for col_idx, value in enumerate(row_data, start=1):
+                cell = ws_master.cell(row=row_num, column=col_idx, value=value)
 
             # Format cells
             if "date" in master_fields[col_idx - 1]:
@@ -180,14 +183,15 @@ def generate_full_workbook(client_name, selected_features):
             style_header(cell)
 
         # Relate each cell in this sheet to MASTER_Orders if the column exists there
-        for row_num in range(2, 7):  # 5 rows
-            for col_idx, col_name in enumerate(columns, start=1):
-                if col_name in master_fields:
-                    ref_col_idx = master_fields.index(col_name) + 1
-                    formula = f"'MASTER_Orders'!{get_column_letter(ref_col_idx)}{row_num}"
-                    ws.cell(row=row_num, column=col_idx, value=f"={formula}")
-                else:
-                    ws.cell(row=row_num, column=col_idx, value="Sample")
+        if include_sample_data:
+            for row_num in range(2, 7):  # 5 rows
+                for col_idx, col_name in enumerate(columns, start=1):
+                    if col_name in master_fields:
+                        ref_col_idx = master_fields.index(col_name) + 1
+                        formula = f"'MASTER_Orders'!{get_column_letter(ref_col_idx)}{row_num}"
+                        ws.cell(row=row_num, column=col_idx, value=f"={formula}")
+                    else:
+                        ws.cell(row=row_num, column=col_idx, value="Sample")
 
     wb.save(file_path)
 
@@ -213,7 +217,10 @@ def generate_full_workbook(client_name, selected_features):
     if public_minio_url:
         url = url.replace("http://minio:9000", public_minio_url)
 
-    return url
+    return {
+        "download_url": url,
+        "file_path": str(file_path)  # actual local .xlsx path
+    }
 
 @csrf_exempt
 def generate_schema(request):
@@ -221,31 +228,23 @@ def generate_schema(request):
         return JsonResponse({"error": "Invalid method"}, status=405)
 
     try:
-        raw = request.body
-        print("[schema_wizard] RAW BODY BYTES:", raw)
-
-        data = json.loads(raw)
-        print("[schema_wizard] Parsed JSON:", data)
-
+        data = json.loads(request.body)
         raw_client_name = data.get("client_name") or data.get("business_name")
         selected_features = data.get("features")
-
-        print("[schema_wizard] raw_client_name =", raw_client_name)
-        print("[schema_wizard] features =", selected_features)
+        include_sample_data = data.get("include_sample_data", True)
 
         if not raw_client_name or not selected_features:
             return JsonResponse({"error": "Missing client_name or features"}, status=400)
 
         client_name = re.sub(r'[^a-z0-9]', '', raw_client_name.lower())
-        print(f"[schema_wizard] Sanitized client_name: {client_name}")
-
-        allowed_keys = {"orders", "products", "suppliers", "warehouses", "customers", "shipments"}
+        allowed_keys = set(SCHEMA_FEATURES.keys())
         selected_features = [f for f in selected_features if f in allowed_keys]
 
         if not selected_features:
             return JsonResponse({"error": "No valid features selected"}, status=400)
 
-        schema_path = Path(SCHEMA_DIR) / f"{client_name}_schema.csv"
+        # Step 1: Write schema CSV
+        schema_path = SCHEMA_DIR / f"{client_name}_schema.csv"
         with open(schema_path, mode="w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["column_name", "data_type"])
@@ -272,26 +271,23 @@ def generate_schema(request):
                     dtype = "TEXT"
                 writer.writerow([col, dtype])
 
-        print(f"[schema_wizard] ✅ Generated schema file: {schema_path}")
-
-        # Build expected headers
+        # Step 2: Collect expected headers
         expected_headers_set = set()
         for feature in selected_features:
             config = SCHEMA_FEATURES.get(feature)
             if config:
                 expected_headers_set.update(config["columns"])
 
-        expected_headers_set.update(["order_id", "product_id", "order_date"])
+        expected_headers_set.update(REQUIRED_KEYS)
         expected_headers = sorted(list(expected_headers_set))
 
-        # Manually authenticate user via JWT
+        # Step 3: Auth & DB update
         user = None
         try:
             authenticator = JWTAuthentication()
             user_auth_tuple = authenticator.authenticate(request)
             if user_auth_tuple:
                 user, _ = user_auth_tuple
-                print(f"[schema_wizard] ✅ Authenticated user: {user}")
                 UserSchema.objects.update_or_create(
                     user=user,
                     defaults={"expected_headers": expected_headers}
@@ -299,16 +295,42 @@ def generate_schema(request):
         except Exception as auth_err:
             print(f"[schema_wizard] ⚠️ User authentication failed: {auth_err}")
 
-        # Create DB + table
-        create_table_for_client(client_name)
+        # Step 4: Generate workbook (.xlsx)##############################################################################################################
+        create_table_for_client(client_name)#############################################################################################################
+        workbook = generate_full_workbook(client_name, selected_features, include_sampl##################################################################
+        download_url = workbook["download_url"]##########################################################################################################
 
-        # Generate Excel workbook
-        download_url = generate_full_workbook(client_name, selected_features)
+        # Step 5: Download from MinIO for Grist upload###################################################################################################
+        import requests##################################################################################################################################
+        local_temp_path = f"/tmp/{client_name}_upload.xlsx" # This all has to change to##################################################################
+        r = requests.get(download_url) ##################################################################################################################
+        with open(local_temp_path, "wb") as f: ##########################################################################################################
+            f.write(r.content)###########################################################################################################################
+
+        # Step 6: Generate .grist file from schema + sample data#########################################################################################
+        schema, sample_data = generate_grist_schema_and_data(selected_features, client_##################################################################
+        grist_path = f"/tmp/{client_name}.grist"#########################################################################################################
+        create_grist_file(grist_path, schema, sample_data)###############################################################################################
+        grist_doc = upload_grist_file(grist_path)########################################################################################################
+
+        # Step 7: Save Grist view to DB if authenticated#################################################################################################
+        if user:##################################################################
+            UserSchema.objects.update_or_create(#########################################################################################################
+                user=user,###############################################################################################################################
+                defaults={###############################################################################################################################
+                    "expected_headers": expected_headers,################################################################################################
+                    "grist_doc_id": grist_doc["doc_id"],#################################################################################################
+                    "grist_doc_url": grist_doc["doc_url"],###############################################################################################
+                    "grist_view_url": grist_doc["view_url"]##############################################################################################
+                }####################################################################################################################################
+            )
 
         return JsonResponse({
             "success": True,
-            "message": f"Workbook generated for {client_name}",
-            "download_url": download_url
+            "message": f"Workbook and Grist doc generated for {client_name}",
+            "download_url": download_url,
+            "grist_doc_url": grist_doc["doc_url"],
+            "grist_view_url": grist_doc["view_url"]
         })
 
     except Exception as e:

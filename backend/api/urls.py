@@ -17,6 +17,7 @@ from .views.schema_wizard import generate_schema
 from .views.user_schema import UserSchemaView
 from .views.upload import FileDownloadView
 from .views.profile import UserProfileView
+from .views.schema import SheetSchemaAPIView
 
 # Using a router for automatic URL routing
 router = DefaultRouter()
@@ -41,4 +42,5 @@ urlpatterns = [
     path('user-schema/', UserSchemaView.as_view(), name='user-schema'),
     path('file-download/<int:file_id>/', FileDownloadView.as_view(), name='file-download'),
     path('profile/', UserProfileView.as_view(), name='user-profile'),
+    path("schema/<str:sheet_name>/", SheetSchemaAPIView.as_view()),
 ]
