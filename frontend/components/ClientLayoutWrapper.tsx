@@ -11,16 +11,22 @@ export default function ClientLayoutWrapper({
 }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isFullWidthPage = pathname.startsWith("/relational");
+  const isNoFooterPage = pathname.startsWith("/relational");
 
   if (isAuthPage) return <>{children}</>;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-6">
-        {children}
-      </main>
-      <Footer />
+      {isFullWidthPage ? (
+        <main className="flex-grow overflow-hidden">{children}</main>
+      ) : (
+        <main className="flex-grow container mx-auto px-4 py-6">
+          {children}
+        </main>
+      )}
+      {!isNoFooterPage && <Footer />}
     </div>
   );
 }
