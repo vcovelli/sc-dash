@@ -106,6 +106,9 @@ class UserSchema(models.Model):
     expected_headers = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    grist_doc_id = models.CharField(max_length=255, null=True, blank=True)
+    grist_doc_url = models.URLField(null=True, blank=True)
+    grist_view_url = models.URLField(null=True, blank=True)
 
     def __str__(self):
         return f"Schema for {self.user.email or self.user.username}"

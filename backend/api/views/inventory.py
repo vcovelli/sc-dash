@@ -6,5 +6,6 @@ from ..serializers import InventorySerializer
 class InventoryViewSet(viewsets.ModelViewSet):
     queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['product', 'warehouse']
+    ordering_fields = ['quantity']

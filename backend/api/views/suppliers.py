@@ -6,6 +6,7 @@ from ..serializers import SupplierSerializer
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['name', 'email']
     search_fields = ['name', 'contact_name']
-    filterset_fields = ['name']
+    ordering_fields = ['name']

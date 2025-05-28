@@ -6,6 +6,7 @@ from ..serializers import CustomerSerializer
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['name', 'email']
     search_fields = ['name', 'email']
-    filterset_fields = ['email']
+    ordering_fields = ['name']
