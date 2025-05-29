@@ -6,7 +6,7 @@ import axios from "axios";
 
 const featureOptions = [
   { key: "orders", label: "📦 Track customer orders" },
-  { key: "products", label: "🛍️ Manage product inventory and SKUs" },
+  { key: "products", label: "🛍️ Manage product inventory / SKUs" },
   { key: "suppliers", label: "🏭 Track supplier data" },
   { key: "warehouses", label: "🏬 Track warehouse locations" },
   { key: "customers", label: "👥 Track customer information" },
@@ -116,20 +116,27 @@ export default function StartFreshPage() {
   };
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-gray-50 to-white px-6 py-16 flex items-center justify-center">
-      <div className="w-full max-w-3xl space-y-10">
+    <section className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-[#1e293b] dark:to-[#10151c] px-6 py-16 rounded-3xl flex items-center justify-center transition-colors duration-500">
+      <div className="w-full max-w-3xl space-y-12">
         <div className="text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight mb-3">
             🧾 Start Fresh
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-gray-600">
+          <p className="mt-2 text-lg md:text-xl text-gray-600 dark:text-gray-300">
             Answer a few questions and we’ll build a smart data template for you.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white p-8 md:p-10 rounded-2xl shadow-xl border border-gray-200 space-y-10">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-white/5 backdrop-blur
+          p-8 md:p-10 rounded-2xl shadow-2xl border border-gray-200 dark:border-[#2a2e3c]/70 space-y-10 transition-colors"
+        >
           <div>
-            <label htmlFor="business-name" className="block text-lg font-semibold mb-2">
+            <label
+              htmlFor="business-name"
+              className="block text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200"
+            >
               Business Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -138,35 +145,38 @@ export default function StartFreshPage() {
               placeholder="e.g. canes"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 bg-white dark:bg-[#202532] text-gray-900 dark:text-gray-100 shadow-sm"
               required
             />
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-gray-800">What would you like to track?</h3>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">What would you like to track?</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {featureOptions.map(({ key, label }) => (
-                <label key={key} className="flex items-center space-x-3">
+                <label
+                  key={key}
+                  className="flex items-center space-x-3 cursor-pointer"
+                >
                   <input
                     type="checkbox"
                     checked={selectedFeatures.includes(key)}
                     onChange={() => toggleFeature(key)}
-                    className="form-checkbox h-5 w-5 text-blue-600"
+                    className="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600"
                   />
-                  <span className="text-gray-700 font-medium">{label}</span>
+                  <span className="text-gray-700 dark:text-gray-100 font-medium">{label}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div className="pt-4">
-            <label className="flex items-center gap-3 text-sm text-gray-700">
+            <label className="flex items-center gap-3 text-base text-gray-700 dark:text-gray-200 font-medium">
               <input
                 type="checkbox"
                 checked={includeSampleData}
                 onChange={() => setIncludeSampleData(!includeSampleData)}
-                className="form-checkbox h-4 w-4 text-blue-600"
+                className="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600"
               />
               Include sample data in template
             </label>
@@ -175,14 +185,14 @@ export default function StartFreshPage() {
           <div className="pt-6">
             <button
               type="submit"
-              className="w-full text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+              className="w-full text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
               🚀 Generate My Data Workbook
             </button>
           </div>
         </form>
 
-        <div className="text-center text-xs text-gray-400 pt-8">
+        <div className="text-center text-xs text-gray-400 dark:text-gray-600 pt-8">
           &copy; {new Date().getFullYear()} SupplyWise Inc. All rights reserved.
         </div>
       </div>

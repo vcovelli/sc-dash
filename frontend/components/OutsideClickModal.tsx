@@ -16,14 +16,16 @@ export default function OutsideClickModal({ onClose, children }: ModalProps) {
         onClose();
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-      <div ref={modalRef} className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div
+        ref={modalRef}
+        className="bg-white/90 dark:bg-[#161b22] border border-white/10 dark:border-white/10 shadow-2xl rounded-2xl p-8 w-full max-w-md ring-1 ring-blue-500/10 dark:ring-white/10 transition-all"
+      >
         {children}
       </div>
     </div>
