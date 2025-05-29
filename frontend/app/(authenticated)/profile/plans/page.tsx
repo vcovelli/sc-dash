@@ -4,27 +4,19 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
+// Plan definitions (keep these simple, styling handled below)
 const PLANS = [
   {
     name: "Free",
     price: "$0/mo",
     description: "Great for exploring the platform.",
     features: ["50 uploads/mo", "1 user", "Basic dashboards"],
-    style: "bg-gray-100 text-gray-700 border border-gray-300",
-    button: "bg-gray-400 hover:bg-gray-500 text-white",
-    tag: "text-gray-500",
   },
   {
     name: "Pro",
     price: "$29/mo",
     description: "Powerful tools for growing teams.",
     features: ["1,000 uploads/mo", "Advanced dashboards", "Priority support"],
-    style:
-      "bg-gradient-to-br from-blue-600 to-blue-800 text-white border border-blue-500 shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out",
-    button:
-      "bg-white text-blue-700 hover:bg-gray-100 font-semibold transition-all duration-300",
-    tag: "text-white",
-    highlight: true,
   },
   {
     name: "Enterprise",
@@ -36,11 +28,6 @@ const PLANS = [
       "Dedicated account manager",
       "Advanced roles: Owner, Manager, Employee",
     ],
-    style:
-      "relative overflow-hidden bg-black text-[#FFD700] border border-[#FFD700] shadow-[0_0_20px_rgba(218,165,32,0.6)] hover:shadow-[0_0_40px_#FFD700aa] transform hover:scale-[1.03] transition-all duration-300 ease-in-out group",
-    button:
-      "bg-[#FFD700] hover:bg-[#e6c200] text-black font-bold transition-all duration-300",
-    tag: "text-[#FFD700]",
     isEnterprise: true,
   },
 ];
@@ -75,13 +62,11 @@ export default function PlansPage() {
       router.push("/onboarding/request-assist");
       return;
     }
-
     if (targetPlan === "Pro") {
       alert("Redirecting to Stripe Checkout...");
-      // replace with Stripe redirect
+      // TODO: Implement Stripe redirect
       return;
     }
-
     try {
       await axios.patch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/`,
@@ -109,67 +94,101 @@ export default function PlansPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold text-center mb-10">Choose the Right Plan</h1>
+    <div className="flex flex-col items-center min-h-[90vh] py-14 bg-transparent">
+      <div className="w-full max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-gray-100 drop-shadow">
+          Choose the Right Plan
+        </h1>
+        <div className="flex flex-col md:flex-row gap-10 justify-center items-stretch">
+          {PLANS.map((plan) => {
+            const isCurrent = currentPlan === plan.name;
+            const isPro = plan.name === "Pro";
+            const isEnterprise = !!plan.isEnterprise;
+            return (
+              <div
+                key={plan.name}
+                className={`
+                  flex-1 px-8 py-10 rounded-3xl shadow-2xl relative flex flex-col transition-all duration-300
+                  ${isPro
+                    ? "bg-gradient-to-br from-blue-600 to-blue-400 text-white scale-105 ring-2 ring-blue-400"
+                    : isEnterprise
+                      ? "bg-[#181d22]/90 dark:bg-[#181d22]/90 text-yellow-200 dark:text-yellow-200 border border-yellow-300 dark:border-yellow-400"
+                      : "bg-white/90 dark:bg-[#202837]/90 text-gray-900 dark:text-gray-100"
+                  }
+                  ${isEnterprise ? "hover:shadow-[0_4px_60px_0_rgba(255,215,0,0.17)]" : ""}
+                  hover:-translate-y-2 hover:shadow-2xl
+                `}
+                style={{
+                  minWidth: 270,
+                  boxShadow: isEnterprise
+                    ? "0 0 40px 0 rgba(255,215,0,0.13)"
+                    : undefined,
+                  zIndex: isPro ? 10 : isEnterprise ? 9 : 1,
+                }}
+              >
+                {/* Enterprise Glow */}
+                {isEnterprise && (
+                  <span className="pointer-events-none absolute inset-0 rounded-3xl ring-2 ring-yellow-300 dark:ring-yellow-400 opacity-20"></span>
+                )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {PLANS.map((plan) => {
-          const isCurrent = currentPlan === plan.name;
-          const isDowngrade = plan.name === "Free" && !isCurrent;
-
-          return (
-            <div
-              key={plan.name}
-              className={`rounded-xl p-6 flex flex-col justify-between min-h-[440px] animate-fade-in-up ${plan.style}`}
-            >
-              {plan.name === "Enterprise" && (
-                <span className="absolute top-0 left-[-75%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/30 to-transparent transform skew-x-[-20deg] group-hover:animate-shine pointer-events-none" />
-              )}
-
-              <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h2 className={`text-xl font-semibold ${plan.tag}`}>{plan.name}</h2>
+                  <h2 className="text-xl font-bold">{plan.name}</h2>
                   {!isCurrent && (
                     <button
                       onClick={() => handlePlanInfo(plan.name)}
-                      className="text-xs text-blue-400 hover:text-blue-200 underline"
+                      className={`text-xs underline ${
+                        isPro
+                          ? "text-blue-100 hover:text-blue-50"
+                          : isEnterprise
+                          ? "text-yellow-200 dark:text-yellow-400"
+                          : "text-blue-400 hover:text-blue-600 dark:text-blue-300 dark:hover:text-blue-100"
+                      }`}
                     >
                       Learn more
                     </button>
                   )}
                 </div>
-
-                <p className="text-2xl font-bold mb-1">{plan.price}</p>
-                <p className="text-sm mb-4">{plan.description}</p>
-
-                <ul className="text-sm mb-6 space-y-2">
+                <p className="text-2xl font-extrabold mb-2">{plan.price}</p>
+                <p className="text-sm opacity-90 mb-6">{plan.description}</p>
+                <ul className="text-sm mb-8 space-y-2">
                   {plan.features.map((feature, i) => (
                     <li key={i}>✓ {feature}</li>
                   ))}
                 </ul>
+                <div className="mt-auto">
+                  {isCurrent ? (
+                    <div className="text-center text-base font-medium opacity-70 mt-4">
+                      You're on this plan
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() =>
+                        plan.name === "Free"
+                          ? confirmDowngrade(plan.name)
+                          : handlePlanChangeWrapper(plan.name)
+                      }
+                      className={`
+                        w-full py-3 rounded-full font-semibold shadow transition-all duration-300
+                        ${isEnterprise
+                          ? "bg-yellow-400 hover:bg-yellow-500 text-black"
+                          : isPro
+                          ? "bg-white text-blue-700 hover:bg-gray-100"
+                          : "bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200"
+                        }
+                      `}
+                      style={{
+                        fontWeight: 700,
+                        letterSpacing: ".01em",
+                      }}
+                    >
+                      {plan.name === "Enterprise" ? "Contact Sales" : `Switch to ${plan.name}`}
+                    </button>
+                  )}
+                </div>
               </div>
-
-              <div className="mt-auto pt-4">
-                {isCurrent ? (
-                  <p className="text-sm text-center font-medium opacity-80">
-                    You're on this plan
-                  </p>
-                ) : (
-                  <button
-                    onClick={() =>
-                      isDowngrade
-                        ? confirmDowngrade(plan.name)
-                        : handlePlanChangeWrapper(plan.name)
-                    }
-                    className={`w-full py-2 rounded-md ${plan.button}`}
-                  >
-                    {plan.isEnterprise ? "Contact Sales" : `Switch to ${plan.name}`}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Confirmation Modal */}
@@ -179,19 +198,19 @@ export default function PlansPage() {
           onClick={() => setShowConfirm(false)}
         >
           <div
-            className="bg-white rounded-lg p-6 w-full max-w-md text-center shadow-lg"
+            className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md text-center shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
               Are you sure you want to switch to {targetPlan}?
             </h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
               You may lose access to features included in your current plan.
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-medium"
+                className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-sm font-medium"
               >
                 Cancel
               </button>
@@ -213,11 +232,11 @@ export default function PlansPage() {
           onClick={() => setShowPlanModal(false)}
         >
           <div
-            className="bg-white rounded-lg max-w-2xl w-full p-8 shadow-xl relative text-gray-800"
+            className="bg-white dark:bg-gray-900 rounded-lg max-w-2xl w-full p-8 shadow-xl relative text-gray-800 dark:text-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute top-4 right-4 text-gray-600 hover:text-black text-lg"
+              className="absolute top-4 right-4 text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white text-lg"
               onClick={() => setShowPlanModal(false)}
             >
               ✕
@@ -240,7 +259,7 @@ export default function PlansPage() {
                   setShowPlanModal(false);
                   router.push("/onboarding/request-assist");
                 }}
-                className="inline-block bg-[#FFD700] text-black font-semibold px-6 py-2 rounded hover:bg-[#e6c200] transition"
+                className="inline-block bg-[#FFD700] text-black font-semibold px-6 py-2 rounded hover:bg-[#e6c200] dark:bg-yellow-400 dark:hover:bg-yellow-500 transition"
               >
                 Contact Sales
               </button>
@@ -252,12 +271,12 @@ export default function PlansPage() {
   );
 }
 
+// For simple redirect (update as needed)
 function handlePlanChangeWrapper(plan: string) {
   if (plan === "Enterprise") {
     window.location.href = "/onboarding/request-assist";
     return;
   }
-
   if (plan === "Pro") {
     alert("Redirecting to Stripe Checkout...");
     return;
