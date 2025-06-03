@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ContextMenuProps {
   position: { x: number; y: number };
@@ -49,10 +50,12 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   const isColHeader = rowIndex === -1;
   const isDataCell = rowIndex !== null && rowIndex >= 0 && colIndex !== null && colIndex > 0;
 
-  return (
+  const menu = (
     <div
       role="menu"
-      className="absolute z-50 w-64 rounded-md border border-gray-300 bg-white text-sm shadow-lg dark:border-gray-700 dark:bg-gray-800"
+      className="fixed z-[9999] w-64 rounded-xl border border-gray-300 bg-white/95 text-sm shadow-lg
+      dark:border-gray-700 dark:bg-gray-700/95 dark:text-white
+      backdrop-blur-sm"
       style={{ top: position.y, left: position.x }}
     >
       <ul className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -146,6 +149,12 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       </ul>
     </div>
   );
+
+  // Don't try to portal on the server (for SSR safety)
+  if (typeof window === "undefined") return null;
+
+  // Use a portal to render the context menu at the document body
+  return createPortal(menu, document.body);
 };
 
 export default ContextMenu;
