@@ -34,7 +34,7 @@ export default function LoginPage() {
       localStorage.setItem("client_name", businessName?.toLowerCase() || "");
       setMessage("✅ Logged in!");
       if (!businessName) {
-        router.push("/onboarding/setup");
+        router.push("/welcome");
       } else {
         router.push("/dashboard");
       }
