@@ -41,3 +41,19 @@ body {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+:root {
+  --body: 14px;
+  --h1: 23px;
+  --h2: 18px;
+  --small: 13px;
+}
+
+.noselect,
+.grid-cell,
+.grid-header {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}

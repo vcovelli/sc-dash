@@ -28,9 +28,7 @@ export default function StartFreshPage() {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        if (res.data?.business_name) {
-          setBusinessName(res.data.business_name);
-        }
+        if (res.data?.business_name) setBusinessName(res.data.business_name);
       } catch (err: any) {
         if (err.response?.status === 401 && refreshToken) {
           try {
@@ -43,10 +41,7 @@ export default function StartFreshPage() {
             const profileRes = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
               headers: { Authorization: `Bearer ${newAccess}` },
             });
-
-            if (profileRes.data?.business_name) {
-              setBusinessName(profileRes.data.business_name);
-            }
+            if (profileRes.data?.business_name) setBusinessName(profileRes.data.business_name);
           } catch (refreshErr) {
             console.error("Token refresh failed", refreshErr);
           }
@@ -99,7 +94,6 @@ export default function StartFreshPage() {
         const data = await res.json();
         const { download_url, grist_view_url } = data;
 
-        // Open both tabs
         if (grist_view_url) window.open(grist_view_url, "_blank");
         if (download_url) window.open(download_url, "_blank");
 
@@ -116,27 +110,36 @@ export default function StartFreshPage() {
   };
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-[#1e293b] dark:to-[#10151c] px-6 py-16 rounded-3xl flex items-center justify-center transition-colors duration-500">
-      <div className="w-full max-w-3xl space-y-12">
+    <section className="
+      min-h-screen
+      bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950
+      flex items-center justify-center
+      px-2 sm:px-6 py-8 sm:py-20
+      transition-colors duration-500
+    ">
+      <div className="
+        w-full max-w-2xl mx-auto
+        rounded-3xl
+        shadow-xl
+        bg-white/80 dark:bg-gray-900/80
+        border border-white/20 dark:border-gray-900/30
+        backdrop-blur-xl
+        px-4 sm:px-10 py-8 sm:py-12
+        flex flex-col gap-8
+      ">
         <div className="text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight mb-3">
-            🧾 Start Fresh
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-2">
+            <span className="align-middle text-4xl mr-2">🧾</span>Start Fresh
           </h1>
-          <p className="mt-2 text-lg md:text-xl text-gray-600 dark:text-gray-300">
+          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 font-medium">
             Answer a few questions and we’ll build a smart data template for you.
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white dark:bg-white/5 backdrop-blur
-          p-8 md:p-10 rounded-2xl shadow-2xl border border-gray-200 dark:border-[#2a2e3c]/70 space-y-10 transition-colors"
-        >
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Business Name */}
           <div>
-            <label
-              htmlFor="business-name"
-              className="block text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200"
-            >
+            <label htmlFor="business-name" className="block text-base font-semibold mb-2 text-gray-800 dark:text-gray-200">
               Business Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -145,54 +148,82 @@ export default function StartFreshPage() {
               placeholder="e.g. canes"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 bg-white dark:bg-[#202532] text-gray-900 dark:text-gray-100 shadow-sm"
+              className="
+                w-full border border-gray-300 dark:border-gray-700
+                rounded-lg px-4 py-3 text-base
+                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600
+                bg-white/90 dark:bg-[#202532] text-gray-900 dark:text-gray-100
+                shadow-sm
+                transition
+              "
               required
             />
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">What would you like to track?</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Features */}
+          <div>
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
+              What would you like to track?
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {featureOptions.map(({ key, label }) => (
                 <label
                   key={key}
-                  className="flex items-center space-x-3 cursor-pointer"
+                  className={`
+                    flex items-center px-3 py-2 rounded-lg
+                    cursor-pointer gap-3
+                    bg-white/60 dark:bg-[#202532]/80 border border-gray-200 dark:border-gray-700
+                    shadow-sm
+                    transition
+                    hover:bg-blue-50/70 dark:hover:bg-blue-900/30
+                    ${selectedFeatures.includes(key) ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-200 dark:ring-blue-900' : ''}
+                  `}
+                  tabIndex={0}
                 >
                   <input
                     type="checkbox"
                     checked={selectedFeatures.includes(key)}
                     onChange={() => toggleFeature(key)}
-                    className="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600"
+                    className="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400 rounded transition"
                   />
-                  <span className="text-gray-700 dark:text-gray-100 font-medium">{label}</span>
+                  <span className="text-gray-700 dark:text-gray-100 font-medium text-base">
+                    {label}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
 
-          <div className="pt-4">
-            <label className="flex items-center gap-3 text-base text-gray-700 dark:text-gray-200 font-medium">
-              <input
-                type="checkbox"
-                checked={includeSampleData}
-                onChange={() => setIncludeSampleData(!includeSampleData)}
-                className="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-600 border-gray-300 dark:border-gray-600"
-              />
-              Include sample data in template
-            </label>
+          {/* Sample Data */}
+          <div className="flex items-center gap-3 text-base text-gray-700 dark:text-gray-200 font-medium">
+            <input
+              type="checkbox"
+              checked={includeSampleData}
+              onChange={() => setIncludeSampleData(!includeSampleData)}
+              className="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 rounded"
+            />
+            Include sample data in template
           </div>
 
-          <div className="pt-6">
-            <button
-              type="submit"
-              className="w-full text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              🚀 Generate My Data Workbook
-            </button>
-          </div>
+          {/* Button */}
+          <button
+            type="submit"
+            className="
+              w-full text-base sm:text-lg font-bold
+              bg-gradient-to-r from-blue-600 to-indigo-600
+              hover:from-blue-700 hover:to-indigo-700
+              text-white py-3 sm:py-4
+              rounded-xl shadow-lg
+              focus:outline-none focus:ring-2 focus:ring-blue-400
+              transition-all duration-200
+              active:scale-98
+            "
+          >
+            🚀 Generate My Data Workbook
+          </button>
         </form>
 
-        <div className="text-center text-xs text-gray-400 dark:text-gray-600 pt-8">
+        <div className="text-center text-xs text-gray-400 dark:text-gray-600 pt-2">
           &copy; {new Date().getFullYear()} SupplyWise Inc. All rights reserved.
         </div>
       </div>

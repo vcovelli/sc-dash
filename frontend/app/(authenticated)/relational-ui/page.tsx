@@ -1,16 +1,62 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import RelationalWorkspaceLayout from "@/app/(authenticated)/relational-ui/lib/layouts/RelationalWorkspaceLayout";
+import RelationalWorkspaceLayout from "@/app/(authenticated)/relational-ui/components/Sheet/RelationalWorkspaceLayout";
 import GridTable from "@/app/(authenticated)/relational-ui/components/Grid/GridTable";
-import ColumnSettingsPanel from "@/app/(authenticated)/relational-ui/components/UI/ColumnSettingsPanel";
-import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/lib/types";
+import ColumnSettingsPanel from "@/app/(authenticated)/relational-ui/components/UX/ColumnSettingsPanel";
+import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
+import { TableSettingsProvider } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
+import { useNavbarVisibility } from "@/components/ClientLayoutWrapper";
+import TableSelectorPanel from "@/app/(authenticated)/relational-ui/components/UX/TableSelectorPanel";
+import { useUserSettings } from "@/components/UserSettingsContext";
+import { FONT_SIZE_PRESETS } from "@/components/FontSizeDropdown";
 
 const PANEL_WIDTH = 320;
-const SIDEBAR_WIDTH = 256;
-const SIDEBAR_COLLAPSED = 48;
-
 const availableTables = ["orders", "products", "customers", "suppliers", "warehouses"];
+
+const activeBtn =
+  "bg-blue-100 text-blue-700 border-blue-400 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-600";
+const inactiveBtn =
+  "bg-gray-100 text-gray-600 border-gray-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-blue-950 dark:hover:text-blue-200 dark:hover:border-blue-400";
+const baseBtn =
+  "px-3 py-1 rounded border text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400";
+
+// --- Mobile Rotate Prompt Overlay ---
+function MobileRotatePrompt() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      // Only target phones (not iPads), in portrait
+      const isMobile =
+        window.innerWidth <= 600 &&
+        /Android|iPhone|iPod|iOS/i.test(navigator.userAgent);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setShow(isMobile && isPortrait);
+    };
+    check();
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
+    };
+  }, []);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
+      <span className="text-6xl mb-4 animate-bounce">🔄</span>
+      <div className="text-white text-2xl font-bold text-center">
+        Please rotate your device
+        <br />
+        <span className="text-base font-normal text-gray-300">
+          Landscape mode is required for this view on mobile.
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function SheetsPage() {
   const [activeTableName, setActiveTableName] = useState<string>("orders");
@@ -19,7 +65,24 @@ export default function SheetsPage() {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isTablePanelOpen, setIsTablePanelOpen] = useState(true);
   const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<any> | null>(null);
-  const [zebraStriping, setZebraStriping] = useState(true);
+  const { showNavbar, setShowNavbar } = useNavbarVisibility();
+
+  // --- Get user global font size (string value, e.g. "base", "sm")
+  const { settings } = useUserSettings();
+  const userFontSize = settings.fontSize || "base";
+  // Find index in FONT_SIZE_PRESETS
+  const userFontSizeIdx = Math.max(
+    0,
+    FONT_SIZE_PRESETS.findIndex((p) => p.value === userFontSize)
+  );
+
+  // CONTROLLED fontSizeIdx for TableSettingsProvider
+  const [fontSizeIdx, setFontSizeIdx] = useState(userFontSizeIdx);
+
+  // Sync local state with user profile settings, so changing the profile updates the sheet
+  useEffect(() => {
+    setFontSizeIdx(userFontSizeIdx);
+  }, [userFontSizeIdx]);
 
   useEffect(() => {
     if (!activeTableName) return;
@@ -46,90 +109,85 @@ export default function SheetsPage() {
   }, [activeTableName]);
 
   return (
-    <RelationalWorkspaceLayout
-      leftPanel={
-        <div
-          className="h-full"
-          style={{ width: isTablePanelOpen ? SIDEBAR_WIDTH : SIDEBAR_COLLAPSED }}
-        >
-          {isTablePanelOpen ? (
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-lg font-semibold">📁 Tables</h2>
-                <button onClick={() => setIsTablePanelOpen(false)} className="text-gray-600 hover:text-black">✕</button>
-              </div>
-              <ul className="p-4 space-y-2 overflow-auto">
-                {availableTables.map((table) => (
-                  <button
-                    key={table}
-                    onClick={() => setActiveTableName(table)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                      table === activeTableName
-                        ? "bg-blue-100 text-blue-700 font-medium"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    {table.charAt(0).toUpperCase() + table.slice(1)}
-                  </button>
-                ))}
-              </ul>
+    <TableSettingsProvider fontSizeIdx={fontSizeIdx} setFontSizeIdx={setFontSizeIdx}>
+      {/* Mobile landscape-only prompt */}
+      <MobileRotatePrompt />
+
+      <RelationalWorkspaceLayout
+        leftPanel={
+          <TableSelectorPanel
+            isOpen={isTablePanelOpen}
+            tables={availableTables}
+            activeTable={activeTableName}
+            onSelectTable={setActiveTableName}
+            onClose={() => setIsTablePanelOpen((v) => !v)}
+            tableFontSize={FONT_SIZE_PRESETS[fontSizeIdx]?.value ?? "base"}
+          />
+        }
+        rightPanel={
+          isSettingsPanelOpen ? (
+            <div style={{ width: PANEL_WIDTH }}>
+              <ColumnSettingsPanel
+                isOpen={isSettingsPanelOpen}
+                column={columnSettingsTarget}
+                onClose={() => setIsSettingsPanelOpen(false)}
+                onUpdate={() => setIsSettingsPanelOpen(false)}
+              />
             </div>
           ) : (
-            <div className="w-full h-full flex flex-col items-center pt-2">
-              <span className="text-xs text-gray-400 mb-1">▶</span>
-            </div>
-          )}
-        </div>
-      }
-      rightPanel={
-        isSettingsPanelOpen ? (
-          <div style={{ width: PANEL_WIDTH }}>
-            <ColumnSettingsPanel
-              isOpen={isSettingsPanelOpen}
-              column={columnSettingsTarget}
-              onClose={() => setIsSettingsPanelOpen(false)}
-              onUpdate={() => setIsSettingsPanelOpen(false)}
-              zebraStriping={zebraStriping}
-              onToggleZebra={() => setZebraStriping((z) => !z)}
-            />
+            <div style={{ width: 0 }} />
+          )
+        }
+      >
+        {/* Top Toolbar */}
+        <div className="flex justify-between items-center px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 transition-colors">
+          {/* Left Buttons */}
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setIsTablePanelOpen((v) => !v)}
+              className={`${baseBtn} ${isTablePanelOpen ? activeBtn : inactiveBtn}`}
+              title={isTablePanelOpen ? "Hide Tables Sidebar" : "Show Tables Sidebar"}
+              style={{ fontSize: FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize }}
+            >
+              📋 {isTablePanelOpen ? "Hide Tables" : "Show Tables"}
+            </button>
           </div>
-        ) : (
-          <div style={{ width: 0 }} />
-        )
-      }
-    >
-      {/* Top Toolbar */}
-      <div className="flex justify-between items-center px-4 py-2 bg-white border-b">
-        <button
-          onClick={() => setIsTablePanelOpen((v) => !v)}
-          className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-blue-600 transition"
-        >
-          <span className="text-base">📁</span>
-          {isTablePanelOpen ? "Show Less Tables" : "Show All Tables"}
-        </button>
-        <button
-          onClick={() => setIsSettingsPanelOpen((v) => !v)}
-          className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-blue-600 transition"
-        >
-          <span className="text-base">⚙</span>
-          {isSettingsPanelOpen ? "Close Settings" : "Open Settings"}
-        </button>
-      </div>
+          {/* Right Buttons */}
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setShowNavbar((v) => !v)}
+              className={`${baseBtn} ${!showNavbar ? activeBtn : inactiveBtn}`}
+              title={showNavbar ? "Hide Navbar" : "Show Navbar"}
+              style={{ fontSize: FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize }}
+            >
+              {showNavbar ? "Hide Navbar" : "👁️ Show Navbar"}
+            </button>
+            <button
+              onClick={() => setIsSettingsPanelOpen((v) => !v)}
+              className={`${baseBtn} ${isSettingsPanelOpen ? activeBtn : inactiveBtn}`}
+              title={isSettingsPanelOpen ? "Close Settings" : "Open Settings"}
+              style={{ fontSize: FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize }}
+            >
+              ⚙️ {isSettingsPanelOpen ? "Close Settings" : "Open Settings"}
+            </button>
+          </div>
+        </div>
 
-      {/* Scrollable Grid */}
-      <div className="flex-1 overflow-auto">
-        <GridTable
-          tableName={activeTableName}
-          columns={columns}
-          data={rows}
-          onUpdateTable={() => {}}
-          onOpenSettingsPanel={(col) => {
-            setColumnSettingsTarget(col);
-            setIsSettingsPanelOpen(true);
-          }}
-          isSettingsPanelOpen={isSettingsPanelOpen}
-        />
-      </div>
-    </RelationalWorkspaceLayout>
+        {/* Scrollable Grid */}
+        <div className="flex-1 overflow-auto">
+          <GridTable
+            tableName={activeTableName}
+            columns={columns}
+            data={rows}
+            onUpdateTable={() => {}}
+            onOpenSettingsPanel={(col) => {
+              setColumnSettingsTarget(col);
+              setIsSettingsPanelOpen(true);
+            }}
+            isSettingsPanelOpen={isSettingsPanelOpen}
+          />
+        </div>
+      </RelationalWorkspaceLayout>
+    </TableSettingsProvider>
   );
 }

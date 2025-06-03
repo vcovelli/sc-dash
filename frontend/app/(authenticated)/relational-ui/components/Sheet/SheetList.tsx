@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import ColumnSettingsPanel from "@/app/(authenticated)/relational-ui/components/UI/ColumnSettingsPanel";
+import ColumnSettingsPanel from "@/app/(authenticated)/relational-ui/components/UX/ColumnSettingsPanel";
 import GridTable from "@/app/(authenticated)/relational-ui/components/Grid/GridTable";
-import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/lib/types";
+import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 interface Sheet {
   id: string;
@@ -12,33 +12,93 @@ interface Sheet {
   created_by: string | null;
 }
 
+interface SheetData {
+  columns: CustomColumnDef<Row>[];
+  data: Row[];
+}
+
 export default function SheetList() {
   const [sheets, setSheets] = useState<Sheet[]>([]);
+  const [sheetData, setSheetData] = useState<Record<string, SheetData>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Settings panel state
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<any> | null>(null);
+  const [columnSettingsSheetId, setColumnSettingsSheetId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSheets = async () => {
+      setLoading(true);
       try {
         const res = await axios.get("http://backend:8000/api/sheets/");
         setSheets(res.data);
+
+        // Fetch columns and data for each sheet
+        const allSheetData: Record<string, SheetData> = {};
+
+        await Promise.all(
+          res.data.map(async (sheet: Sheet) => {
+            const [colsRes, dataRes] = await Promise.all([
+              axios.get(`http://backend:8000/api/sheets/${sheet.id}/columns/`),
+              axios.get(`http://backend:8000/api/sheets/${sheet.id}/rows/`)
+            ]);
+            allSheetData[sheet.id] = {
+              columns: colsRes.data,
+              data: dataRes.data,
+            };
+          })
+        );
+
+        setSheetData(allSheetData);
       } catch (error) {
         console.error("Failed to fetch sheets:", error);
       }
+      setLoading(false);
     };
 
     fetchSheets();
   }, []);
 
-  const handleUpdateColumn = (updatedCol: CustomColumnDef<any>) => {
-    // Handle column update here if needed
+  // Update a column's properties (e.g., type, currencyCode, header)
+  const handleUpdateColumn = useCallback((updatedCol: CustomColumnDef<any>) => {
+    if (!columnSettingsSheetId) {
+      console.warn("[handleUpdateColumn] No sheet selected");
+      setIsSettingsPanelOpen(false);
+      return;
+    }
+    console.log("[handleUpdateColumn] Updating column:", updatedCol, "for sheet:", columnSettingsSheetId);
+
+    setSheetData((prev) => {
+      const prevSheet = prev[columnSettingsSheetId];
+      if (!prevSheet) {
+        console.warn("[handleUpdateColumn] No previous sheet data for:", columnSettingsSheetId);
+        return prev;
+      }
+
+      const newColumns = prevSheet.columns.map(col =>
+        col.accessorKey === updatedCol.accessorKey ? { ...col, ...updatedCol } : col
+      );
+
+      console.log("[handleUpdateColumn] New columns array:", newColumns);
+
+      return {
+        ...prev,
+        [columnSettingsSheetId]: {
+          ...prevSheet,
+          columns: newColumns,
+          data: prevSheet.data,
+        }
+      };
+    });
+
     setIsSettingsPanelOpen(false);
-  };
+  }, [columnSettingsSheetId]);
 
   return (
     <div className="relative p-8">
       <h1 className="text-2xl font-bold mb-6">🧾 Relational Spreadsheet</h1>
-      {sheets.length === 0 ? (
+      {loading ? (
         <p className="text-gray-600">Loading...</p>
       ) : (
         <div className="space-y-4">
@@ -53,20 +113,31 @@ export default function SheetList() {
               </p>
               <div className="mt-4">
                 <GridTable
+                  tableName={sheet.name}
+                  columns={sheetData[sheet.id]?.columns || []}
+                  data={sheetData[sheet.id]?.data || []}
+                  onUpdateTable={(name, updated) => {
+                    setSheetData((prev) => ({
+                      ...prev,
+                      [sheet.id]: {
+                        ...prev[sheet.id],
+                        ...updated,
+                      },
+                    }));
+                  }}
+                  isSettingsPanelOpen={isSettingsPanelOpen}
                   onOpenSettingsPanel={(col) => {
                     setColumnSettingsTarget(col);
+                    setColumnSettingsSheetId(sheet.id);
                     setIsSettingsPanelOpen(true);
-                  } }
-                  isSettingsPanelOpen={isSettingsPanelOpen} tableName={""} columns={[]} data={[]} onUpdateTable={function (name: string, updated: { columns: CustomColumnDef<Row>[]; data: Row[]; }): void {
-                    throw new Error("Function not implemented.");
-                  } }                />
+                  }}
+                />
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Global overlay panel */}
       <ColumnSettingsPanel
         isOpen={isSettingsPanelOpen}
         column={columnSettingsTarget}
