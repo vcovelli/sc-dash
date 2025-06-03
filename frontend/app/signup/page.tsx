@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { FaUser, FaEnvelope, FaLock, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { HiOutlineCube } from "react-icons/hi";
 import zxcvbn from "zxcvbn";
-import { ThemeToggle } from "@/components/ThemeToggle"; // <-- Update import if your path is different
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function SignupPage() {
   const router = useRouter();
