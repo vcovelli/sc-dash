@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/lib/types";
+import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 type Props = {
   showRenameModal: boolean;
@@ -9,7 +9,7 @@ type Props = {
   setEditingCell: (cell: { rowIndex: number; colIndex: number } | null) => void;
   data: Row[];
   rawColumns: CustomColumnDef<Row>[] | undefined;
-  columnDefs: ReturnType<typeof import("@/app/(authenticated)/relational-ui/lib/hooks/useColumns").buildColumnDefs>;
+  columnDefs: ReturnType<typeof import("@/app/(authenticated)/relational-ui/components/Grid/useColumns").buildColumnDefs>;
 };
 
 export default function useKeyboardNavigation({
