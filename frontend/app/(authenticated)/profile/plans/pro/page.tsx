@@ -53,7 +53,7 @@ export default function ProPlanPage() {
             />
             <FeatureCard
               icon="📦"
-              title="Better Operations"
+              title="Advanced Operations"
               items={[
                 "Smart SKU tracking",
                 "Warehouse optimization tools",
