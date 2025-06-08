@@ -19,7 +19,7 @@ export default function Footer() {
             Terms
           </a>
           <a
-            href="/contact"
+            href="/onboarding/request-assist"
             className="hover:text-gray-800 dark:hover:text-gray-200 transition"
           >
             Contact
