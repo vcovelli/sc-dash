@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/lib/types";
+import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 const TextCell = React.memo(function TextCell({
   value,
@@ -10,6 +10,8 @@ const TextCell = React.memo(function TextCell({
   onSave,
   onEditComplete,
   onStartEdit,
+  fontSize = 14,
+  rowHeight = 36,
 }: {
   value: any;
   row: any;
@@ -19,6 +21,8 @@ const TextCell = React.memo(function TextCell({
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
+  fontSize?: number;
+  rowHeight?: number;
 }) {
   const [val, setVal] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,26 +59,39 @@ const TextCell = React.memo(function TextCell({
         onChange={(e) => setVal(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="w-full h-full px-2 py-1 text-sm border border-gray-300 rounded outline-none
-                   bg-white text-black dark:bg-white dark:text-black"
+        style={{ fontSize, height: rowHeight, minHeight: rowHeight }}
+        className="w-full h-full px-2 py-1 border border-gray-300 rounded outline-none bg-white text-black dark:bg-white dark:text-black"
       />
     );
   }
 
   return (
     <div
-      className="w-full h-full px-2 py-1 text-sm cursor-pointer"
+      className="w-full h-full px-2 py-1 flex items-center min-w-0 select-none cursor-pointer"
+      style={{
+        fontSize,
+        minHeight: rowHeight,
+        height: rowHeight,
+      }}
+      tabIndex={0}
       onDoubleClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         onStartEdit?.();
       }}
-      tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "Enter") onStartEdit?.();
       }}
     >
-      {value}
+      <span
+        className="block truncate min-w-0 max-w-full whitespace-nowrap"
+        style={{
+          width: "100%",
+        }}
+        title={typeof value === "string" && value.length > 0 ? value : undefined}
+      >
+        {value || <span className="text-gray-400">—</span>}
+      </span>
     </div>
   );
 });

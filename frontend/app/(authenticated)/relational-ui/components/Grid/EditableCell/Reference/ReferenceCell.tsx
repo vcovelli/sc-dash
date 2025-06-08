@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/lib/types";
+import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import ChoiceTag from "@/app/(authenticated)/relational-ui/components/Grid/EditableCell/Choice/ChoiceTag";
 import ReferenceList from "@/app/(authenticated)/relational-ui/components/Grid/EditableCell/Reference/ReferenceList";
 
 type ReferenceOption = { id: string; name: string };
 
-const ReferenceCell: React.FC<{
+interface ReferenceCellProps {
   value: any;
   row: any;
   rowId: string;
@@ -16,8 +16,23 @@ const ReferenceCell: React.FC<{
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
-}> = React.memo(
-  ({ value: initialValue, row, rowId, column, onSave, editing = false, onEditComplete, onStartEdit }) => {
+  fontSize: number;
+  rowHeight: number;
+}
+
+const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
+  ({
+    value: initialValue,
+    row,
+    rowId,
+    column,
+    onSave,
+    editing = false,
+    onEditComplete,
+    onStartEdit,
+    fontSize,
+    rowHeight,
+  }) => {
     const [value, setValue] = useState(initialValue);
 
     useEffect(() => {
@@ -65,6 +80,8 @@ const ReferenceCell: React.FC<{
           onChange={handleChange}
           onEditComplete={onEditComplete}
           autoFocus
+          fontSize={fontSize}
+          rowHeight={rowHeight}
         />
       );
     }
@@ -75,8 +92,9 @@ const ReferenceCell: React.FC<{
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
+        style={{ fontSize, height: rowHeight, minHeight: rowHeight, lineHeight: `${rowHeight}px` }}
       >
-        <ChoiceTag value={display} />
+        <ChoiceTag value={display} fontSize={fontSize} rowHeight={rowHeight} />
       </div>
     );
   }
