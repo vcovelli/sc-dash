@@ -133,6 +133,15 @@ const GridTable: React.FC<GridTableProps> = ({
   // Cell click handler
   const handleCellClick = useCallback(
     (rowIndex: number, colIndex: number, isEditable: boolean) => {
+      console.log('[handleCellClick]', {
+        rowIndex,
+        colIndex,
+        isEditable,
+        editingCell,
+        colType: rawColumns[colIndex]?.type,
+        rawColumns,
+      });
+
       setColumnHighlightMode(false);
       setFocusedRowIndex(null);
 
@@ -284,7 +293,7 @@ const GridTable: React.FC<GridTableProps> = ({
             editingCell={editingCell}
             handleCellClick={handleCellClick}
             handleContextMenu={handleContextMenu}
-            getTouchHandlers={getTouchHandlers}    // <-- pass here!
+            getTouchHandlers={getTouchHandlers}
             focusedColIndex={focusedColIndex}
             focusedRowIndex={focusedRowIndex}
             setFocusedRowIndex={setFocusedRowIndex}

@@ -26,7 +26,6 @@ function MobileRotatePrompt() {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const check = () => {
-      // Only target phones (not iPads), in portrait
       const isMobile =
         window.innerWidth <= 600 &&
         /Android|iPhone|iPod|iOS/i.test(navigator.userAgent);
@@ -41,9 +40,7 @@ function MobileRotatePrompt() {
       window.removeEventListener("orientationchange", check);
     };
   }, []);
-
   if (!show) return null;
-
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
       <span className="text-6xl mb-4 animate-bounce">🔄</span>
@@ -70,7 +67,6 @@ export default function SheetsPage() {
   // --- Get user global font size (string value, e.g. "base", "sm")
   const { settings } = useUserSettings();
   const userFontSize = settings.fontSize || "base";
-  // Find index in FONT_SIZE_PRESETS
   const userFontSizeIdx = Math.max(
     0,
     FONT_SIZE_PRESETS.findIndex((p) => p.value === userFontSize)
@@ -78,6 +74,10 @@ export default function SheetsPage() {
 
   // CONTROLLED fontSizeIdx for TableSettingsProvider
   const [fontSizeIdx, setFontSizeIdx] = useState(userFontSizeIdx);
+
+  // SSR/CSR hydration fix: only use dynamic font size after mount
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Sync local state with user profile settings, so changing the profile updates the sheet
   useEffect(() => {
@@ -99,7 +99,14 @@ export default function SheetsPage() {
         });
         if (!res.ok) return;
         const json = await res.json();
-        setColumns(json.columns || []);
+
+        // --- Enforce a unique `id` on every column ---
+        const fixedCols: CustomColumnDef<any>[] = (json.columns || []).map((col: any, i: number) => ({
+          ...col,
+          id: col.id || col.accessorKey || `col_${i}_${Math.random().toString(36).slice(2, 8)}`
+        }));
+
+        setColumns(fixedCols);
         setRows(json.rows || []);
       } catch (error) {
         console.error("Error loading table data:", error);
@@ -107,6 +114,12 @@ export default function SheetsPage() {
     };
     fetchData();
   }, [activeTableName]);
+
+  // Use mounted-safe font size for SSR/CSR hydration
+  const toolbarFontSize =
+    mounted && FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
+      ? FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
+      : 14;
 
   return (
     <TableSettingsProvider fontSizeIdx={fontSizeIdx} setFontSizeIdx={setFontSizeIdx}>
@@ -131,7 +144,15 @@ export default function SheetsPage() {
                 isOpen={isSettingsPanelOpen}
                 column={columnSettingsTarget}
                 onClose={() => setIsSettingsPanelOpen(false)}
-                onUpdate={() => setIsSettingsPanelOpen(false)}
+                onUpdate={(updatedCol) => {
+                  setColumns((cols) =>
+                    cols.map((col) =>
+                      // Always use id for matching (guaranteed unique by above loader)
+                      col.id === updatedCol.id ? updatedCol : col
+                    )
+                  );
+                  setIsSettingsPanelOpen(false);
+                }}
               />
             </div>
           ) : (
@@ -147,7 +168,7 @@ export default function SheetsPage() {
               onClick={() => setIsTablePanelOpen((v) => !v)}
               className={`${baseBtn} ${isTablePanelOpen ? activeBtn : inactiveBtn}`}
               title={isTablePanelOpen ? "Hide Tables Sidebar" : "Show Tables Sidebar"}
-              style={{ fontSize: FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize }}
+              style={{ fontSize: toolbarFontSize }}
             >
               📋 {isTablePanelOpen ? "Hide Tables" : "Show Tables"}
             </button>
@@ -158,7 +179,7 @@ export default function SheetsPage() {
               onClick={() => setShowNavbar((v) => !v)}
               className={`${baseBtn} ${!showNavbar ? activeBtn : inactiveBtn}`}
               title={showNavbar ? "Hide Navbar" : "Show Navbar"}
-              style={{ fontSize: FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize }}
+              style={{ fontSize: toolbarFontSize }}
             >
               {showNavbar ? "Hide Navbar" : "👁️ Show Navbar"}
             </button>
@@ -166,7 +187,7 @@ export default function SheetsPage() {
               onClick={() => setIsSettingsPanelOpen((v) => !v)}
               className={`${baseBtn} ${isSettingsPanelOpen ? activeBtn : inactiveBtn}`}
               title={isSettingsPanelOpen ? "Close Settings" : "Open Settings"}
-              style={{ fontSize: FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize }}
+              style={{ fontSize: toolbarFontSize }}
             >
               ⚙️ {isSettingsPanelOpen ? "Close Settings" : "Open Settings"}
             </button>

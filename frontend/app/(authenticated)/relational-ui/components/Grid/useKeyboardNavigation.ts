@@ -24,10 +24,12 @@ export default function useKeyboardNavigation({
 }: Props) {
   const rafRef = useRef<number | null>(null);
 
+  // Pause grid nav for modals, poppers, or when editing a cell (including DateCell popover/portal)
   const shouldBlockInput = () => {
     const active = document.activeElement as HTMLElement | null;
     return (
       showRenameModal ||
+      editingCell !== null || // <--- This line is new and CRUCIAL
       active?.tagName === "INPUT" ||
       active?.tagName === "TEXTAREA" ||
       active?.isContentEditable ||
@@ -44,7 +46,19 @@ export default function useKeyboardNavigation({
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null;
 
-        if (!focusedCell || shouldBlockInput()) return;
+        // Block grid nav for modals, poppers, or when editing a cell
+        if (!focusedCell || shouldBlockInput()) {
+          // Special: let Escape always close cell editing/focus even when paused
+          if (
+            e.key === "Escape" &&
+            (editingCell !== null || focusedCell !== null)
+          ) {
+            e.preventDefault();
+            setFocusedCell(null);
+            setEditingCell(null);
+          }
+          return;
+        }
 
         const { rowIndex, colIndex } = focusedCell;
         const maxRow = data.length - 1;
