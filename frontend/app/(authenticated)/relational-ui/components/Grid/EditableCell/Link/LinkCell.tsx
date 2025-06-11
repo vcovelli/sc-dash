@@ -6,9 +6,9 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 interface LinkCellProps {
   value: string;
   rowId: string;
-  column: CustomColumnDef<any>;
+  column: CustomColumnDef<unknown>;
   editing?: boolean;
-  onSave?: (id: string, key: string, value: any) => void;
+  onSave?: (id: string, key: string, value: string) => void;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
   fontSize?: number;
@@ -38,5 +38,7 @@ const LinkCell: React.FC<LinkCellProps> = React.memo(({ value, fontSize = 14, ro
     </a>
   );
 });
+
+LinkCell.displayName = "LinkCell";
 
 export default LinkCell;

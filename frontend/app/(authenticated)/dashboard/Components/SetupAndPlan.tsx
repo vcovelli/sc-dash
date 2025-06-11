@@ -2,7 +2,7 @@
 import GlassCard from "./GlassCard";
 import SetupProgressPanel from "./SetupProgressPanel";
 import BrandingBlock from "./BrandingBlock";
-import { Sparkles, CheckCircle2, ChevronDown } from "lucide-react";
+import { Sparkles, ChevronDown } from "lucide-react";
 
 export default function SetupAndPlan({
   planType,

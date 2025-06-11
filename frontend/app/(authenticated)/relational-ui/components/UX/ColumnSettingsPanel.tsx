@@ -37,9 +37,9 @@ interface ChoiceOption {
 
 interface ColumnSettingsPanelProps {
   isOpen: boolean;
-  column: CustomColumnDef<any> | null;
+  column: CustomColumnDef<unknown> | null;
   onClose: () => void;
-  onUpdate: (updated: CustomColumnDef<any>) => void;
+  onUpdate: (updated: CustomColumnDef<unknown>) => void;
 }
 
 function ColorSwatchGrid({ value, onChange, swatchSize }: { value?: string, onChange: (v: string) => void, swatchSize: number }) {
@@ -65,7 +65,6 @@ function ColorSwatchGrid({ value, onChange, swatchSize }: { value?: string, onCh
 }
 
 export default function ColumnSettingsPanel({
-  isOpen,
   column,
   onClose,
   onUpdate,
@@ -78,7 +77,6 @@ export default function ColumnSettingsPanel({
   const [choices, setChoices] = useState<ChoiceOption[]>([]);
   const [newChoice, setNewChoice] = useState("");
   const [editingChoiceIdx, setEditingChoiceIdx] = useState<number | null>(null);
-  const [hexInput, setHexInput] = useState(""); // For custom hex input
 
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
@@ -91,12 +89,12 @@ export default function ColumnSettingsPanel({
     if (!column) return;
     setName(column.header?.toString() || "");
     setType(column.type || "text");
-    setFormula(column.type === "formula" && "formula" in column ? (column as any).formula || "" : "");
+    setFormula(column.type === "formula" && "formula" in column ? (column as CustomColumnDef<unknown> & { formula: string }).formula || "" : "");
     setCurrencyCode(column.currencyCode || "USD");
     if (column.type === "choice") {
       let arr: ChoiceOption[] = [];
       if (Array.isArray(column.choices)) {
-        arr = (column.choices as any[]).map((c: any) =>
+        arr = (column.choices as ChoiceOption[]).map((c: ChoiceOption | string) =>
           typeof c === "string"
             ? { id: c, name: c }
             : { id: c.id || c.name || nanoid(), name: c.name || c.id, color: c.color }
@@ -147,7 +145,7 @@ export default function ColumnSettingsPanel({
   // Save logic
   const handleSave = () => {
     if (!column || !name.trim()) return;
-    const updated: CustomColumnDef<any> = {
+    const updated: CustomColumnDef<unknown> = {
       ...column,
       header: name.trim(),
       type,

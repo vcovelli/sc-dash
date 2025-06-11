@@ -10,10 +10,20 @@ const COLORS = [
   "#3b82f6", "#f59e42", "#10b981", "#ef4444", "#a78bfa", "#f43f5e", "#facc15"
 ];
 
+type DraftSettings = {
+  table: string;
+  xField: string;
+  yFields: string[];
+  barColors?: string[];
+  yScale?: string;
+  showLegend?: boolean;
+  stacked?: boolean;
+};
+
 export function renderSettingsByChartType(
   type: WidgetType,
-  draft: any,
-  updateSetting: (key: string, value: any) => void,
+  draft: DraftSettings,
+  updateSetting: (key: string, value: unknown) => void,
   toggleYField: (field: string) => void,
   tableName: string
 ) {

@@ -6,7 +6,7 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 interface NumberCellProps {
   value: number;
   rowId: string;
-  column: CustomColumnDef<any>;
+  column: CustomColumnDef<unknown>;
   onSave: (id: string, key: string, value: number) => void;
   editing?: boolean;
   onEditComplete?: () => void;
@@ -100,5 +100,7 @@ const NumberCell: React.FC<NumberCellProps> = React.memo(
     );
   }
 );
+
+NumberCell.displayName = "NumberCell";
 
 export default NumberCell;

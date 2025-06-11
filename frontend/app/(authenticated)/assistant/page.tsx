@@ -59,7 +59,7 @@ export default function AssistantPage() {
 
         {/* Suggestions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-          {SUGGESTIONS.map((s, idx) => (
+          {SUGGESTIONS.map((s) => (
             <motion.div
               key={s.title}
               whileHover={{ scale: 1.03, y: -2 }}

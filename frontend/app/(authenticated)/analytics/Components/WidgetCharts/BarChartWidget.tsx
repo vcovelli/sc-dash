@@ -35,7 +35,7 @@ type BarChartConfig = {
   xMax?: number | string;
 };
 
-type DataRow = Record<string, any>;
+type DataRow = Record<string, unknown>;
 
 export function BarChartWidget({
   config,
@@ -66,18 +66,6 @@ export function BarChartWidget({
     typeof config.yMax === "number" ? config.yMax : "auto",
   ];
 
-  // --- X Axis domain setup (auto unless set, applies for numeric/date only) ---
-  const xDomain =
-    typeof config.xMin !== "undefined" || typeof config.xMax !== "undefined"
-      ? [
-          typeof config.xMin !== "undefined" ? config.xMin : "auto",
-          typeof config.xMax !== "undefined" ? config.xMax : "auto",
-        ]
-      : undefined;
-
-  // --- Optionally, handle date formatting here if your X axis is date-based ---
-  // This demo just passes the value straight through.
-
   return (
     <div className="w-full h-full min-w-0 min-h-0 flex items-center">
       <ResponsiveContainer width="100%" height="100%">
@@ -85,9 +73,6 @@ export function BarChartWidget({
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey={config.xField || "name"}
-            // domain only if numeric/date; harmless to leave off for string
-            {...(xDomain ? { domain: xDomain } : {})}
-            // tickFormatter={dateTickFormatter} // If you want to handle dates
           />
           <YAxis
             scale={config.yScale || "linear"}

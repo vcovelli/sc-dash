@@ -1,16 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
+import type { RecentFile } from "./types";
 import StatCards from "./Components/StatCards";
 import SetupAndPlan from "./Components/SetupAndPlan";
 import AlertsCard from "./Components/AlertsCard";
+import type { Alert } from "./Components/AlertsCard";
 import ActivityAndUploads from "./Components/ActivityAndUploads";
 import InsightsFeedbackHelp from "./Components/InsightsFeedbackHelp";
 
 import api from "@/lib/axios";
 
-// Example placeholder data for widgets (move to server/db as needed)
 const PLAN_LIMIT = 10000;
 const PLAN_TYPE = "Pro";
 const ROWS_USED = 2430;
@@ -22,14 +22,14 @@ const ACTIVITY_FEED = [
   { text: "⚙️ Settings updated", time: "Yesterday" },
   { text: "📤 Uploaded <b>inventory.csv</b>", time: "2 days ago" },
 ];
-const ALERTS = [];
+const ALERTS: Alert[] = [];
 const COMPLETED_KEYS = ["add_users", "upload_data", "verify_data"]; // Demo
 
 export default function DashboardPage() {
   const [fileCount, setFileCount] = useState<number | null>(null);
   const [storageUsed, setStorageUsed] = useState<string | null>(null);
   const [uptime, setUptime] = useState<string | null>(null);
-  const [recentFiles, setRecentFiles] = useState<any[]>([]);
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {

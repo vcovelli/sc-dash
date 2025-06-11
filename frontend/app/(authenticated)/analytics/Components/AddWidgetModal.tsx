@@ -1,5 +1,5 @@
 import { useState, useLayoutEffect } from "react";
-import { WidgetType, WidgetConfig } from "../types";
+import { WidgetConfig, AllWidgetSettings, WidgetType } from "../types";
 import { BarChart2, LineChart, PieChart, Table as TableIcon, X } from "lucide-react";
 
 // UUID fallback for environments without crypto.randomUUID
@@ -31,7 +31,12 @@ function useDockedPosition(width = 380, height = 410, margin = 32) {
   return pos;
 }
 
-export default function AddWidgetModal({ onAdd, onClose }) {
+type AddWidgetModalProps = {
+  onAdd: (widget: WidgetConfig<AllWidgetSettings>) => void;
+  onClose: () => void;
+};
+
+export default function AddWidgetModal({ onAdd, onClose }: AddWidgetModalProps) {
   const [type, setType] = useState<WidgetType>("bar");
   const pos = useDockedPosition();
 
@@ -111,6 +116,7 @@ export default function AddWidgetModal({ onAdd, onClose }) {
               type,
               title: `${type.charAt(0).toUpperCase() + type.slice(1)} Widget`,
               settings: {
+                type,
                 table: "orders",
                 xField: "status",
                 yFields: ["count"],
@@ -124,8 +130,15 @@ export default function AddWidgetModal({ onAdd, onClose }) {
   );
 }
 
+type WidgetTypeButtonProps = {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+};
+
 // -- Button for each chart type
-function WidgetTypeButton({ icon, label, active, onClick }) {
+function WidgetTypeButton({ icon, label, active, onClick }: WidgetTypeButtonProps) {
   return (
     <button
       className={`

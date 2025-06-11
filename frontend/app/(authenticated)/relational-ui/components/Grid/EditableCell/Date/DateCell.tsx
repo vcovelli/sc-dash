@@ -4,9 +4,21 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { format } from "date-fns";
+import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
-// Helper to get grid and focus it after mount
-function focusCalendarGrid(portalRef: React.RefObject<HTMLDivElement>) {
+export type DateCellProps = {
+  value: string | number | Date | undefined;
+  rowId: string;
+  column: CustomColumnDef<unknown>;
+  onSave: (rowId: string, key: string, value: unknown) => void;
+  editing?: boolean;
+  onEditComplete?: () => void;
+  onStartEdit?: () => void;
+  fontSize?: number;
+  rowHeight?: number;
+};
+
+function focusCalendarGrid(portalRef: React.RefObject<HTMLDivElement | null>) {
   const grid = portalRef.current?.querySelector('[role="grid"]') as HTMLDivElement | null;
   if (grid) {
     grid.tabIndex = -1;
@@ -14,7 +26,7 @@ function focusCalendarGrid(portalRef: React.RefObject<HTMLDivElement>) {
   }
 }
 
-const DateCell = React.memo(({
+const DateCell = React.memo(function DateCell({
   value,
   rowId,
   column,
@@ -24,23 +36,23 @@ const DateCell = React.memo(({
   onStartEdit,
   fontSize = 14,
   rowHeight = 36,
-}) => {
-  const [selected, setSelected] = useState(value ? new Date(value) : undefined);
+}: DateCellProps) {
+  const [selected, setSelected] = useState<Date | undefined>(value ? new Date(value) : undefined);
   const [originalValue, setOriginalValue] = useState(value);
   const [anchorPos, setAnchorPos] = useState({ top: 0, left: 0, width: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const portalRef = useRef<HTMLDivElement>(null);
 
-  // --- Set selected date and focus calendar on edit open
   useEffect(() => {
     if (editing) {
       setOriginalValue(value);
       setSelected(value ? new Date(value) : undefined);
-      setTimeout(() => focusCalendarGrid(portalRef), 1);
+      setTimeout(() => {
+        if (portalRef.current) focusCalendarGrid(portalRef);
+      }, 1);
     }
   }, [editing, value]);
 
-  // --- Portal anchor: updates on open, scroll, resize
   const updateAnchor = useCallback(() => {
     if (editing && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
@@ -67,14 +79,12 @@ const DateCell = React.memo(({
     }
   }, [editing, updateAnchor]);
 
-  // --- Block window scroll when portal is open
   useEffect(() => {
     if (!editing) return;
     const blockScroll = (e: KeyboardEvent) => {
       if (
         ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", " "].includes(e.key)
       ) {
-        // Only preventDefault if calendar or portal is focused
         if (
           portalRef.current?.contains(document.activeElement) ||
           (document.activeElement === document.body && portalRef.current)
@@ -87,7 +97,6 @@ const DateCell = React.memo(({
     return () => window.removeEventListener("keydown", blockScroll, { capture: true });
   }, [editing]);
 
-  // --- Dismiss/Cancel logic
   useEffect(() => {
     if (!editing) return;
     function handleClick(e: MouseEvent) {
@@ -97,7 +106,7 @@ const DateCell = React.memo(({
         btnRef.current &&
         !btnRef.current.contains(e.target as Node)
       ) {
-        setSelected(originalValue ? new Date(originalValue) : undefined);
+        setSelected(originalValue ? new Date(originalValue as string) : undefined);
         onEditComplete?.();
       }
     }
@@ -105,7 +114,6 @@ const DateCell = React.memo(({
     return () => window.removeEventListener("mousedown", handleClick, true);
   }, [editing, originalValue, onEditComplete]);
 
-  // --- Keyboard inside portal: commit/cancel
   const handlePortalKeyDown = (e: React.KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", " "].includes(e.key)) {
       e.preventDefault();
@@ -119,7 +127,7 @@ const DateCell = React.memo(({
       onEditComplete?.();
     }
     if (e.key === "Escape") {
-      setSelected(originalValue ? new Date(originalValue) : undefined);
+      setSelected(originalValue ? new Date(originalValue as string) : undefined);
       onEditComplete?.();
     }
   };
@@ -154,7 +162,7 @@ const DateCell = React.memo(({
             <div className="flex gap-2 mt-2 w-full justify-end">
               <button
                 onClick={() => {
-                  setSelected(originalValue ? new Date(originalValue) : undefined);
+                  setSelected(originalValue ? new Date(originalValue as string) : undefined);
                   onEditComplete?.();
                 }}
                 className="text-xs px-3 py-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded"

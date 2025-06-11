@@ -1,30 +1,32 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
-const TextCell = React.memo(function TextCell({
-  value,
-  editing = false,
-  row,
-  rowId,
-  column,
-  onSave,
-  onEditComplete,
-  onStartEdit,
-  fontSize = 14,
-  rowHeight = 36,
-}: {
-  value: any;
-  row: any;
+type CellValue = string | number | null;
+
+interface TextCellProps {
+  value: CellValue;
   rowId: string;
-  column: CustomColumnDef<any>;
-  onSave: (id: string, key: string, value: any) => void;
+  column: CustomColumnDef<unknown>;
+  onSave: (id: string, key: string, value: CellValue) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
   fontSize?: number;
   rowHeight?: number;
-}) {
-  const [val, setVal] = useState(value);
+}
+
+const TextCell = React.memo(function TextCell({
+  value,
+  rowId,
+  column,
+  onSave,
+  editing = false,
+  onEditComplete,
+  onStartEdit,
+  fontSize = 14,
+  rowHeight = 36,
+}: TextCellProps) {
+  const [val, setVal] = useState<CellValue>(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ const TextCell = React.memo(function TextCell({
   }, [val, value, onSave, rowId, column.accessorKey, onEditComplete]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") inputRef.current?.blur();
       if (e.key === "Escape") {
         setVal(value);

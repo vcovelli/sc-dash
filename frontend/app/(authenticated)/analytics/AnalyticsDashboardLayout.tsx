@@ -2,28 +2,28 @@
 import { useState, useEffect } from "react";
 import AnalyticsWorkspaceLayout from "./Dashboard/AnalyticsWorkspaceLayout";
 import WidgetCard from "./Components/WidgetCard";
-import SettingsPanel from "./Components/SettingsPanel";
+import SettingsPanel from "./Components/SettingsPanel/SettingsPanel";
 import InsightPanel from "./Components/InsightPanel";
 import AddWidgetModal from "./Components/AddWidgetModal";
-import { WidgetConfig } from "./types";
+import { WidgetConfig, AllWidgetSettings } from "./types";
 import RGL, { WidthProvider, Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
 const ResponsiveGridLayout = WidthProvider(RGL);
 
-const DUMMY_WIDGETS: WidgetConfig[] = [
+const DUMMY_WIDGETS: WidgetConfig<AllWidgetSettings>[] = [
   {
     id: "1",
     type: "bar",
     title: "Orders by Status",
-    settings: { table: "orders", xField: "status", yFields: ["count"], showLegend: true },
+    settings: { type: "bar", table: "orders", xField: "status", yFields: ["count"], showLegend: true },
   },
   {
     id: "2",
     type: "line",
     title: "Revenue Trend",
-    settings: { table: "orders", xField: "date", yFields: ["revenue"], showLegend: true },
+    settings: { type: "line", table: "orders", xField: "date", yFields: ["revenue"], showLegend: true },
   },
 ];
 
@@ -32,10 +32,10 @@ const DEFAULT_LAYOUT: Layout[] = [
   { i: "2", x: 1, y: 0, w: 1, h: 3, minW: 1, minH: 2 },
 ];
 
-const NAVBAR_HEIGHT = 64;
+// const NAVBAR_HEIGHT = 64;
 
 export default function AnalyticsDashboardLayout() {
-  const [widgets, setWidgets] = useState<WidgetConfig[]>(DUMMY_WIDGETS);
+  const [widgets, setWidgets] = useState<WidgetConfig<AllWidgetSettings>[]>(DUMMY_WIDGETS);
   const [layout, setLayout] = useState<Layout[]>(DEFAULT_LAYOUT);
   const [focusedWidgetId, setFocusedWidgetId] = useState<string | null>(null);
   const [openPanel, setOpenPanel] = useState<null | "settings" | "insights">(null);
@@ -43,7 +43,7 @@ export default function AnalyticsDashboardLayout() {
   const [gridWidth, setGridWidth] = useState<number | null>(null);
 
   // NEW: for live editing and revert-on-cancel
-  const [originalWidgetSettings, setOriginalWidgetSettings] = useState<any>(null);
+  const [originalWidgetSettings, setOriginalWidgetSettings] = useState<AllWidgetSettings | null>(null);
 
   const focusedWidget = widgets.find(w => w.id === focusedWidgetId);
 
@@ -92,7 +92,7 @@ export default function AnalyticsDashboardLayout() {
   };
 
   // Called on every tweak in SettingsPanel: updates widget settings live
-  const handleLiveUpdateSettings = (liveSettings: any) => {
+  const handleLiveUpdateSettings = (liveSettings: Partial<AllWidgetSettings>) => {
     if (!focusedWidgetId) return;
     setWidgets(widgets =>
       widgets.map(w =>
@@ -186,14 +186,14 @@ export default function AnalyticsDashboardLayout() {
     <AnalyticsWorkspaceLayout
       leftPanel={openPanel === "insights" && !focusedWidget ? (
         <InsightPanel
-          widget={null}
+          widget={undefined}
           open={false}
           onClose={() => setOpenPanel(null)}
         />
       ) : null}
       rightPanel={openPanel === "settings" && !focusedWidget ? (
         <SettingsPanel
-          widget={null}
+          widget={undefined}
           open={false}
           onClose={() => setOpenPanel(null)}
           onSave={() => setOpenPanel(null)}
@@ -211,7 +211,7 @@ export default function AnalyticsDashboardLayout() {
       </button>
       {showAddModal && (
         <AddWidgetModal
-          onAdd={w => {
+          onAdd={(w: WidgetConfig<AllWidgetSettings>) => {
             handleAddWidget(w);
             setShowAddModal(false);
           }}
@@ -234,7 +234,6 @@ export default function AnalyticsDashboardLayout() {
             compactType="vertical"
             draggableHandle=".card-handle"
             preventCollision={false}
-            minW={1}
             style={{
               minHeight: "calc(100vh - 120px)", // adjusts for navbar/side panels
               height: "100%",

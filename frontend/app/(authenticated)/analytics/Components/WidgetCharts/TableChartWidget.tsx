@@ -1,6 +1,19 @@
 // components/WidgetCharts/TableChartWidget.tsx
 
-export function TableChartWidget({ config, data }) {
+type TableChartConfig = {
+  xField: string;
+  yFields: string[];
+};
+
+type DataRow = Record<string, unknown>;
+
+export function TableChartWidget({
+  config,
+  data,
+}: {
+  config: TableChartConfig;
+  data?: DataRow[];
+}) {
   const tableData = data || [
     { name: "A", count: 400 },
     { name: "B", count: 300 },
@@ -24,7 +37,7 @@ export function TableChartWidget({ config, data }) {
             {tableData.map((row, i) => (
               <tr key={i} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800">
                 {columns.map((col) => (
-                  <td key={col} className="p-2">{row[col]}</td>
+                  <td key={col} className="p-2">{String(row[col] ?? "")}</td>
                 ))}
               </tr>
             ))}

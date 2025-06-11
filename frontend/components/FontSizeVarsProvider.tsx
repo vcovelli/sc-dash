@@ -6,7 +6,7 @@ import { useUserSettings } from "@/components/UserSettingsContext";
 // Updated to support both fontSize and rowHeight (if you want global row height as a variable too)
 export function getFontVars(fontSize: string | number, rowHeight?: number) {
   // If fontSize is a string, map it to a number (so we can compute rowHeight if needed)
-  let size =
+  const size =
     typeof fontSize === "number"
       ? fontSize
       : fontSize === "xs"
@@ -20,7 +20,7 @@ export function getFontVars(fontSize: string | number, rowHeight?: number) {
       : 14;
 
   // If not passed, compute row height
-  let row = rowHeight ?? Math.round(size * 1.7);
+  const row = rowHeight ?? Math.round(size * 1.7);
 
   return {
     "--body": `${size}px`,
@@ -33,7 +33,7 @@ export function getFontVars(fontSize: string | number, rowHeight?: number) {
 
 export default function FontSizeVarsProvider({ children }: { children: React.ReactNode }) {
   const { settings } = useUserSettings();
-  const fontVars = getFontVars(settings.fontSize || "base", settings.rowHeight);
+  const fontVars = getFontVars(settings.fontSize || "base");
 
   // Apply to <body>
   useEffect(() => {

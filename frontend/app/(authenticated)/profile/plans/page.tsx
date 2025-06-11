@@ -48,7 +48,7 @@ export default function PlansPage() {
         },
       })
       .then((res) => setCurrentPlan(res.data.plan))
-      .catch((err) => console.error("Error loading plan", err));
+      .catch(() => console.error("Error loading plan"));
   }, []);
 
   const confirmDowngrade = (plan: string) => {
@@ -80,7 +80,7 @@ export default function PlansPage() {
       );
       setCurrentPlan(targetPlan);
       router.push("/profile");
-    } catch (err) {
+    } catch {
       alert("Error updating plan.");
     }
   };
@@ -168,7 +168,7 @@ export default function PlansPage() {
                   <div className="mt-auto">
                     {isCurrent ? (
                       <div className="text-center text-base font-medium opacity-70 mt-4" style={{ fontSize: "var(--body)" }}>
-                        You're on this plan
+                        You&apos;re on this plan
                       </div>
                     ) : (
                       <button

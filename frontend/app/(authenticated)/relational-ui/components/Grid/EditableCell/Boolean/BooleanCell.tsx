@@ -6,7 +6,7 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 interface BooleanCellProps {
   value: boolean;
   rowId: string;
-  column: CustomColumnDef<any>;
+  column: CustomColumnDef<unknown>;
   onSave: (id: string, key: string, value: boolean) => void;
 }
 
@@ -30,5 +30,7 @@ const BooleanCell: React.FC<BooleanCellProps> = React.memo(
     );
   }
 );
+
+BooleanCell.displayName = "BooleanCell";
 
 export default BooleanCell;

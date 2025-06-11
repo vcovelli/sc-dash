@@ -3,7 +3,6 @@
 import React from "react";
 import { XIcon, MenuIcon } from "lucide-react";
 import { getFontVars } from "@/components/FontSizeVarsProvider";
-import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
 
 // Panel widths
 const SIDEBAR_WIDTH = 256;
@@ -15,6 +14,7 @@ interface TableSelectorPanelProps {
   activeTable: string | null;
   onClose: () => void;
   onSelectTable: (tableName: string) => void;
+  tableFontSize: string;
 }
 
 export default function TableSelectorPanel({
@@ -23,9 +23,9 @@ export default function TableSelectorPanel({
   activeTable,
   onClose,
   onSelectTable,
-}: Omit<TableSelectorPanelProps, "tableFontSize">) {
-  const { fontSize } = useTableSettings();
-  const fontVars = getFontVars(fontSize|| "base");
+  tableFontSize,
+}: TableSelectorPanelProps) {
+  const fontVars = getFontVars(tableFontSize || "base");
 
   return (
     <div

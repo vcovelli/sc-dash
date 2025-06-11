@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { flexRender, Table } from "@tanstack/react-table";
-import { motion, AnimatePresence } from "framer-motion";
+import { flexRender, Table, Row as TableRow } from "@tanstack/react-table";
+import { AnimatePresence } from "framer-motion";
 import { Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import { FixedSizeList as List } from "react-window";
 import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
@@ -11,16 +11,34 @@ import { getFontVars } from "@/components/FontSizeVarsProvider";
 interface Props {
   table: Table<Row>;
   focusedCell: { rowIndex: number; colIndex: number } | null;
-  editingCell: { rowIndex: number; colIndex: number } | null;
   handleCellClick: (rowIndex: number, colIndex: number, isEditable: boolean) => void;
   handleContextMenu: (e: React.MouseEvent, rowIndex: number, colIndex: number) => void;
-  getTouchHandlers?: (rowIndex: number, colIndex: number) => React.HTMLAttributes<any>;
+  getTouchHandlers?: (rowIndex: number, colIndex: number) => React.HTMLAttributes<HTMLElement>;
   focusedColIndex: number | null;
   focusedRowIndex?: number | null;
   setFocusedRowIndex?: (index: number | null) => void;
   setFocusedColIndex?: (index: number | null) => void;
   columnHighlightMode?: boolean;
   listHeight: number;
+  columnWidths: number[];
+}
+
+interface MemoizedRowRendererProps {
+  row: TableRow<Row>;
+  index: number;
+  style: React.CSSProperties;
+  focusedCell: { rowIndex: number; colIndex: number } | null;
+  handleCellClick: (rowIndex: number, colIndex: number, isEditable: boolean) => void;
+  handleContextMenu: (e: React.MouseEvent, rowIndex: number, colIndex: number) => void;
+  getTouchHandlers?: (rowIndex: number, colIndex: number) => React.HTMLAttributes<HTMLElement>;
+  zebraStriping: boolean;
+  focusedColIndex: number | null;
+  focusedRowIndex?: number | null;
+  setFocusedRowIndex?: (index: number | null) => void;
+  setFocusedColIndex?: (index: number | null) => void;
+  columnHighlightMode?: boolean;
+  rowNumberWidth: number;
+  rowHeight: number;
 }
 
 const getRowNumberColumnWidth = (rowCount: number, fontSize: number) => {
@@ -28,26 +46,23 @@ const getRowNumberColumnWidth = (rowCount: number, fontSize: number) => {
   return digits * fontSize + fontSize * 2;
 };
 
-const MemoizedRowRenderer = (props: any) => {
-  const {
-    row,
-    index,
-    style,
-    focusedCell,
-    editingCell,
-    handleCellClick,
-    handleContextMenu,
-    getTouchHandlers,
-    zebraStriping,
-    focusedColIndex,
-    focusedRowIndex,
-    setFocusedRowIndex,
-    setFocusedColIndex,
-    columnHighlightMode,
-    rowNumberWidth,
-    rowHeight,
-  } = props;
-
+const MemoizedRowRenderer = ({
+  row,
+  index,
+  style,
+  focusedCell,
+  handleCellClick,
+  handleContextMenu,
+  getTouchHandlers,
+  zebraStriping,
+  focusedColIndex,
+  focusedRowIndex,
+  setFocusedRowIndex,
+  setFocusedColIndex,
+  columnHighlightMode,
+  rowNumberWidth,
+  rowHeight,
+}: MemoizedRowRendererProps) => {
   const isRowFocused = focusedRowIndex === index;
   const isZebra = zebraStriping && index % 2 === 1;
 
@@ -59,7 +74,7 @@ const MemoizedRowRenderer = (props: any) => {
         display: "grid",
         gridTemplateColumns: `${rowNumberWidth}px ${row
           .getVisibleCells()
-          .map((cell: any) => `${cell.column.getSize()}px`)
+          .map((cell) => `${cell.column.getSize()}px`)
           .join(" ")}`,
         fontSize: "var(--body)",
         minHeight: rowHeight,
@@ -98,7 +113,7 @@ const MemoizedRowRenderer = (props: any) => {
         {index + 1}
       </div>
 
-      {row.getVisibleCells().map((cell: any, colIndex: number) => {
+      {row.getVisibleCells().map((cell, colIndex: number) => {
         const isFocused =
           focusedCell?.rowIndex === index && focusedCell?.colIndex === colIndex;
         const isEditable = cell.column.id !== "__rownum__";
@@ -142,7 +157,6 @@ const MemoizedRowRenderer = (props: any) => {
 const GridTableRows: React.FC<Props> = ({
   table,
   focusedCell,
-  editingCell,
   handleCellClick,
   handleContextMenu,
   getTouchHandlers,
@@ -167,7 +181,6 @@ const GridTableRows: React.FC<Props> = ({
         index={index}
         style={style}
         focusedCell={focusedCell}
-        editingCell={editingCell}
         handleCellClick={handleCellClick}
         handleContextMenu={handleContextMenu}
         getTouchHandlers={getTouchHandlers}
@@ -184,7 +197,6 @@ const GridTableRows: React.FC<Props> = ({
     [
       rows,
       focusedCell,
-      editingCell,
       handleCellClick,
       handleContextMenu,
       getTouchHandlers,

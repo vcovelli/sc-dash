@@ -24,41 +24,39 @@ export default function useKeyboardNavigation({
 }: Props) {
   const rafRef = useRef<number | null>(null);
 
-  // Pause grid nav for modals, poppers, or when editing a cell (including DateCell popover/portal)
-  const shouldBlockInput = () => {
-    const active = document.activeElement as HTMLElement | null;
-    return (
-      showRenameModal ||
-      editingCell !== null || // <--- This line is new and CRUCIAL
-      active?.tagName === "INPUT" ||
-      active?.tagName === "TEXTAREA" ||
-      active?.isContentEditable ||
-      active?.closest(".rename-modal") ||
-      active?.closest("[data-radix-popper-content-wrapper]") ||
-      document.querySelector(".datepicker-modal-active")
-    );
-  };
-
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (rafRef.current) return;
+  const handleKeyDown = (e: KeyboardEvent) => {
+    const shouldBlockInput = () => {
+      const active = document.activeElement as HTMLElement | null;
+      return (
+        showRenameModal ||
+        editingCell !== null ||
+        active?.tagName === "INPUT" ||
+        active?.tagName === "TEXTAREA" ||
+        active?.isContentEditable ||
+        active?.closest(".rename-modal") ||
+        active?.closest("[data-radix-popper-content-wrapper]") ||
+        document.querySelector(".datepicker-modal-active")
+      );
+    };
 
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
+    if (rafRef.current) return;
 
-        // Block grid nav for modals, poppers, or when editing a cell
-        if (!focusedCell || shouldBlockInput()) {
-          // Special: let Escape always close cell editing/focus even when paused
-          if (
-            e.key === "Escape" &&
-            (editingCell !== null || focusedCell !== null)
-          ) {
-            e.preventDefault();
-            setFocusedCell(null);
-            setEditingCell(null);
-          }
-          return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+
+      if (!focusedCell || shouldBlockInput()) {
+        // Special: let Escape always close cell editing/focus even when paused
+        if (
+          e.key === "Escape" &&
+          (editingCell !== null || focusedCell !== null)
+        ) {
+          e.preventDefault();
+          setFocusedCell(null);
+          setEditingCell(null);
         }
+        return;
+      }
 
         const { rowIndex, colIndex } = focusedCell;
         const maxRow = data.length - 1;

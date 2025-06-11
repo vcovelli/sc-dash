@@ -10,10 +10,10 @@ interface ChoiceOption {
 }
 
 interface ChoiceCellProps {
-  value: any;
+  value: string | string[] | null;
   rowId: string;
-  column: CustomColumnDef<any>;
-  onSave: (id: string, key: string, value: any) => void;
+  column: CustomColumnDef<unknown>;
+  onSave: (id: string, key: string, value: string | string[]) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
@@ -34,7 +34,7 @@ const ChoiceCell = React.memo(function ChoiceCell({
   rowHeight,
   onAddChoice,
 }: ChoiceCellProps) {
-  const [value, setValue] = useState(initialValue);
+  const [value, setValue] = useState<string | string[] | null>(initialValue);
 
   // Normalize choices to [{id, name, color}]
   const choices = Array.isArray(column.choices) ? column.choices : [];
@@ -99,7 +99,7 @@ const ChoiceCell = React.memo(function ChoiceCell({
               );
             })
           : (() => {
-              const opt = findOption(value);
+              const opt = findOption(value ?? "");
               return (
                 <ChoiceTag
                   value={opt?.name ?? value}
@@ -118,7 +118,7 @@ const ChoiceCell = React.memo(function ChoiceCell({
   return (
     <div style={{ minWidth: 160 }}>
       <ChoiceList
-        value={value}
+        value={Array.isArray(value) ? value[0] ?? "" : value ?? ""} 
         options={normalizedChoices}
         onChange={handleChange}
         onEditComplete={onEditComplete}

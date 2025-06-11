@@ -8,6 +8,14 @@ import {
 } from "./WidgetCharts";
 import { GripVertical, ChevronDown, ChevronUp } from "lucide-react";
 
+const SAMPLE_DATA = [
+  { name: "A", count: 400, revenue: 2400 },
+  { name: "B", count: 300, revenue: 2210 },
+  { name: "C", count: 200, revenue: 2290 },
+  { name: "D", count: 278, revenue: 2000 },
+  { name: "E", count: 189, revenue: 2181 },
+];
+
 export default function WidgetCard({
   widget,
   focused,
@@ -32,16 +40,16 @@ export default function WidgetCard({
   let ChartComponent = null;
   switch (widget.type) {
     case "bar":
-      ChartComponent = <BarChartWidget config={widget.settings} />;
+      ChartComponent = <BarChartWidget config={widget.settings} data={SAMPLE_DATA} />;
       break;
     case "line":
-      ChartComponent = <LineChartWidget config={widget.settings} />;
+      ChartComponent = <LineChartWidget config={widget.settings} data={SAMPLE_DATA} />;
       break;
     case "pie":
-      ChartComponent = <PieChartWidget config={widget.settings} />;
+      ChartComponent = <PieChartWidget config={widget.settings} data={SAMPLE_DATA} />;
       break;
     case "table":
-      ChartComponent = <TableChartWidget config={widget.settings} />;
+      ChartComponent = <TableChartWidget config={widget.settings} data={SAMPLE_DATA} />;
       break;
     default:
       ChartComponent = <div>No chart type</div>;

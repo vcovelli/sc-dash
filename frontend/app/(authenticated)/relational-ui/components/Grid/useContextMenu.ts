@@ -122,20 +122,22 @@ export default function useContextMenu({
       switch (action) {
         case "insertAbove":
         case "insertBelow": {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { __rowId, ...rest } = data[rowIndex];
           const insertAt = action === "insertAbove" ? rowIndex : rowIndex + 1;
-          const newRow = { ...data[rowIndex], __rowId: uuidv4() };
-          delete newRow.id;
+          const newRow: Row = { ...rest, __rowId: uuidv4() };
           setData([...data.slice(0, insertAt), newRow, ...data.slice(insertAt)]);
           break;
         }
         case "duplicateRow": {
-          const newRow = { ...data[rowIndex], __rowId: uuidv4() };
-          delete newRow.id;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { __rowId, ...rest } = data[rowIndex];
+          const newRow: Row = { ...rest, __rowId: uuidv4() };
           setData([...data.slice(0, rowIndex + 1), newRow, ...data.slice(rowIndex + 1)]);
           break;
         }
         case "deleteRow":
-          setData(data.filter((_, i) => i !== rowIndex));
+          setData(data.filter((__, i) => i !== rowIndex));
           break;
         case "insertColLeft":
         case "insertColRight": {
@@ -164,8 +166,12 @@ export default function useContextMenu({
         case "deleteCol": {
           const key = getColumnKey();
           if (!key) return;
-          setRawColumns(rawColumns.filter((_, i) => i !== colIndex - 1));
-          setData(data.map(({ [key]: _, ...rest }) => ({ ...rest })));
+          setRawColumns(rawColumns.filter((_col, i) => i !== colIndex - 1));
+          setData(data.map(row => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { [key]: _, __rowId, ...rest } = row;
+            return { ...rest, __rowId };
+          }));
           break;
         }
         case "renameColumn": {
@@ -194,7 +200,7 @@ export default function useContextMenu({
 
       setShowContextMenu(false);
     },
-    [contextTarget, data, rawColumns, containerRef]
+    [contextTarget, data, rawColumns, containerRef, setData, setRawColumns, setRenamePosition, setRenameTarget, setShowRenameModal]
   );
 
   return {

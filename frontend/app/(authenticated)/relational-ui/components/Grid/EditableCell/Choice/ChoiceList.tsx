@@ -280,4 +280,6 @@ const ChoiceList: React.FC<ChoiceListProps> = React.memo(({
   );
 });
 
+ChoiceList.displayName = "ChoiceList";
+
 export default ChoiceList;

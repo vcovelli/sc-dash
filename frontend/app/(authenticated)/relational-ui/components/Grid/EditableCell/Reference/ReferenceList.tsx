@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDownIcon, CheckIcon } from "@radix-ui/react-icons";
 import classNames from "classnames";
@@ -184,5 +184,7 @@ const ReferenceList: React.FC<ReferenceListProps> = React.memo(
     );
   }
 );
+
+ReferenceList.displayName = "ReferenceList";
 
 export default ReferenceList;

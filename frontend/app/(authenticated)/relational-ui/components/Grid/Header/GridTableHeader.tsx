@@ -36,11 +36,15 @@ interface Props {
   setShowRenameModal: React.Dispatch<React.SetStateAction<boolean>>;
   focusedColIndex: number | null;
   onFocusColumn: (col: CustomColumnDef<Row>, index: number) => void;
+  columnWidths: number[];
   onOpenSettingsPanel: (col: CustomColumnDef<Row>) => void;
   setRawColumns: React.Dispatch<React.SetStateAction<CustomColumnDef<Row>[]>>;
   setData: React.Dispatch<React.SetStateAction<Row[]>>;
   handleContextMenu: (e: React.MouseEvent, rowIndex: number, colIndex: number) => void;
-  getTouchHandlers: (rowIndex: number, colIndex: number) => React.HTMLAttributes<any>; // Add this!
+  getTouchHandlers: <T extends Element = HTMLDivElement>(
+    rowIndex: number,
+    colIndex: number
+  ) => React.HTMLAttributes<T>;
   setFocusedRowIndex: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
@@ -59,7 +63,7 @@ const GridTableHeader: React.FC<Props> = ({
   setShowRenameModal,
   focusedColIndex,
   onFocusColumn,
-  onOpenSettingsPanel,
+  //onOpenSettingsPanel,
   setRawColumns,
   setData,
   handleContextMenu,
@@ -171,8 +175,8 @@ const GridTableHeader: React.FC<Props> = ({
                           header={header}
                           col={col}
                           colWidth={colWidth}
-                          fontSize={"var(--body)"}
-                          rowHeight={"var(--row)"}
+                          fontSize={fontSize}
+                          rowHeight={rowHeight}
                           dragHandleProps={dragHandleProps}
                           focused={focusedColIndex === adjustedIndex}
                           onClick={(e) => {
@@ -210,8 +214,8 @@ const GridTableHeader: React.FC<Props> = ({
                 {/* Add Column Button */}
                 <AddColumnButton
                   onAddColumn={handleAddColumn}
-                  fontSize={"var(--body)"}
-                  rowHeight={"var(--row)"}
+                  fontSize={fontSize}
+                  rowHeight={rowHeight}
                 />
               </div>
             </SortableContext>

@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaEnvelope, FaLock, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
@@ -76,11 +77,11 @@ export default function SignupPage() {
       });
       // Optionally redirect after a few seconds
       setTimeout(() => router.push("/login"), 2500);
-    } catch (err: any) {
-      setMessage(err.response?.data?.error || "❌ Signup failed.");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      const error = err as AxiosError<{ error?: string }>;
+      setMessage(error.response?.data?.error || "❌ Signup failed.");
     }
+    setLoading(false);
   };
 
   return (

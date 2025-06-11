@@ -35,6 +35,7 @@ export default function FirstTimeSetupPage() {
       );
       router.push("/onboarding/start-fresh");
     } catch (err) {
+      console.error(err);
       alert("Failed to save business name.");
     } finally {
       setLoading(false);

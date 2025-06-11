@@ -5,14 +5,15 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 export interface UserSettings {
   currencyCode: string;
   fontSize: string;
-  theme: "light" | "dark";
-  // add more as needed
+  theme: "light" | "dark" | "system";
+  timezone?: string;
 }
 
 const defaultSettings: UserSettings = {
   currencyCode: "USD",
   fontSize: "base", // e.g. medium font size preset
-  theme: "light",
+  theme: "system",
+  timezone: "America/New_York", 
 };
 
 interface UserSettingsContextType {

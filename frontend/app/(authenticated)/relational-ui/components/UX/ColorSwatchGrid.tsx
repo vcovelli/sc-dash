@@ -19,7 +19,13 @@ const COLOR_GROUPS = [
 
 const PRESET_COLORS = COLOR_GROUPS.flat();
 
-export default function ColorSwatchGrid({ value, onChange, swatchSize = 24 }) {
+interface ColorSwatchGridProps {
+  value: string;                  // currently selected color hex (e.g. "#3b82f6")
+  onChange: (color: string) => void;  // callback when user selects a color
+  swatchSize?: number;            // optional, size of each swatch
+}
+
+export default function ColorSwatchGrid({ value, onChange, swatchSize = 24 }: ColorSwatchGridProps) {
   return (
     <div className="flex flex-wrap gap-1.5 p-1 max-w-[220px]">
       {PRESET_COLORS.map((color) => (
