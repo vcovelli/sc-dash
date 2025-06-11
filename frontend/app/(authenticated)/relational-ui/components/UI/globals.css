@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === Custom Global Styles === */
+body {
+  @apply bg-gray-100 text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100;
+}
+
+html {
+  scroll-behavior: smooth;
+  @apply bg-white dark:bg-gray-900;
+}
+
+/* === Ensure input fields are legible in all modes === */
+input,
+select,
+textarea {
+  @apply text-black dark:text-black bg-white dark:bg-white;
+}
+
+/* Optional: dropdowns and modals in dark mode */
+[data-radix-popper-content-wrapper] {
+  @apply bg-white text-black dark:bg-white dark:text-black;
+}
+
+.glass-card {
+  @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-xl border border-white/30 dark:border-gray-900/30 rounded-2xl p-6;
+}
+
+.noselect,
+.grid-cell,
+.grid-header {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none; /* Prevents iOS callout menu */
+  -webkit-tap-highlight-color: transparent; /* Prevents blue tap */
+}

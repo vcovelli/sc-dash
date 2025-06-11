@@ -4,126 +4,106 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-const requiredFields = ["order_id", "product_name", "uuid", "ingested_at", "version", "client_name"];
-
-const fieldGroups: Record<string, string[]> = {
-  "🧾 Order Info": [
-    "order_date", "expected_delivery_date", "actual_delivery_date", "order_status", "total_price", "currency"
-  ],
-  "👥 Customer Info": ["customer_id", "customer_name"],
-  "📦 Product Info": ["product_id", "product_category", "unit_price", "quantity"],
-  "🏭 Supplier Info": ["supplier_id", "supplier_name"],
-  "🏬 Warehouse Info": ["warehouse_id", "warehouse_location"],
-  "📤 Shipment Info": [
-    "shipment_id", "shipment_method", "tracking_number", "shipment_status"
-  ],
-  "🛠️ System Metadata (Required)": requiredFields,
-};
+const featureOptions = [
+  { key: "orders", label: "📦 Track customer orders" },
+  { key: "products", label: "🛍️ Manage product inventory / SKUs" },
+  { key: "suppliers", label: "🏭 Track supplier data" },
+  { key: "warehouses", label: "🏬 Track warehouse locations" },
+  { key: "customers", label: "👥 Track customer information" },
+  { key: "shipments", label: "🚚 Track shipping and delivery" },
+];
 
 export default function StartFreshPage() {
   const router = useRouter();
-  const [selected, setSelected] = useState<string[]>([]);
   const [businessName, setBusinessName] = useState("");
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [includeSampleData, setIncludeSampleData] = useState(true);
 
   useEffect(() => {
-    const accessToken = localStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
 
-    const fetchProfile = async () => {
-      try {
-        const res = await axios.get("http://192.168.1.42:8000/auth/me/", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (res.data?.business_name) {
-          setBusinessName(res.data.business_name);
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.data?.business_name) setBusinessName(res.data.business_name);
+    } catch (err: unknown) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        (err as { response?: { status?: number } }).response?.status === 401 &&
+        refreshToken
+      ) {
+        try {
+          const refreshRes = await axios.post(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/token/refresh/`,
+            { refresh: refreshToken }
+          );
+          const newAccess = refreshRes.data.access;
+          localStorage.setItem("access_token", newAccess);
+
+          const profileRes = await axios.get(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`,
+            { headers: { Authorization: `Bearer ${newAccess}` } }
+          );
+          if (profileRes.data?.business_name) setBusinessName(profileRes.data.business_name);
+        } catch (refreshErr) {
+          console.error("Token refresh failed", refreshErr);
         }
-      } catch (err: any) {
-        if (err.response?.status === 401 && refreshToken) {
-          try {
-            const refreshRes = await axios.post("http://192.168.1.42:8000/auth/token/refresh/", {
-              refresh: refreshToken,
-            });
-
-            const newAccess = refreshRes.data.access;
-            localStorage.setItem("access_token", newAccess);
-
-            const profileRes = await axios.get("http://192.168.1.42:8000/auth/me/", {
-              headers: { Authorization: `Bearer ${newAccess}` },
-            });
-
-            if (profileRes.data?.business_name) {
-              setBusinessName(profileRes.data.business_name);
-            }
-          } catch (refreshErr) {
-            console.error("Token refresh failed", refreshErr);
-          }
-        } else {
-          console.error("Failed to fetch profile:", err);
-        }
+      } else {
+        console.error("Failed to fetch profile:", err);
       }
-    };
+    }
+  };
 
-    fetchProfile();
-  }, []);
+  fetchProfile();
+}, []);
 
-  const toggleField = (field: string) => {
-    if (requiredFields.includes(field)) return;
-    setSelected((prev) =>
-      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
+  const toggleFeature = (key: string) => {
+    setSelectedFeatures((prev) =>
+      prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key]
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!businessName) {
-    alert("Please enter your business name.");
-    return;
-  }
+    if (!businessName) {
+      alert("Please enter your business name.");
+      return;
+    }
 
-  const allSelected = [...requiredFields, ...selected];
-  const token = localStorage.getItem("access_token");
+    const token = localStorage.getItem("access_token");
 
-  try {
-    // Update user's business_name on the backend
-    await axios.patch("http://192.168.1.42:8000/auth/me/", {
-      business_name: businessName,
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    // Save schema to backend
-    await axios.post("http://192.168.1.42:8000/api/user-schema/", {
-      expected_headers: allSelected.filter(
-        (field) => !["uuid", "version", "ingested_at"].includes(field)
-      )
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      await axios.patch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
+        business_name: businessName,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/schema-wizard/generate/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({
           client_name: businessName.toLowerCase(),
-          columns: allSelected,
+          features: selectedFeatures,
+          include_sample_data: includeSampleData,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        const { download_url } = data;
+        const { download_url, grist_view_url } = data;
 
-        const link = document.createElement("a");
-        link.href = download_url;
-        link.download = `${businessName}_data_template.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        if (grist_view_url) window.open(grist_view_url, "_blank");
+        if (download_url) window.open(download_url, "_blank");
 
         localStorage.setItem("client_name", businessName.toLowerCase());
         router.push("/uploads");
@@ -138,20 +118,36 @@ export default function StartFreshPage() {
   };
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-gray-50 to-white px-6 py-16 flex items-center justify-center">
-      <div className="w-full max-w-4xl space-y-10">
+    <section className="
+      min-h-screen
+      bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950
+      flex items-center justify-center
+      px-2 sm:px-6 py-8 sm:py-20
+      transition-colors duration-500
+    ">
+      <div className="
+        w-full max-w-2xl mx-auto
+        rounded-3xl
+        shadow-xl
+        bg-white/80 dark:bg-gray-900/80
+        border border-white/20 dark:border-gray-900/30
+        backdrop-blur-xl
+        px-4 sm:px-10 py-8 sm:py-12
+        flex flex-col gap-8
+      ">
         <div className="text-center">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
-            🧾 Start Fresh
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-2">
+            <span className="align-middle text-4xl mr-2">🧾</span>Start Fresh
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-gray-600">
-            Choose the data fields for your custom CSV template.
+          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 font-medium">
+            Answer a few questions and we’ll build a smart data template for you.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white p-8 md:p-10 rounded-2xl shadow-xl border border-gray-200 space-y-10">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Business Name */}
           <div>
-            <label htmlFor="business-name" className="block text-lg font-semibold mb-2">
+            <label htmlFor="business-name" className="block text-base font-semibold mb-2 text-gray-800 dark:text-gray-200">
               Business Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -160,44 +156,82 @@ export default function StartFreshPage() {
               placeholder="e.g. canes"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="
+                w-full border border-gray-300 dark:border-gray-700
+                rounded-lg px-4 py-3 text-base
+                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600
+                bg-white/90 dark:bg-[#202532] text-gray-900 dark:text-gray-100
+                shadow-sm
+                transition
+              "
               required
             />
           </div>
 
-          {Object.entries(fieldGroups).map(([group, fields]) => (
-            <div key={group}>
-              <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-1">{group}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {fields.map((field) => (
-                  <label key={field} className="flex items-center space-x-3 px-3 py-2 rounded transition">
-                    <input
-                      type="checkbox"
-                      checked={requiredFields.includes(field) || selected.includes(field)}
-                      disabled={requiredFields.includes(field)}
-                      onChange={() => toggleField(field)}
-                      className="form-checkbox h-5 w-5 text-blue-600"
-                    />
-                    <span className={`text-gray-700 font-medium ${requiredFields.includes(field) ? 'opacity-70 italic' : ''}`}>
-                      {field} {requiredFields.includes(field) ? "(required)" : ""}
-                    </span>
-                  </label>
-                ))}
-              </div>
+          {/* Features */}
+          <div>
+            <h3 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
+              What would you like to track?
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {featureOptions.map(({ key, label }) => (
+                <label
+                  key={key}
+                  className={`
+                    flex items-center px-3 py-2 rounded-lg
+                    cursor-pointer gap-3
+                    bg-white/60 dark:bg-[#202532]/80 border border-gray-200 dark:border-gray-700
+                    shadow-sm
+                    transition
+                    hover:bg-blue-50/70 dark:hover:bg-blue-900/30
+                    ${selectedFeatures.includes(key) ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-200 dark:ring-blue-900' : ''}
+                  `}
+                  tabIndex={0}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedFeatures.includes(key)}
+                    onChange={() => toggleFeature(key)}
+                    className="form-checkbox h-5 w-5 text-blue-600 dark:text-blue-400 rounded transition"
+                  />
+                  <span className="text-gray-700 dark:text-gray-100 font-medium text-base">
+                    {label}
+                  </span>
+                </label>
+              ))}
             </div>
-          ))}
-
-          <div className="pt-6">
-            <button
-              type="submit"
-              className="w-full text-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-            >
-              🚀 Generate Template
-            </button>
           </div>
+
+          {/* Sample Data */}
+          <div className="flex items-center gap-3 text-base text-gray-700 dark:text-gray-200 font-medium">
+            <input
+              type="checkbox"
+              checked={includeSampleData}
+              onChange={() => setIncludeSampleData(!includeSampleData)}
+              className="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 rounded"
+            />
+            Include sample data in template
+          </div>
+
+          {/* Button */}
+          <button
+            type="submit"
+            className="
+              w-full text-base sm:text-lg font-bold
+              bg-gradient-to-r from-blue-600 to-indigo-600
+              hover:from-blue-700 hover:to-indigo-700
+              text-white py-3 sm:py-4
+              rounded-xl shadow-lg
+              focus:outline-none focus:ring-2 focus:ring-blue-400
+              transition-all duration-200
+              active:scale-98
+            "
+          >
+            🚀 Generate My Data Workbook
+          </button>
         </form>
 
-        <div className="text-center text-xs text-gray-400 pt-8">
+        <div className="text-center text-xs text-gray-400 dark:text-gray-600 pt-2">
           &copy; {new Date().getFullYear()} SupplyWise Inc. All rights reserved.
         </div>
       </div>

@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useUploadedFiles } from "../hooks/useUploadedFiles"
-import axios from "axios"
-import { useState } from "react"
+import { useUploadedFiles } from "../hooks/useUploadedFiles";
+import axios from "axios";
+import { useState } from "react";
 
 export const UploadedFilesTable = () => {
-  const { files, loading, refetch } = useUploadedFiles()
-  const [ingesting, setIngesting] = useState<number | null>(null)
+  const { files, loading, refetch } = useUploadedFiles();
+  const [ingesting, setIngesting] = useState<number | null>(null);
 
   const startIngestion = async (fileId: number) => {
     try {
-      setIngesting(fileId)
+      setIngesting(fileId);
       await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/start-ingestion/`,
         { file_id: fileId },
@@ -19,62 +19,89 @@ export const UploadedFilesTable = () => {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         }
-      )
-      setTimeout(refetch, 2000)
+      );
+      setTimeout(refetch, 2000);
     } catch (err) {
-      console.error("Ingestion error:", err)
-      alert("Failed to start ingestion.")
+      console.error("Ingestion error:", err);
+      alert("Failed to start ingestion.");
     } finally {
-      setIngesting(null)
+      setIngesting(null);
     }
-  }
+  };
 
-  if (loading) return <p>Loading files...</p>
-  if (!files.length) return <p>No uploaded files found.</p>
+  const getReadableSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} Bytes`;
+    else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    else if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    else return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  };
+
+  const getDownloadUrl = async (fileId: number) => {
+    try {
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/file-download/${fileId}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        }
+      );
+      return res.data.url;
+    } catch (err) {
+      console.error("Failed to get download URL:", err);
+      return null;
+    }
+  };
+
+  if (loading) return <p>Loading files...</p>;
+  if (!files.length) return <p>No uploaded files found.</p>;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200 rounded-md shadow-sm">
+    <div className="overflow-x-auto bg-white dark:bg-[#161B22] border border-gray-200 dark:border-gray-800 rounded-md shadow-sm">
+      <table className="min-w-full">
         <thead>
-          <tr className="bg-gray-100 text-left">
-            <th className="px-4 py-2 border-b">Filename</th>
-            <th className="px-4 py-2 border-b">Size</th>
-            <th className="px-4 py-2 border-b">Uploaded By</th>
-            <th className="px-4 py-2 border-b">Uploaded At</th>
-            <th className="px-4 py-2 border-b">Status</th>
+          <tr className="bg-gray-100 dark:bg-[#21262d] text-left">
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Filename</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Size</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Rows</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Uploaded By</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Uploaded At</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Status</th>
           </tr>
         </thead>
         <tbody>
           {files.map((file) => (
-            <tr key={file.id} className="hover:bg-gray-50">
-              <td className="px-4 py-2 border-b">{file.file_name}</td>
-              <td className="px-4 py-2 border-b">
-                {file.file_size ? `${(file.file_size / 1024).toFixed(1)} KB` : "Unknown"}
+            <tr key={file.id} className="hover:bg-gray-50 dark:hover:bg-[#22272e]">
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">{file.file_name}</td>
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
+                {file.file_size ? getReadableSize(file.file_size) : "Unknown"}
               </td>
-              <td className="px-4 py-2 border-b">{file.uploaded_by}</td>
-              <td className="px-4 py-2 border-b">
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">{file.row_count ?? "-"}</td>
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">{file.uploaded_by}</td>
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
                 {new Date(file.uploaded_at).toLocaleString()}
               </td>
-              <td className="px-4 py-2 border-b">
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
                 {file.status === "success" && file.minio_path ? (
-                  <a
-                    href={`http://192.168.1.42:9000/${file.minio_path}`}
-                    className="text-blue-600 underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={async () => {
+                      const url = await getDownloadUrl(file.id);
+                      if (url) window.open(url, "_blank");
+                    }}
+                    className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
                   >
                     Download CSV
-                  </a>
+                  </button>
                 ) : file.status === "pending" ? (
                   <button
                     onClick={() => startIngestion(file.id)}
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300"
                     disabled={ingesting === file.id}
                   >
                     {ingesting === file.id ? "Ingesting..." : "Start Ingestion"}
                   </button>
                 ) : (
-                  <span className="text-gray-500 capitalize">{file.status}</span>
+                  <span className="text-gray-500 dark:text-gray-400 capitalize">{file.status}</span>
                 )}
               </td>
             </tr>
@@ -82,5 +109,5 @@ export const UploadedFilesTable = () => {
         </tbody>
       </table>
     </div>
-  )
-}
+  );
+};
