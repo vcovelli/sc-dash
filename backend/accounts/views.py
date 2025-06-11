@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status
 from .serializers import SignupSerializer
+from api.models import UploadedFile
 
 User = get_user_model()
 
@@ -14,9 +15,14 @@ class SignupView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        plan = request.data.get("plan", "Free")  # default to Free if missing
+        request.data["plan"] = plan  # inject into serializer
+
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            user.plan = plan
+            user.save(update_fields=["plan"])
             return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -44,22 +50,36 @@ class UserProfileView(APIView):
 
     def get(self, request):
         user = request.user
+        upload_count = UploadedFile.objects.filter(user=user).count()
         return Response({
             "username": user.username,
             "email": user.email,
             "role": user.role,
             "business_name": user.business_name,
+            "plan": user.plan,
+            "joined": user.date_joined.strftime("%B %Y"),
+            "uploads": upload_count,
         })
 
     def patch(self, request):
+        user = request.user
+        updated = False
+
         business_name = request.data.get("business_name")
+        plan = request.data.get("plan")
 
-        if not business_name or not isinstance(business_name, str):
-            return Response(
-                {"error": "business_name is required and must be a string"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if business_name and isinstance(business_name, str):
+            user.business_name = business_name.strip()
+            updated = True
 
-        request.user.business_name = business_name.strip()
-        request.user.save(update_fields=["business_name"])  # more explicit
-        return Response({"message": "Business name updated successfully"}, status=status.HTTP_200_OK)
+        if plan and plan in ["Free", "Pro", "Enterprise"]:
+            user.plan = plan
+            updated = True
+        elif plan:
+            return Response({"error": "Invalid plan selected"}, status=400)
+
+        if updated:
+            user.save()
+            return Response({"message": "Profile updated successfully"})
+        else:
+            return Response({"error": "No valid fields to update"}, status=400)

@@ -10,9 +10,20 @@ class UserSchemaView(APIView):
     def get(self, request):
         schema = UserSchema.objects.filter(user=request.user).first()
         if not schema:
-            return Response({"expected_headers": []}, status=200)
-        serializer = UserSchemaSerializer(schema)
-        return Response(serializer.data)
+            return Response({
+                "expected_headers": [],
+                "grist_doc_id": None,
+                "grist_doc_url": None,
+                "grist_view_url": None
+            }, status=200)
+
+        # Return full schema record
+        return Response({
+            "expected_headers": schema.expected_headers or [],
+            "grist_doc_id": schema.grist_doc_id,
+            "grist_doc_url": schema.grist_doc_url,
+            "grist_view_url": schema.grist_view_url
+        })
 
     def post(self, request):
         headers = request.data.get("expected_headers")

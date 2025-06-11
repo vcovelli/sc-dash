@@ -13,24 +13,42 @@ services:
     env_file:
       - .env
     environment:
-      POSTGRES_DB: ${PG_DATABASE}
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${APP_DB_NAME}
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./airflow/init-airflow.sql:/docker-entrypoint-initdb.d/init-airflow.sql
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $PG_USER"]
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app 
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     entrypoint: /app/backend_entrypoint.sh
+    environment:
+      PG_USER: ${APP_DB_USER}
+      PG_PASSWORD: ${APP_DB_PASSWORD}
+      PG_DATABASE: ${APP_DB_NAME}
     volumes:
       - ./backend:/app
       - ./scripts:/app/scripts
@@ -52,7 +70,7 @@ services:
       - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres/${PG_DATABASE}
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@postgres/${AIRFLOW_DB_NAME}
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
       BACKEND_API_URL: http://backend:8000
     entrypoint: /opt/airflow/airflow_entrypoint.sh
@@ -84,7 +102,7 @@ services:
       - .env
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PG_USER}:${PG_PASSWORD}@postgres/${PG_DATABASE}
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@postgres/${AIRFLOW_DB_NAME}
       BACKEND_API_URL: http://backend:8000
     volumes:
       - ./airflow/dags:/opt/airflow/dags
@@ -105,6 +123,7 @@ services:
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_SERVER_URL: ${MINIO_SERVER_URL}
     volumes:
       - minio_data:/data
     command: server --console-address ":9001" /data
@@ -144,3 +163,4 @@ volumes:
   airflow_logs:
   spark-data:
   minio_data:
+  grist_data:

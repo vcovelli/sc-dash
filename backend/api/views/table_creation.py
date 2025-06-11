@@ -12,14 +12,18 @@ def create_table_for_client(client_name: str):
     schema_path = Path(SCHEMA_DIR) / f"{client_name}_schema.csv"
     db_name = f"clientdata_{client_name}"
 
+    print(f"[create_table_for_client] Looking for schema at: {schema_path}")
+    print(f"[create_table_for_client] Target DB name: {db_name}")
+
     if not schema_path.exists():
+        print(f"[create_table_for_client] ❌ Schema CSV not found: {schema_path}")
         raise FileNotFoundError(f"Schema not found for client: {client_name}")
 
     # Connect to default DB to create client-specific DB if it doesn't exist
     default_conn = psycopg2.connect(
         dbname=os.getenv("PG_DATABASE"),
-        user=os.getenv("PG_USER"),
-        password=os.getenv("PG_PASSWORD"),
+        user=os.getenv("APP_DB_USER"),
+        password=os.getenv("APP_DB_PASSWORD"),
         host=os.getenv("PG_HOST"),
         port=os.getenv("PG_PORT")
     )
@@ -35,8 +39,8 @@ def create_table_for_client(client_name: str):
     # Now connect to the client-specific DB to create the table
     conn = psycopg2.connect(
         dbname=db_name,
-        user=os.getenv("PG_USER"),
-        password=os.getenv("PG_PASSWORD"),
+        user=os.getenv("APP_DB_USER"),
+        password=os.getenv("APP_DB_PASSWORD"),
         host=os.getenv("PG_HOST"),
         port=os.getenv("PG_PORT")
     )

@@ -1,91 +1,123 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { RecentFile } from "./types";
+import StatCards from "./Components/StatCards";
+import SetupAndPlan from "./Components/SetupAndPlan";
+import AlertsCard from "./Components/AlertsCard";
+import type { Alert } from "./Components/AlertsCard";
+import ActivityAndUploads from "./Components/ActivityAndUploads";
+import InsightsFeedbackHelp from "./Components/InsightsFeedbackHelp";
+
 import api from "@/lib/axios";
+
+const PLAN_LIMIT = 10000;
+const PLAN_TYPE = "Pro";
+const ROWS_USED = 2430;
+const DAYS_LEFT = 3;
+const ONBOARDING_STEPS = 5;
+const COMPLETED_STEPS = 3;
+const ACTIVITY_FEED = [
+  { text: "✅ Uploaded <b>orders.csv</b>", time: "2 hours ago" },
+  { text: "⚙️ Settings updated", time: "Yesterday" },
+  { text: "📤 Uploaded <b>inventory.csv</b>", time: "2 days ago" },
+];
+const ALERTS: Alert[] = [];
+const COMPLETED_KEYS = ["add_users", "upload_data", "verify_data"]; // Demo
 
 export default function DashboardPage() {
   const [fileCount, setFileCount] = useState<number | null>(null);
-  const [recentFiles, setRecentFiles] = useState<any[]>([]);
+  const [storageUsed, setStorageUsed] = useState<string | null>(null);
+  const [uptime, setUptime] = useState<string | null>(null);
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) return;
-
-    const fetchDashboardData = async () => {
-      try {
-        const res = await api.get("/api/dashboard-overview");
+    api.get("/api/dashboard-overview")
+      .then((res) => {
         setFileCount(res.data.total_files);
         setRecentFiles(res.data.recent_uploads || []);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
-        setRecentFiles([]);
-      }
-    };
-
-    fetchDashboardData();
+        setStorageUsed(res.data.storage_used);
+        setUptime(res.data.system_uptime);
+      })
+      .catch(() => setRecentFiles([]));
   }, []);
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">📊 SupplyWise Dashboard</h1>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-sm text-gray-500 mb-2">Total Files Uploaded</h2>
-          <p className="text-2xl font-semibold text-blue-600">
-            {fileCount !== null ? fileCount : "..."}
-          </p>
+    <section
+      className="
+        min-h-screen w-full
+        bg-gradient-to-br from-blue-50 to-indigo-100
+        dark:from-gray-900 dark:to-gray-950
+        transition-colors duration-500
+        px-2 sm:px-4 py-6 sm:py-10
+      "
+      style={{ fontSize: "var(--body)" }}
+    >
+      {/* Header & Quick Actions */}
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-4 sm:mb-8 px-0">
+        <div className="flex items-center gap-3">
+          <span style={{ fontSize: "var(--h1)" }}>📊</span>
+          <h1
+            style={{ fontSize: "var(--h1)" }}
+            className="font-extrabold text-gray-900 dark:text-gray-100 tracking-tight"
+          >
+            SupplyWise Dashboard
+          </h1>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-sm text-gray-500 mb-2">Storage Used</h2>
-          <p className="text-2xl font-semibold text-green-600">1.2 GB</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-sm text-gray-500 mb-2">System Uptime</h2>
-          <p className="text-2xl font-semibold text-purple-600">99.99%</p>
-        </div>
-      </div>
-
-      {/* Recent Uploads Table */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">🕒 Recent Uploads</h2>
-        {Array.isArray(recentFiles) && recentFiles.length > 0 ? (
-          <table className="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr className="text-gray-500">
-                <th className="border-b px-4 py-2">Filename</th>
-                <th className="border-b px-4 py-2">Rows</th>
-                <th className="border-b px-4 py-2">Uploaded</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentFiles.map((file, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 font-medium">{file?.file_name || "N/A"}</td>
-                  <td className="px-4 py-2">{file?.row_count ?? "-"}</td>
-                  <td className="px-4 py-2">
-                    {file?.uploaded_at
-                      ? new Date(file.uploaded_at).toLocaleString()
-                      : "Unknown"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-gray-500 text-sm">No recent uploads found.</p>
-        )}
-      </div>
-
-      {/* Quick Link */}
-      <div className="text-center mt-10">
-        <Link href="/uploads">
-          <button className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow hover:bg-blue-700 hover:scale-105 transition">
-            ➕ Upload a New File
+        <div className="flex flex-col w-full sm:w-auto sm:flex-row gap-2 sm:gap-2">
+          <Link href="/uploads" className="w-full sm:w-auto">
+            <button
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 shadow transition flex items-center gap-1 justify-center"
+              style={{ fontSize: "var(--body)" }}
+            >
+              <span style={{ fontSize: "var(--h2)" }}>➕</span> Upload File
+            </button>
+          </Link>
+          <button
+            className="w-full sm:w-auto px-4 py-2 bg-indigo-100 text-indigo-700 rounded-xl font-semibold hover:bg-indigo-200 transition shadow dark:bg-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-800 flex items-center gap-1 justify-center"
+            style={{ fontSize: "var(--body)" }}
+          >
+            🧑‍🤝‍🧑 Add User
           </button>
-        </Link>
+          <Link href="/onboarding/request-assist" className="w-full sm:w-auto">
+            <button
+              className="w-full sm:w-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition shadow dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 flex items-center gap-1 justify-center"
+              style={{ fontSize: "var(--body)" }}
+            >
+              💬 Request Support
+            </button>
+          </Link>
+        </div>
       </div>
-    </div>
+
+      {/* Main Responsive Grid */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 gap-4 sm:gap-6 px-0">
+        <StatCards
+          fileCount={fileCount}
+          storageUsed={storageUsed}
+          uptime={uptime}
+        />
+        <SetupAndPlan
+          planType={PLAN_TYPE}
+          planLimit={PLAN_LIMIT}
+          rowsUsed={ROWS_USED}
+          daysLeft={DAYS_LEFT}
+          onboardingSteps={ONBOARDING_STEPS}
+          completedSteps={COMPLETED_STEPS}
+          completedKeys={COMPLETED_KEYS}
+          showOnboarding={showOnboarding}
+          setShowOnboarding={setShowOnboarding}
+        />
+        <AlertsCard alerts={ALERTS} />
+        <ActivityAndUploads
+          activityFeed={ACTIVITY_FEED}
+          recentFiles={recentFiles}
+        />
+        <InsightsFeedbackHelp />
+      </div>
+    </section>
   );
 }
