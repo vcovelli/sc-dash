@@ -2,18 +2,19 @@ import React, { useState } from "react";
 import { Header } from "@tanstack/react-table";
 import { Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
-const RESIZER_HITBOX = 20; // Big for touch
+const RESIZER_HITBOX = 20;
 const RESIZER_BAR = 3;
+
+type ResizeEvent = React.MouseEvent<Element> | React.TouchEvent<Element>;
 
 export default function ColumnResizeHandle({ header }: { header: Header<Row, unknown> }) {
   const [hover, setHover] = useState(false);
 
-  // Only handle drag/resize, never context menu or long-press here!
-  const stopDnDAndResize = (e: React.MouseEvent | React.TouchEvent) => {
+  const stopDnDAndResize = (e: ResizeEvent) => {
     e.stopPropagation();
     e.preventDefault();
     const handler = header.getResizeHandler();
-    if (handler) handler(e as any);
+    if (handler) handler(e);
   };
 
   return (
@@ -46,7 +47,7 @@ export default function ColumnResizeHandle({ header }: { header: Header<Row, unk
           borderRadius: 2,
           marginLeft: (RESIZER_HITBOX - RESIZER_BAR) / 2,
           marginRight: (RESIZER_HITBOX - RESIZER_BAR) / 2,
-          background: "#999", // or your accent color
+          background: "#999",
         }}
       />
     </div>

@@ -22,7 +22,26 @@ const SAMPLE_DATA = [
   { name: "E", count: 189, revenue: 2181 },
 ];
 
-export function LineChartWidget({ config, data }) {
+type LineChartConfig = {
+  xField: string;
+  yFields: string[];
+  showLegend?: boolean;
+  lineColors?: string[];
+  // add more as needed
+};
+
+type DataRow = {
+  name: string;
+  [key: string]: string | number | undefined;
+};
+
+export function LineChartWidget({
+  config,
+  data,
+}: {
+  config: LineChartConfig;
+  data?: DataRow[];
+}) {
   const lineData = data || SAMPLE_DATA;
   return (
     <div className="w-full h-full min-w-0 min-h-0 flex items-center">
@@ -32,13 +51,16 @@ export function LineChartWidget({ config, data }) {
           <XAxis dataKey={config.xField || "name"} />
           <YAxis />
           <Tooltip />
-          <Legend />
+          {config.showLegend !== false && <Legend />}
           {(config.yFields || ["revenue"]).map((y, idx) => (
             <Line
               key={y}
               type="monotone"
               dataKey={y}
-              stroke={COLORS[idx % COLORS.length]}
+              stroke={
+                (config.lineColors && config.lineColors[idx]) ||
+                COLORS[idx % COLORS.length]
+              }
               strokeWidth={2}
               dot={false}
             />

@@ -1,7 +1,16 @@
 import GlassCard from "./GlassCard";
 import Link from "next/link";
 
-export default function AlertsCard({ alerts }: { alerts: any[] }) {
+export interface Alert {
+  type: string;
+  msg: string;
+  action?: {
+    label: string;
+    href: string;
+  };
+}
+
+export default function AlertsCard({ alerts }: { alerts: Alert[] }) {
   return (
     <div>
       {alerts.length > 0 ? (

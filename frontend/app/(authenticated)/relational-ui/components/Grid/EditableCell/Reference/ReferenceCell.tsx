@@ -8,11 +8,10 @@ import ReferenceList from "@/app/(authenticated)/relational-ui/components/Grid/E
 type ReferenceOption = { id: string; name: string };
 
 interface ReferenceCellProps {
-  value: any;
-  row: any;
+  value: string | number | null;
   rowId: string;
-  column: CustomColumnDef<any> & { referenceData?: ReferenceOption[] };
-  onSave: (id: string, key: string, value: any) => void;
+  column: CustomColumnDef<unknown> & { referenceData?: ReferenceOption[] };
+  onSave: (id: string, key: string, value: string | number | null) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
@@ -23,7 +22,6 @@ interface ReferenceCellProps {
 const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
   ({
     value: initialValue,
-    row,
     rowId,
     column,
     onSave,
@@ -33,14 +31,14 @@ const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
     fontSize,
     rowHeight,
   }) => {
-    const [value, setValue] = useState(initialValue);
+    const [value, setValue] = useState<string | number | null>(initialValue);
 
     useEffect(() => {
       setValue(initialValue);
     }, [initialValue]);
 
     const display = useMemo(() => {
-      if (!column.referenceData) return initialValue;
+      if (!column.referenceData) return initialValue == null ? "—" : String(initialValue);
       const match = column.referenceData.find((item) => String(item.id) === String(initialValue));
       return match?.name ?? "—";
     }, [initialValue, column.referenceData]);
@@ -54,7 +52,7 @@ const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
     );
 
     const handleDoubleClick = useCallback(
-      (e: React.MouseEvent) => {
+      (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         onStartEdit?.();
@@ -63,7 +61,7 @@ const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
     );
 
     const handleKeyDown = useCallback(
-      (e: React.KeyboardEvent) => {
+      (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (e.key === "Enter") {
           e.preventDefault();
           onStartEdit?.();
@@ -75,7 +73,7 @@ const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
     if (editing) {
       return (
         <ReferenceList
-          value={value}
+          value={value == null ? "" : String(value)}
           options={column.referenceData || []}
           onChange={handleChange}
           onEditComplete={onEditComplete}
@@ -99,5 +97,7 @@ const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
     );
   }
 );
+
+ReferenceCell.displayName = "ReferenceCell";
 
 export default ReferenceCell;

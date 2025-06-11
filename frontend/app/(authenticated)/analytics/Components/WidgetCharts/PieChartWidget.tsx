@@ -12,7 +12,21 @@ const SAMPLE_DATA = [
   { name: "E", count: 189 },
 ];
 
-export function PieChartWidget({ config, data }) {
+type PieChartConfig = {
+  xField: string;
+  yFields: string[];
+  showLegend?: boolean;
+};
+
+type DataRow = Record<string, unknown>;
+
+export function PieChartWidget({
+  config,
+  data,
+}: {
+  config: PieChartConfig;
+  data?: DataRow[];
+}) {
   const pieData = data || SAMPLE_DATA;
   const valueKey = (config.yFields && config.yFields[0]) || "count";
   const nameKey = config.xField || "name";

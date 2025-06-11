@@ -6,7 +6,7 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 interface CurrencyCellProps {
   value: number;
   rowId: string;
-  column: CustomColumnDef<any>;
+  column: CustomColumnDef<unknown>;
   onSave: (id: string, key: string, value: number) => void;
   editing?: boolean;
   onEditComplete?: () => void;
@@ -146,5 +146,7 @@ const CurrencyCell: React.FC<CurrencyCellProps> = React.memo(
     );
   }
 );
+
+CurrencyCell.displayName = "CurrencyCell";
 
 export default CurrencyCell;

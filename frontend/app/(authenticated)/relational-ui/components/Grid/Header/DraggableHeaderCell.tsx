@@ -6,7 +6,7 @@ import { Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 interface Props {
   header: Header<Row, unknown>;
-  children: (dragHandleProps: any) => React.ReactNode; // children is now a render function
+  children: (dragHandleProps: React.HTMLAttributes<HTMLSpanElement>) => React.ReactNode;
 }
 
 export default function DraggableHeaderCell({ header, children }: Props) {
@@ -30,7 +30,7 @@ export default function DraggableHeaderCell({ header, children }: Props) {
       {...attributes}
       className="relative"
     >
-      {children(listeners)} {/* Pass listeners ONLY to intended drag area */}
+      {children(listeners as React.HTMLAttributes<HTMLSpanElement>)} {/* Correctly typed */}
     </div>
   );
 }

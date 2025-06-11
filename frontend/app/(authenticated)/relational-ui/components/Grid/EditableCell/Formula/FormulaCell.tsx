@@ -4,11 +4,11 @@ import React from "react";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 interface FormulaCellProps {
-  value: any;
+  value: string | number | null | undefined;
   rowId: string;
-  column: CustomColumnDef<any>;
+  column: CustomColumnDef<unknown>;
   editing?: boolean;
-  onSave?: (id: string, key: string, value: any) => void;
+  onSave?: (id: string, key: string, value: string) => void;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
   fontSize?: number;
@@ -42,5 +42,7 @@ const FormulaCell: React.FC<FormulaCellProps> = React.memo(
     );
   }
 );
+
+FormulaCell.displayName = "FormulaCell";
 
 export default FormulaCell;

@@ -1,8 +1,12 @@
 import GlassCard from "./GlassCard";
+import type { RecentFile } from "../types";
 
-export default function ActivityAndUploads({ activityFeed, recentFiles }: {
-  activityFeed: { text: string, time: string }[],
-  recentFiles: any[],
+export default function ActivityAndUploads({
+  activityFeed,
+  recentFiles,
+}: {
+  activityFeed: { text: string; time: string }[];
+  recentFiles: RecentFile[];
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">

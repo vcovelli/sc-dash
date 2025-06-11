@@ -24,7 +24,7 @@ export default function SheetList() {
 
   // Settings panel state
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
-  const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<any> | null>(null);
+  const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
   const [columnSettingsSheetId, setColumnSettingsSheetId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function SheetList() {
   }, []);
 
   // Update a column's properties (e.g., type, currencyCode, header)
-  const handleUpdateColumn = useCallback((updatedCol: CustomColumnDef<any>) => {
+  const handleUpdateColumn = useCallback((updatedCol: CustomColumnDef<unknown>) => {
     if (!columnSettingsSheetId) {
       console.warn("[handleUpdateColumn] No sheet selected");
       setIsSettingsPanelOpen(false);

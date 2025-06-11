@@ -1,6 +1,6 @@
 export interface Row {
   __rowId: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type ColumnDataType =
@@ -21,20 +21,14 @@ export interface Option {
   name: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface CustomColumnDef<TData = Row> {
   accessorKey: string;
   header: string;
   type: ColumnDataType;
-
-  // For "choice" type columns
+  id?: string;
   choices?: string[] | Option[];
-
-  // For "reference" type columns
   referenceData?: Option[];
-
-  // For "formula" type columns
   formula?: string;
-
-  // For "currency" type columns
   currencyCode?: string;
 }

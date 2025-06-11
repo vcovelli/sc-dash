@@ -1,7 +1,12 @@
 import { Sparkles } from "lucide-react"; // Lucide or swap for your AI logo!
 import { motion } from "framer-motion";
 
-export default function RunAIInsightsButton({ onClick, className = "" }) {
+type RunAIInsightsButtonProps = {
+  onClick: React.MouseEventHandler<HTMLButtonElement>;
+  className?: string;
+};
+
+export default function RunAIInsightsButton({ onClick, className = "" }: RunAIInsightsButtonProps) {
   return (
     <motion.button
       whileHover={{ scale: 1.04, boxShadow: "0 0 16px 2px #6366f1" }}

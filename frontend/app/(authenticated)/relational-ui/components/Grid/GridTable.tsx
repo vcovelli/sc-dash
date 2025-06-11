@@ -85,18 +85,26 @@ const GridTable: React.FC<GridTableProps> = ({
     handleContextMenu,
     handleContextAction,
     setShowContextMenu,
-    setContextTarget,
-    getTouchHandlers, // <-- receive this from the hook
+    //setContextTarget,
+    getTouchHandlers,
   } = useContextMenu({
     data: dataState,
-    setData: (newData) => {
-      setDataState(newData);
-      onUpdateTable(tableName, { columns: rawColumns, data: newData });
+    setData: (newDataOrUpdater) => {
+      const nextRows =
+        typeof newDataOrUpdater === "function"
+          ? newDataOrUpdater(dataState)
+          : newDataOrUpdater;
+      setDataState(newDataOrUpdater); // always let React handle
+      onUpdateTable(tableName, { columns: rawColumns, data: nextRows });
     },
     rawColumns,
-    setRawColumns: (newCols) => {
-      setRawColumns(newCols);
-      onUpdateTable(tableName, { columns: newCols, data: dataState });
+    setRawColumns: (newColsOrUpdater) => {
+      setRawColumns(newColsOrUpdater);
+      const nextCols =
+        typeof newColsOrUpdater === "function"
+          ? newColsOrUpdater(rawColumns)
+          : newColsOrUpdater;
+      onUpdateTable(tableName, { columns: nextCols, data: dataState });
     },
     setRenameTarget,
     setRenamePosition,
@@ -106,7 +114,7 @@ const GridTable: React.FC<GridTableProps> = ({
 
   // Cell save handler
   const handleSave = useCallback(
-    (id: string, key: string, value: any) => {
+    (id: string, key: string, value: unknown) => {
       setDataState((prev) => {
         const updated = prev.map((row) =>
           ((row.__rowId ?? row.id) === id && key !== "id") ? { ...row, [key]: value } : row
@@ -218,7 +226,7 @@ const GridTable: React.FC<GridTableProps> = ({
     if (isSettingsPanelOpen && focusedColumn && !showRenameModal) {
       onOpenSettingsPanel(focusedColumn);
     }
-  }, [focusedColumn?.accessorKey, isSettingsPanelOpen, showRenameModal]);
+  }, [focusedColumn, isSettingsPanelOpen, showRenameModal, onOpenSettingsPanel]);
 
   // Table size/style from context
   const { fontSize, rowHeight } = useTableSettings();
@@ -239,7 +247,7 @@ const GridTable: React.FC<GridTableProps> = ({
         Math.max(col.getSize() || 120, MIN_COL_WIDTH)
       ),
     ],
-    [rowNumberWidth, table, fontSize]
+    [rowNumberWidth, table]
   );
 
   return (
@@ -263,13 +271,21 @@ const GridTable: React.FC<GridTableProps> = ({
             setShowRenameModal={setShowRenameModal}
             handleContextMenu={handleContextMenu}
             getTouchHandlers={getTouchHandlers}    // <-- pass here!
-            setRawColumns={(cols) => {
-              setRawColumns(cols);
-              onUpdateTable(tableName, { columns: cols, data: dataState });
+            setRawColumns={(colsOrUpdater) => {
+              const nextCols =
+                typeof colsOrUpdater === "function"
+                  ? colsOrUpdater(rawColumns)
+                  : colsOrUpdater;
+              setRawColumns(colsOrUpdater);
+              onUpdateTable(tableName, { columns: nextCols, data: dataState });
             }}
-            setData={(rows) => {
-              setDataState(rows);
-              onUpdateTable(tableName, { columns: rawColumns, data: rows });
+            setData={(rowsOrUpdater) => {
+              const nextRows =
+                typeof rowsOrUpdater === "function"
+                  ? rowsOrUpdater(dataState)
+                  : rowsOrUpdater;
+              setDataState(rowsOrUpdater);
+              onUpdateTable(tableName, { columns: rawColumns, data: nextRows });
             }}
             focusedColIndex={focusedColIndex}
             setFocusedRowIndex={setFocusedRowIndex}
@@ -290,7 +306,6 @@ const GridTable: React.FC<GridTableProps> = ({
             table={table}
             listHeight={scrollContainerRef.current?.clientHeight || 0}
             focusedCell={focusedCell}
-            editingCell={editingCell}
             handleCellClick={handleCellClick}
             handleContextMenu={handleContextMenu}
             getTouchHandlers={getTouchHandlers}

@@ -57,11 +57,11 @@ function MobileRotatePrompt() {
 
 export default function SheetsPage() {
   const [activeTableName, setActiveTableName] = useState<string>("orders");
-  const [columns, setColumns] = useState<CustomColumnDef<any>[]>([]);
+  const [columns, setColumns] = useState<CustomColumnDef<unknown>[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isTablePanelOpen, setIsTablePanelOpen] = useState(true);
-  const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<any> | null>(null);
+  const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
   const { showNavbar, setShowNavbar } = useNavbarVisibility();
 
   // --- Get user global font size (string value, e.g. "base", "sm")
@@ -69,7 +69,7 @@ export default function SheetsPage() {
   const userFontSize = settings.fontSize || "base";
   const userFontSizeIdx = Math.max(
     0,
-    FONT_SIZE_PRESETS.findIndex((p) => p.value === userFontSize)
+    FONT_SIZE_PRESETS.findIndex((v: { value: string; label: string; fontSize: number; rowHeight: number }) => v.value === userFontSize)
   );
 
   // CONTROLLED fontSizeIdx for TableSettingsProvider
@@ -101,10 +101,15 @@ export default function SheetsPage() {
         const json = await res.json();
 
         // --- Enforce a unique `id` on every column ---
-        const fixedCols: CustomColumnDef<any>[] = (json.columns || []).map((col: any, i: number) => ({
-          ...col,
-          id: col.id || col.accessorKey || `col_${i}_${Math.random().toString(36).slice(2, 8)}`
-        }));
+        const fixedCols: CustomColumnDef<unknown>[] = (json.columns || []).map(
+          (col: unknown, i: number) => {
+            const column = col as CustomColumnDef<unknown>;
+            return {
+              ...column,
+              id: column.id || column.accessorKey || `col_${i}_${Math.random().toString(36).slice(2, 8)}`
+            };
+          }
+        );
 
         setColumns(fixedCols);
         setRows(json.rows || []);
@@ -176,7 +181,7 @@ export default function SheetsPage() {
           {/* Right Buttons */}
           <div className="flex gap-2 items-center">
             <button
-              onClick={() => setShowNavbar((v) => !v)}
+              onClick={() => setShowNavbar(!showNavbar)}
               className={`${baseBtn} ${!showNavbar ? activeBtn : inactiveBtn}`}
               title={showNavbar ? "Hide Navbar" : "Show Navbar"}
               style={{ fontSize: toolbarFontSize }}

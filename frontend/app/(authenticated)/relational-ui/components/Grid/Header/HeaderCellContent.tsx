@@ -15,12 +15,11 @@ interface Props {
   onContextMenu: (e: React.MouseEvent) => void;
   fontSize: number;
   rowHeight: number;
-  dragHandleProps?: any; // <- NEW
+  dragHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
 }
 
 export default function HeaderCellContent({
   header,
-  col,
   colWidth,
   focused,
   onClick,

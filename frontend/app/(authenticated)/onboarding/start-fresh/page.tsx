@@ -20,39 +20,47 @@ export default function StartFreshPage() {
   const [includeSampleData, setIncludeSampleData] = useState(true);
 
   useEffect(() => {
-    const accessToken = localStorage.getItem("access_token");
-    const refreshToken = localStorage.getItem("refresh_token");
+  const accessToken = localStorage.getItem("access_token");
+  const refreshToken = localStorage.getItem("refresh_token");
 
-    const fetchProfile = async () => {
-      try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (res.data?.business_name) setBusinessName(res.data.business_name);
-      } catch (err: any) {
-        if (err.response?.status === 401 && refreshToken) {
-          try {
-            const refreshRes = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/token/refresh/`, {
-              refresh: refreshToken,
-            });
-            const newAccess = refreshRes.data.access;
-            localStorage.setItem("access_token", newAccess);
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.data?.business_name) setBusinessName(res.data.business_name);
+    } catch (err: unknown) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        (err as { response?: { status?: number } }).response?.status === 401 &&
+        refreshToken
+      ) {
+        try {
+          const refreshRes = await axios.post(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/token/refresh/`,
+            { refresh: refreshToken }
+          );
+          const newAccess = refreshRes.data.access;
+          localStorage.setItem("access_token", newAccess);
 
-            const profileRes = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`, {
-              headers: { Authorization: `Bearer ${newAccess}` },
-            });
-            if (profileRes.data?.business_name) setBusinessName(profileRes.data.business_name);
-          } catch (refreshErr) {
-            console.error("Token refresh failed", refreshErr);
-          }
-        } else {
-          console.error("Failed to fetch profile:", err);
+          const profileRes = await axios.get(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`,
+            { headers: { Authorization: `Bearer ${newAccess}` } }
+          );
+          if (profileRes.data?.business_name) setBusinessName(profileRes.data.business_name);
+        } catch (refreshErr) {
+          console.error("Token refresh failed", refreshErr);
         }
+      } else {
+        console.error("Failed to fetch profile:", err);
       }
-    };
+    }
+  };
 
-    fetchProfile();
-  }, []);
+  fetchProfile();
+}, []);
 
   const toggleFeature = (key: string) => {
     setSelectedFeatures((prev) =>

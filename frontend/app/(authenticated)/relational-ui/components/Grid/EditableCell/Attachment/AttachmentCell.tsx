@@ -7,9 +7,9 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 interface AttachmentCellProps {
   value: string | null;
   rowId: string;
-  column: CustomColumnDef<any>;
+  column: CustomColumnDef<unknown>;
   editing?: boolean;
-  onSave?: (id: string, key: string, value: any) => void;
+  onSave?: (id: string, key: string, value: string) => void;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
   fontSize?: number;
@@ -100,5 +100,7 @@ const AttachmentCell: React.FC<AttachmentCellProps> = React.memo(
     );
   }
 );
+
+AttachmentCell.displayName = "AttachmentCell";
 
 export default AttachmentCell;

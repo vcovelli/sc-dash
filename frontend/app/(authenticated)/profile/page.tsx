@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import { Cog6ToothIcon } from "@heroicons/react/24/solid";
 import OutsideClickModal from "@/components/OutsideClickModal";
 import {
@@ -73,15 +72,6 @@ export default function ProfilePage() {
     };
     fetchUserProfile();
   }, []);
-
-  const getFormattedJoinDate = () => {
-    try {
-      if (!user?.joined) return "N/A";
-      return format(new Date(user.joined), "MMMM d, yyyy");
-    } catch {
-      return "N/A";
-    }
-  };
 
   if (!user)
     return (
@@ -261,7 +251,7 @@ export default function ProfilePage() {
                 icon={<FaAdjust className="text-indigo-500" />}
                 value={settings.theme || "system"}
                 options={themes}
-                onChange={val => updateSetting("theme", val)}
+                onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
               />
 
               <div>
@@ -272,7 +262,7 @@ export default function ProfilePage() {
                 <FontSizeDropdown
                   value={settings.fontSize || "base"}
                   onChange={val => updateSetting("fontSize", val)}
-                  label={null}
+                  label={undefined}
                 />
               </div>
             </div>

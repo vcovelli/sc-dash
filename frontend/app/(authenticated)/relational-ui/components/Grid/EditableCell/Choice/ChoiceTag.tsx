@@ -100,7 +100,7 @@ const ChoiceTag: React.FC<Props> = React.memo(function ChoiceTag({
   }
 
   // Color and style logic
-  let tagStyle: React.CSSProperties = {
+  const tagStyle: React.CSSProperties = {
     fontSize,
     height: rowHeight - 4,
     lineHeight: `${rowHeight - 2}px`,

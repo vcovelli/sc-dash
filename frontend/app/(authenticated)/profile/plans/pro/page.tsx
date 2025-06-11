@@ -1,10 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
 
 export default function ProPlanPage() {
-  const router = useRouter();
 
   return (
     <FontSizeVarsProvider>

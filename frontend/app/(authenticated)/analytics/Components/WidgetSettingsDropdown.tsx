@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { WidgetConfig } from "../types";
 
 export default function WidgetSettingsDropdown({
@@ -22,7 +22,7 @@ export default function WidgetSettingsDropdown({
         left: rect.left + window.scrollX,
       });
     }
-  }, [anchorRef, showDropdown]);
+  }, [anchorRef]);
 
   // Dismiss on click-away
   useEffect(() => {

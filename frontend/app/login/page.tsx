@@ -1,10 +1,11 @@
 "use client";
 
 import axios from "axios";
+import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaLock } from "react-icons/fa";
-import { ThemeToggle } from "@/components/ThemeToggle"; // Make sure this import is correct in your file tree!
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ username: "", password: "" });
@@ -38,8 +39,9 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
-      setMessage(err.response?.data?.error || "❌ Login failed.");
+    } catch (err) {
+      const error = err as AxiosError<{ error?: string }>;
+      setMessage(error.response?.data?.error || "❌ Login failed.");
     } finally {
       setLoading(false);
     }
@@ -92,7 +94,7 @@ export default function LoginPage() {
             </p>
           )}
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <a href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">Sign up here</a>.
           </p>
         </form>

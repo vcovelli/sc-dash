@@ -31,7 +31,7 @@ class SheetSchemaAPIView(APIView):
             columns = [
                 {"accessorKey": "id", "header": "Product ID", "type": "text"},
                 {"accessorKey": "name", "header": "Name", "type": "text"},
-                {"accessorKey": "price", "header": "Price", "type": "currency"},
+                {"accessorKey": "price", "header": "Price", "type": "currency", "currencyCode": "USD"},
                 {"accessorKey": "stock_quantity", "header": "Stock", "type": "number"},
                 {"accessorKey": "supplier_id", "header": "Supplier", "type": "reference", "referenceData": [{"id": s["id"], "name": s["name"]} for s in supplier_refs]},
             ]
