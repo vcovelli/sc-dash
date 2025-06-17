@@ -37,8 +37,6 @@ services:
       - NODE_ENV=production
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app 
 
   backend:
     build:
@@ -133,34 +131,48 @@ services:
       timeout: 20s
       retries: 3
 
-  spark:
-    image: bitnami/spark:latest
-    container_name: spark
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    restart: always
     ports:
-      - "7077:7077"     # Spark master port
-      - "8081:8080"     # Spark web UI
-    environment:
-      - SPARK_MODE=master
+      - "11434:11434"
     volumes:
-      - spark-data:/bitnami/spark
-    networks:
-      - default
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-  spark-worker:
-    image: bitnami/spark:latest
-    container_name: spark-worker
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-    depends_on:
-      - spark
-    networks:
-      - default
+  #spark:
+    #image: bitnami/spark:latest
+    #container_name: spark
+    #ports:
+      #- "7077:7077"     # Spark master port
+      #- "8081:8080"     # Spark web UI
+    #environment:
+      #- SPARK_MODE=master
+    #volumes:
+      #- spark-data:/bitnami/spark
+    #networks:
+      #- default
+
+  #spark-worker:
+    #image: bitnami/spark:latest
+    #container_name: spark-worker
+    #environment:
+      #- SPARK_MODE=worker
+      #- SPARK_MASTER_URL=spark://spark:7077
+    #depends_on:
+      #- spark
+    #networks:
+      #- default
 
 volumes:
   mongo:
   pg_data:
   airflow_logs:
-  spark-data:
+  #spark-data:
   minio_data:
-  grist_data:
+  ollama_data:

@@ -173,10 +173,7 @@ export default function ColumnSettingsPanel({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
-        <h2
-          className="text-lg font-semibold dark:text-white flex items-center gap-2"
-          style={{ fontSize: "var(--h2)" }}
-        >
+        <h2 className="text-lg font-semibold dark:text-white flex items-center gap-2" style={{ fontSize: "var(--h2)" }}>
           <span className="text-xl">⚙️</span> Column Settings
         </h2>
         <button onClick={onClose} aria-label="Close">
@@ -203,28 +200,22 @@ export default function ColumnSettingsPanel({
         {/* Choice Options Editor */}
         {type === "choice" && (
           <div>
-            <label className="block mb-2 text-xs font-semibold">Choice Options</label>
+            <label className="block mb-2 text-xs font-semibold text-gray-700 dark:text-gray-300">Choice Options</label>
             <div className="space-y-2">
               {choices.map((opt, idx) => (
                 <div
                   key={opt.id}
-                  className="relative flex items-center gap-3 py-1 px-2 rounded group bg-white dark:bg-gray-800 border border-transparent hover:border-blue-200"
-                  style={{
-                    minHeight: Math.max(28, preset.rowHeight * 0.8),
-                    fontSize: preset.fontSize,
-                  }}
+                  className="relative flex items-center gap-3 py-1 px-2 rounded group bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700"
+                  style={{ minHeight: Math.max(28, preset.rowHeight * 0.8), fontSize: preset.fontSize }}
                 >
-                  {/* Color Square */}
                   <button
                     type="button"
                     title="Change color"
-                    className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                    className="w-6 h-6 rounded border border-gray-300 dark:border-gray-600 flex-shrink-0"
                     style={{ background: opt.color || "#ddd", borderColor: opt.color || "#bbb" }}
                     onClick={() => setEditingChoiceIdx(editingChoiceIdx === idx ? null : idx)}
                     tabIndex={0}
                   />
-
-                  {/* POPUP ColorSwatchGrid (absolute, closes on pick or outside click) */}
                   {editingChoiceIdx === idx && (
                     <div
                       ref={colorPickerRef}
@@ -239,7 +230,6 @@ export default function ColumnSettingsPanel({
                         }}
                         swatchSize={swatchSize}
                       />
-                      {/* Custom hex input */}
                       <div className="flex items-center gap-2 mt-2">
                         <input
                           type="color"
@@ -248,7 +238,7 @@ export default function ColumnSettingsPanel({
                             handleChangeChoiceColor(idx, e.target.value);
                             setEditingChoiceIdx(null);
                           }}
-                          className="w-7 h-7 border rounded"
+                          className="w-7 h-7 border rounded cursor-pointer"
                           title="Custom color"
                         />
                         <input
@@ -257,56 +247,54 @@ export default function ColumnSettingsPanel({
                           value={opt.color || ""}
                           onChange={e => handleChangeChoiceColor(idx, e.target.value)}
                           placeholder="#hex"
-                          className="w-16 px-1 py-0.5 border rounded text-xs"
+                          className="w-16 px-1 py-0.5 border rounded text-xs bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white"
                         />
                       </div>
                     </div>
                   )}
-
-                  {/* Option Name (editable) */}
                   <input
                     value={opt.name}
                     onChange={e => handleChangeChoiceName(idx, e.target.value)}
-                    className="flex-1 min-w-0 px-2 py-1 border rounded text-xs overflow-hidden"
-                    style={{
-                      fontSize: preset.fontSize,
-                      minHeight: Math.max(24, preset.rowHeight * 0.7),
-                    }}
+                    className="flex-1 min-w-0 px-2 py-1 border rounded text-xs bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white"
+                    style={{ fontSize: preset.fontSize, minHeight: Math.max(24, preset.rowHeight * 0.7) }}
                     maxLength={30}
                   />
-                  {/* Remove button */}
                   <button
+                    type="button"
                     onClick={() => handleRemoveChoice(idx)}
-                    className="text-red-500 text-xs ml-1 opacity-70 hover:opacity-100"
-                    tabIndex={0}
-                    style={{ minWidth: 20 }}
-                  >✕</button>
+                    className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                    title="Remove choice"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
-            </div>
-            {/* Add Option Row */}
-            <div className="flex items-center gap-2 mt-3 px-2">
-              <input
-                value={newChoice}
-                onChange={e => setNewChoice(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-1 border rounded text-xs overflow-hidden"
-                placeholder="Add option…"
-                onKeyDown={e => e.key === "Enter" && handleAddChoice()}
-                style={{
-                  fontSize: preset.fontSize,
-                  minHeight: Math.max(24, preset.rowHeight * 0.7),
-                }}
-                maxLength={30}
-              />
-              <button
-                onClick={handleAddChoice}
-                className="px-2 py-1 bg-blue-600 text-white rounded text-xs flex-shrink-0"
-                style={{
-                  fontSize: preset.fontSize <= 14 ? 12 : 14,
-                  minWidth: 38, // stays smaller on XL font
-                  maxWidth: 44,
-                }}
-              >Add</button>
+              {/* Add Option Row */}
+              <div className="flex items-center gap-2 mt-3 px-2">
+                <input
+                  value={newChoice}
+                  onChange={e => setNewChoice(e.target.value)}
+                  className="flex-1 min-w-0 px-2 py-1 border rounded text-xs overflow-hidden"
+                  placeholder="Add option…"
+                  onKeyDown={e => e.key === "Enter" && handleAddChoice()}
+                  style={{
+                    fontSize: preset.fontSize,
+                    minHeight: Math.max(24, preset.rowHeight * 0.7),
+                  }}
+                  maxLength={30}
+                />
+                <button
+                  onClick={handleAddChoice}
+                  className="px-2 py-1 bg-blue-600 text-white rounded text-xs flex-shrink-0"
+                  style={{
+                    fontSize: preset.fontSize <= 14 ? 12 : 14,
+                    minWidth: 38,
+                    maxWidth: 44,
+                  }}
+                >
+                  Add
+                </button>
+              </div>
             </div>
           </div>
         )}

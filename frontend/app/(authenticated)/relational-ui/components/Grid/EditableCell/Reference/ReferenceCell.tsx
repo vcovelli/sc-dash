@@ -45,10 +45,16 @@ const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
 
     const handleChange = useCallback(
       (newId: string) => {
-        setValue(newId);
-        onSave(rowId, column.accessorKey, newId);
+        if (newId !== value) {
+          setValue(newId);
+          onSave(rowId, column.accessorKey, newId);
+        }
+        // Delay edit completion to ensure dropdown finishes animating/closing
+        setTimeout(() => {
+          onEditComplete?.();
+        }, 100);
       },
-      [onSave, rowId, column.accessorKey]
+      [value, onSave, rowId, column.accessorKey, onEditComplete]
     );
 
     const handleDoubleClick = useCallback(
@@ -90,9 +96,18 @@ const ReferenceCell: React.FC<ReferenceCellProps> = React.memo(
         onDoubleClick={handleDoubleClick}
         onKeyDown={handleKeyDown}
         tabIndex={0}
-        style={{ fontSize, height: rowHeight, minHeight: rowHeight, lineHeight: `${rowHeight}px` }}
+        style={{
+          fontSize,
+          height: rowHeight,
+          minHeight: rowHeight,
+          lineHeight: `${rowHeight}px`,
+        }}
       >
-        <ChoiceTag value={display} fontSize={fontSize} rowHeight={rowHeight} />
+        <ChoiceTag
+          value={display}
+          fontSize={fontSize}
+          rowHeight={rowHeight}
+        />
       </div>
     );
   }

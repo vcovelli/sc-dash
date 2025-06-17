@@ -21,7 +21,8 @@ const FULL_BLEED_ROUTES = [
   "/analytics",
   "/assistant",
   "/terms",
-  "/privacy"
+  "/privacy",
+  "/"
 ];
 
 // You may want analytics to be footerless even if it's not a "full width" page

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
@@ -36,17 +38,24 @@ const TextCell = React.memo(function TextCell({
     }
   }, [editing]);
 
+  useEffect(() => {
+    setVal(value);
+  }, [value]);
+
   const handleBlur = useCallback(() => {
-    if (val !== value) onSave(rowId, column.accessorKey, val);
+    if (val !== value) {
+      onSave(rowId, column.accessorKey, val);
+    }
     requestAnimationFrame(() => onEditComplete?.());
   }, [val, value, onSave, rowId, column.accessorKey, onEditComplete]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") inputRef.current?.blur();
+      if (e.key === "Enter") {
+        inputRef.current?.blur();
+      }
       if (e.key === "Escape") {
         setVal(value);
-        inputRef.current?.blur();
         requestAnimationFrame(() => onEditComplete?.());
       }
     },
@@ -67,14 +76,12 @@ const TextCell = React.memo(function TextCell({
     );
   }
 
+  const displayValue = value == null || value === "" ? "" : String(value);
+
   return (
     <div
       className="w-full h-full px-2 py-1 flex items-center min-w-0 select-none cursor-pointer"
-      style={{
-        fontSize,
-        minHeight: rowHeight,
-        height: rowHeight,
-      }}
+      style={{ fontSize, minHeight: rowHeight, height: rowHeight }}
       tabIndex={0}
       onDoubleClick={(e) => {
         e.preventDefault();
@@ -87,12 +94,10 @@ const TextCell = React.memo(function TextCell({
     >
       <span
         className="block truncate min-w-0 max-w-full whitespace-nowrap"
-        style={{
-          width: "100%",
-        }}
+        style={{ width: "100%" }}
         title={typeof value === "string" && value.length > 0 ? value : undefined}
       >
-        {value || <span className="text-gray-400">—</span>}
+        {displayValue || <span className="text-gray-400">—</span>}
       </span>
     </div>
   );

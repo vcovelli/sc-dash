@@ -9,6 +9,7 @@ sc_env
 
 # Ignore Airflow logs, PIDs, DB, and configs
 standalone_admin_password.txt
+static
 
 # Ignore database files
 *.sqlite3
