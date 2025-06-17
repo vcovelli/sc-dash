@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
           <div>
             <h2 className="font-bold text-xl mb-1">Contact</h2>
             <p>
-              Have questions? <Link href="/support" className="text-blue-700 dark:text-blue-300 underline font-medium">Contact our support team</Link> any time.
+              Have questions? <Link href="/request-assist" className="text-blue-700 dark:text-blue-300 underline font-medium">Contact our support team</Link> any time.
             </p>
           </div>
         </div>

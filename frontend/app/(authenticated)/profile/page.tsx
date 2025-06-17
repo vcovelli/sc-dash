@@ -62,7 +62,7 @@ export default function ProfilePage() {
         const token = localStorage.getItem("access_token");
         if (!token) return;
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/profile/`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me/`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setUser(res.data);

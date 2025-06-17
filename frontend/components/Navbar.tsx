@@ -58,6 +58,7 @@ export default function Navbar() {
             <Link href="/uploads" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Uploads</Link>
             <Link href="/relational-ui" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Data</Link>
             <Link href="/analytics" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Analytics</Link>
+            <Link href="/assistant" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Assistant</Link>
             <Link href="/profile" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Profile</Link>
             <ThemeToggle />
             <button
@@ -85,6 +86,7 @@ export default function Navbar() {
             <Link href="/uploads" className="hover:text-blue-600 dark:hover:text-blue-400 transition" onClick={() => setMenuOpen(false)}>Uploads</Link>
             <Link href="/relational-ui" className="hover:text-blue-600 dark:hover:text-blue-400 transition" onClick={() => setMenuOpen(false)}>Data</Link>
             <Link href="/analytics" className="hover:text-blue-600 dark:hover:text-blue-400 transition" onClick={() => setMenuOpen(false)}>Analytics</Link>
+            <Link href="/assistant" className="hover:text-blue-600 dark:hover:text-blue-400 transition" onClick={() => setMenuOpen(false)}>Assistant</Link>
             <Link href="/profile" className="hover:text-blue-600 dark:hover:text-blue-400 transition" onClick={() => setMenuOpen(false)}>Profile</Link>
             <div className="my-2">
               <ThemeToggle />

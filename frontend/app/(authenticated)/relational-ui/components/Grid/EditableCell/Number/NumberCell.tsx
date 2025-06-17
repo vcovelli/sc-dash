@@ -4,10 +4,10 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 interface NumberCellProps {
-  value: number;
+  value: number | null;
   rowId: string;
   column: CustomColumnDef<unknown>;
-  onSave: (id: string, key: string, value: number) => void;
+  onSave: (id: string, key: string, value: number | null) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   fontSize: number;
@@ -25,11 +25,13 @@ const NumberCell: React.FC<NumberCellProps> = React.memo(
     fontSize,
     rowHeight
   }) => {
-    const [value, setValue] = useState<string>(initialValue?.toString() ?? "");
+    const [value, setValue] = useState<string>(
+      typeof initialValue === "number" ? initialValue.toString() : ""
+    );
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-      setValue(initialValue?.toString() ?? "");
+      setValue(typeof initialValue === "number" ? initialValue.toString() : "");
     }, [initialValue]);
 
     useEffect(() => {
@@ -44,7 +46,13 @@ const NumberCell: React.FC<NumberCellProps> = React.memo(
     }, []);
 
     const commitSave = useCallback(() => {
-      const parsed = parseFloat(value);
+      const trimmed = value.trim();
+      if (trimmed === "") {
+        onSave(rowId, column.accessorKey, null); // save null if field is cleared
+        return;
+      }
+
+      const parsed = parseFloat(trimmed);
       if (!isNaN(parsed)) {
         onSave(rowId, column.accessorKey, parsed);
       }
@@ -68,7 +76,7 @@ const NumberCell: React.FC<NumberCellProps> = React.memo(
 
       if (e.key === "Escape") {
         e.preventDefault();
-        setValue(initialValue?.toString() ?? "");
+        setValue(typeof initialValue === "number" ? initialValue.toString() : "");
         setTimeout(() => onEditComplete?.(), 0);
       }
     }, [commitSave, initialValue, onEditComplete]);
