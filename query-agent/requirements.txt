@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+langchain
+langchain-community
+openai
+psycopg2-binary
