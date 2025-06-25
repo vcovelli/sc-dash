@@ -32,7 +32,7 @@ export default function BarChartSettingsPanel({
   xColumns,
   yColumns,
   updateSetting,
-  toggleYField
+  //toggleYField
 }: Props) {
   // --- Type Guard: Only render for bar charts! ---
   if (settings.type !== "bar") return null;
@@ -45,57 +45,57 @@ export default function BarChartSettingsPanel({
   return (
     <>
       {/* Data Section */}
-      <Section title="Data">
-        <div className="mb-2">
-          <label className="block text-xs mb-1">Table:</label>
-          <select
-            value={settings.table}
-            onChange={e => updateSetting("table", e.target.value)}
-            className="p-2 rounded border w-full"
-          >
-            {mockTables.map(t => (
-              <option key={t.name} value={t.name}>{t.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-2">
-          <label className="block text-xs mb-1">X Column:</label>
-          <select
-            value={settings.xField}
-            onChange={e => updateSetting("xField", e.target.value)}
-            className="p-2 rounded border w-full"
-          >
-            {xColumns.map(col => (
-              <option key={col.name} value={col.name}>{col.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs mb-1">Y Columns (Metrics):</label>
-          {yColumns.length === 0 ? (
-            <div className="text-xs text-red-500 italic mt-1">
-              No numeric columns available in this table.
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {yColumns.map(col => (
-                <label
-                  key={col.name}
-                  className="inline-flex items-center bg-white dark:bg-gray-900 rounded px-2 py-1 border"
-                >
+        <Section title="Data">
+          <div className="mb-2">
+            <label className="block text-xs mb-1 text-gray-700 dark:text-gray-300">Table:</label>
+            <select
+              value={settings.table}
+              onChange={e => updateSetting("table", e.target.value)}
+              className="p-2 rounded border w-full bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              {mockTables.map(t => (
+                <option key={t.name} value={t.name}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-2">
+            <label className="block text-xs mb-1 text-gray-700 dark:text-gray-300">X Column:</label>
+            <select
+              value={settings.xField}
+              onChange={e => updateSetting("xField", e.target.value)}
+              className="p-2 rounded border w-full bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              {xColumns.map(col => (
+                <option key={col.name} value={col.name}>{col.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs mb-1 text-gray-700 dark:text-gray-300">Y Columns (Metrics):</label>
+            {yColumns.length === 0 ? (
+              <div className="text-xs text-red-600 dark:text-red-400 italic mt-1">
+                No numeric columns available in this table.
+              </div>
+            ) : (
+              yColumns.map(col => (
+                <div key={col.name} className="flex items-center space-x-2 mb-1">
                   <input
                     type="checkbox"
-                    checked={settings.yFields?.includes(col.name)}
-                    onChange={() => toggleYField(col.name)}
-                    className="mr-1"
+                    checked={settings.yFields.includes(col.name)}
+                    onChange={() => {
+                      const newY = settings.yFields.includes(col.name)
+                        ? settings.yFields.filter(f => f !== col.name)
+                        : [...settings.yFields, col.name];
+                      updateSetting("yFields", newY);
+                    }}
+                    className="accent-blue-600"
                   />
-                  {col.name}
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-      </Section>
+                  <span className="text-sm text-gray-800 dark:text-gray-100">{col.name}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </Section>
 
       {/* Appearance Section */}
       <Section title="Appearance">

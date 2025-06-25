@@ -73,7 +73,7 @@ export default function TermsOfServicePage() {
           <div>
             <h2 className="font-bold text-xl mb-1">8. Contact</h2>
             <p>
-              Questions? Reach out any time via our <Link href="/support" className="text-blue-700 dark:text-blue-300 underline font-medium">Support page</Link>.
+              Questions? Reach out any time via our <Link href="/request-assist" className="text-blue-700 dark:text-blue-300 underline font-medium">Support page</Link>.
             </p>
           </div>
         </div>

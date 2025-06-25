@@ -9,7 +9,7 @@ export const useUploadedFiles = () => {
   const fetchFiles = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/uploaded-files");
+      const res = await api.get("/uploaded-files/");
       setFiles(res.data);
     } catch (err) {
       console.error("Failed to fetch uploaded files", err);

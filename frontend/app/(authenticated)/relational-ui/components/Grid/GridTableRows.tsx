@@ -21,6 +21,7 @@ interface Props {
   columnHighlightMode?: boolean;
   listHeight: number;
   columnWidths: number[];
+  rowNumberWidth: number;
 }
 
 interface MemoizedRowRendererProps {
@@ -40,11 +41,6 @@ interface MemoizedRowRendererProps {
   rowNumberWidth: number;
   rowHeight: number;
 }
-
-const getRowNumberColumnWidth = (rowCount: number, fontSize: number) => {
-  const digits = String(rowCount).length;
-  return digits * fontSize + fontSize * 2;
-};
 
 const MemoizedRowRenderer = ({
   row,
@@ -166,34 +162,64 @@ const GridTableRows: React.FC<Props> = ({
   setFocusedColIndex,
   columnHighlightMode = false,
   listHeight,
+  rowNumberWidth,
 }) => {
   const { fontSize, rowHeight, zebraStriping } = useTableSettings();
   const fontVars = getFontVars(fontSize || "base");
   const rows = table.getRowModel().rows;
   const computedRowHeight = rowHeight ?? Math.round(fontSize * 1.7);
-  const rowNumberWidth = getRowNumberColumnWidth(rows.length, fontSize);
+
+  // Add a "buffer" to help with off-by-one pixel issues at normal font sizes
+  // This should be the maximum pixel value where a single row might get cut off
+  const bufferPx = 3; // tweak this if you see the bug reappear
+
+  const realRowsHeight = rows.length * computedRowHeight;
+  const allRowsFit = realRowsHeight <= listHeight - bufferPx;
+  const shouldVirtualize = rows.length > 10 && !allRowsFit;
+  const needsGhostRow = shouldVirtualize;
 
   const RowRenderer = useCallback(
-    ({ index, style }: { index: number; style: React.CSSProperties }) => (
-      <MemoizedRowRenderer
-        key={rows[index]?.id || index}
-        row={rows[index]}
-        index={index}
-        style={style}
-        focusedCell={focusedCell}
-        handleCellClick={handleCellClick}
-        handleContextMenu={handleContextMenu}
-        getTouchHandlers={getTouchHandlers}
-        zebraStriping={zebraStriping}
-        focusedColIndex={focusedColIndex}
-        focusedRowIndex={focusedRowIndex}
-        setFocusedRowIndex={setFocusedRowIndex}
-        setFocusedColIndex={setFocusedColIndex}
-        columnHighlightMode={columnHighlightMode}
-        rowNumberWidth={rowNumberWidth}
-        rowHeight={computedRowHeight}
-      />
-    ),
+    ({ index, style }: { index: number; style: React.CSSProperties }) => {
+      if (index >= rows.length) {
+        // Ghost row only for scrolling case
+        if (!needsGhostRow) return null;
+        return (
+          <div
+            key="ghost-row"
+            aria-hidden="true"
+            style={{
+              ...style,
+              height: computedRowHeight,
+              minHeight: computedRowHeight,
+              width: "100%",
+              background: "transparent",
+              gridColumn: `span ${table.getVisibleLeafColumns().length + 1}`,
+            }}
+          />
+        );
+      }
+      // Real row
+      return (
+        <MemoizedRowRenderer
+          key={rows[index]?.id || index}
+          row={rows[index]}
+          index={index}
+          style={style}
+          focusedCell={focusedCell}
+          handleCellClick={handleCellClick}
+          handleContextMenu={handleContextMenu}
+          getTouchHandlers={getTouchHandlers}
+          zebraStriping={zebraStriping}
+          focusedColIndex={focusedColIndex}
+          focusedRowIndex={focusedRowIndex}
+          setFocusedRowIndex={setFocusedRowIndex}
+          setFocusedColIndex={setFocusedColIndex}
+          columnHighlightMode={columnHighlightMode}
+          rowNumberWidth={rowNumberWidth}
+          rowHeight={computedRowHeight}
+        />
+      );
+    },
     [
       rows,
       focusedCell,
@@ -208,32 +234,33 @@ const GridTableRows: React.FC<Props> = ({
       columnHighlightMode,
       rowNumberWidth,
       computedRowHeight,
+      table,
+      needsGhostRow,
     ]
   );
-
-  const shouldVirtualize = rows.length > 10;
-  const virtualListHeight = Math.min(listHeight, rows.length * computedRowHeight);
 
   return (
     <div style={fontVars}>
       <AnimatePresence initial={false}>
-        {shouldVirtualize ? (
-          <List
-            height={virtualListHeight}
-            itemCount={rows.length}
-            itemSize={computedRowHeight}
-            width="100%"
-          >
-            {RowRenderer}
-          </List>
-        ) : (
-          <div>
+        {allRowsFit ? (
+          // No scroll: just render all rows, no ghost row, no virtualization
+          <div style={{ display: "flex", flexDirection: "column", width: "100%", overflowY: "unset" }}>
             {rows.map((_, i) => (
               <React.Fragment key={rows[i]?.id || i}>
                 {RowRenderer({ index: i, style: {} })}
               </React.Fragment>
             ))}
           </div>
+        ) : (
+          // Scroll/virtualize: only if needed, ghost row at the end
+          <List
+            height={listHeight}
+            itemCount={needsGhostRow ? rows.length + 1 : rows.length}
+            itemSize={computedRowHeight}
+            width="100%"
+          >
+            {RowRenderer}
+          </List>
         )}
       </AnimatePresence>
     </div>

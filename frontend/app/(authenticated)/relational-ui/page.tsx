@@ -10,9 +10,19 @@ import { useNavbarVisibility } from "@/components/ClientLayoutWrapper";
 import TableSelectorPanel from "@/app/(authenticated)/relational-ui/components/UX/TableSelectorPanel";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import { FONT_SIZE_PRESETS } from "@/components/FontSizeDropdown";
+import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
+import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
 
 const PANEL_WIDTH = 320;
 const availableTables = ["orders", "products", "customers", "suppliers", "warehouses"];
+
+const schemaNameMap: Record<string, string> = {
+  orders: "orders",
+  products: "products",
+  customers: "customers",
+  suppliers: "suppliers",
+  warehouses: "warehouses",
+};
 
 const activeBtn =
   "bg-blue-100 text-blue-700 border-blue-400 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-600";
@@ -21,7 +31,6 @@ const inactiveBtn =
 const baseBtn =
   "px-3 py-1 rounded border text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400";
 
-// --- Mobile Rotate Prompt Overlay ---
 function MobileRotatePrompt() {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -64,25 +73,13 @@ export default function SheetsPage() {
   const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
   const { showNavbar, setShowNavbar } = useNavbarVisibility();
 
-  // --- Get user global font size (string value, e.g. "base", "sm")
   const { settings } = useUserSettings();
   const userFontSize = settings.fontSize || "base";
-  const userFontSizeIdx = Math.max(
-    0,
-    FONT_SIZE_PRESETS.findIndex((v: { value: string; label: string; fontSize: number; rowHeight: number }) => v.value === userFontSize)
-  );
-
-  // CONTROLLED fontSizeIdx for TableSettingsProvider
+  const userFontSizeIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((v) => v.value === userFontSize));
   const [fontSizeIdx, setFontSizeIdx] = useState(userFontSizeIdx);
-
-  // SSR/CSR hydration fix: only use dynamic font size after mount
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-
-  // Sync local state with user profile settings, so changing the profile updates the sheet
-  useEffect(() => {
-    setFontSizeIdx(userFontSizeIdx);
-  }, [userFontSizeIdx]);
+  useEffect(() => setFontSizeIdx(userFontSizeIdx), [userFontSizeIdx]);
 
   useEffect(() => {
     if (!activeTableName) return;
@@ -90,29 +87,40 @@ export default function SheetsPage() {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/schema/${activeTableName}/`, {
+
+        const apiSlug = schemaNameMap[activeTableName] || activeTableName;
+        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schema/${apiSlug}/`;
+
+        const res = await fetch(url, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         });
-        if (!res.ok) return;
+
+        if (!res.ok) {
+          console.error("Schema fetch failed", res.status);
+          return;
+        }
+
         const json = await res.json();
 
-        // --- Enforce a unique `id` on every column ---
-        const fixedCols: CustomColumnDef<unknown>[] = (json.columns || []).map(
-          (col: unknown, i: number) => {
-            const column = col as CustomColumnDef<unknown>;
-            return {
-              ...column,
-              id: column.id || column.accessorKey || `col_${i}_${Math.random().toString(36).slice(2, 8)}`
-            };
-          }
-        );
+        const fixedCols: CustomColumnDef<unknown>[] = (json.columns || []).map((col: unknown, i: number) => {
+          const column = col as CustomColumnDef<unknown>;
+          return {
+            ...column,
+            id: column.id || column.accessorKey || `col_${i}_${Math.random().toString(36).slice(2, 8)}`,
+          };
+        });
 
-        setColumns(fixedCols);
-        setRows(json.rows || []);
+        const enrichedCols = await enrichSchemaWithReferenceData(fixedCols);
+        const populatedRows = (json.rows || []).length > 0
+          ? json.rows
+          : [{ ...generateEmptyRow(enrichedCols) }];
+
+        setColumns(enrichedCols);
+        setRows(populatedRows);
       } catch (error) {
         console.error("Error loading table data:", error);
       }
@@ -120,7 +128,6 @@ export default function SheetsPage() {
     fetchData();
   }, [activeTableName]);
 
-  // Use mounted-safe font size for SSR/CSR hydration
   const toolbarFontSize =
     mounted && FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
       ? FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
@@ -128,9 +135,7 @@ export default function SheetsPage() {
 
   return (
     <TableSettingsProvider fontSizeIdx={fontSizeIdx} setFontSizeIdx={setFontSizeIdx}>
-      {/* Mobile landscape-only prompt */}
       <MobileRotatePrompt />
-
       <RelationalWorkspaceLayout
         leftPanel={
           <TableSelectorPanel
@@ -151,10 +156,7 @@ export default function SheetsPage() {
                 onClose={() => setIsSettingsPanelOpen(false)}
                 onUpdate={(updatedCol) => {
                   setColumns((cols) =>
-                    cols.map((col) =>
-                      // Always use id for matching (guaranteed unique by above loader)
-                      col.id === updatedCol.id ? updatedCol : col
-                    )
+                    cols.map((col) => (col.id === updatedCol.id ? updatedCol : col))
                   );
                   setIsSettingsPanelOpen(false);
                 }}
@@ -165,9 +167,7 @@ export default function SheetsPage() {
           )
         }
       >
-        {/* Top Toolbar */}
         <div className="flex justify-between items-center px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 transition-colors">
-          {/* Left Buttons */}
           <div className="flex gap-2 items-center">
             <button
               onClick={() => setIsTablePanelOpen((v) => !v)}
@@ -178,7 +178,6 @@ export default function SheetsPage() {
               📋 {isTablePanelOpen ? "Hide Tables" : "Show Tables"}
             </button>
           </div>
-          {/* Right Buttons */}
           <div className="flex gap-2 items-center">
             <button
               onClick={() => setShowNavbar(!showNavbar)}
@@ -199,8 +198,7 @@ export default function SheetsPage() {
           </div>
         </div>
 
-        {/* Scrollable Grid */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-h-0 flex flex-col">
           <GridTable
             tableName={activeTableName}
             columns={columns}

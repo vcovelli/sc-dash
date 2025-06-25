@@ -13,12 +13,12 @@ export default function FirstTimeSetupPage() {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     axios
-      .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-schema/`, {
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-table-schemas/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        const headers = res.data?.expected_headers || [];
-        setHasSchema(headers.length > 0);
+        // res.data is an array of schema objects
+        setHasSchema(Array.isArray(res.data) && res.data.length > 0);
       })
       .catch(() => setHasSchema(false));
   }, []);

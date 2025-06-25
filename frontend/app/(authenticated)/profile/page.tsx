@@ -33,12 +33,6 @@ const themes = [
   { value: "system", label: <>🖥️ System</> },
 ];
 
-// ---- Plan Usage Card Data (replace with real data as needed) ----
-const PLAN_TYPE = "Pro";
-const PLAN_LIMIT = 10000;
-const ROWS_USED = 2430;
-const DAYS_LEFT = 3;
-
 export default function ProfilePage() {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
@@ -48,13 +42,13 @@ export default function ProfilePage() {
     plan: string;
     joined: string;
     uploads: number;
+    usage: number;
+    usage_quota: number;
+    days_left: number;
   }>(null);
 
   // ------- USE GLOBAL SETTINGS CONTEXT ---------
   const { settings, updateSetting } = useUserSettings();
-
-  // UI for collapsible settings
-  const [showPrefs, setShowPrefs] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -190,83 +184,76 @@ export default function ProfilePage() {
             style={{ fontSize: "var(--body)" }}>
             <span className="inline-block px-2 py-1 text-xs rounded bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-900"
               style={{ fontSize: "var(--small)" }}>
-              {PLAN_TYPE} Plan
+              {user.plan} Plan
             </span>
             Usage
           </div>
           <div className="flex items-end gap-2 mb-1">
             <span className="text-2xl font-bold text-gray-800 dark:text-gray-100"
               style={{ fontSize: "var(--h2)" }}>
-              {ROWS_USED.toLocaleString()}
+              {(user.usage ?? 0).toLocaleString()}
             </span>
             <span className="text-gray-600 dark:text-gray-400 text-sm"
               style={{ fontSize: "var(--body)" }}>
-              / {PLAN_LIMIT.toLocaleString()} rows used
+              / {(user.usage_quota ?? 0).toLocaleString()} rows used
             </span>
           </div>
           <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded mb-1">
             <div
               className="h-2 bg-green-400 dark:bg-green-600 rounded transition-all"
-              style={{ width: `${(ROWS_USED / PLAN_LIMIT) * 100}%` }}
+              style={{
+                width: `${Math.min(100, (user.usage / user.usage_quota) * 100)}%`
+              }}
             />
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400"
             style={{ fontSize: "var(--small)" }}>
-            {DAYS_LEFT} days left on trial – <span className="underline text-blue-600 dark:text-blue-300 cursor-pointer">Upgrade Now</span>
+            {user.days_left} days left on trial – <span className="underline text-blue-600 dark:text-blue-300 cursor-pointer">Upgrade Now</span>
           </p>
         </GlassCard>
 
-        {/* Collapsible Settings Card */}
+        {/* Settings Card (Always Open) */}
         <GlassCard className="p-3 sm:p-8">
-          <button
-            className="w-full flex justify-between items-center text-lg font-bold mb-2 focus:outline-none"
-            onClick={() => setShowPrefs(v => !v)}
-            aria-expanded={showPrefs}
-            aria-controls="prefs-content"
-            style={{ fontSize: "var(--h2)" }}
-          >
-            <span className="flex items-center gap-2">⚙️ Settings</span>
-            {showPrefs
-              ? <FaChevronUp className="text-indigo-500" />
-              : <FaChevronDown className="text-indigo-500" />}
-          </button>
-          <div id="prefs-content" className={`${showPrefs ? "block" : "hidden"} transition-all`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <SettingSelect
-                label="Timezone"
-                icon={<FaClock className="text-blue-500" />}
-                value={settings.timezone || "America/New_York"}
-                options={timezones}
-                onChange={val => updateSetting("timezone", val)}
-              />
-              <SettingSelect
-                label="Default Currency"
-                icon={<FaDollarSign className="text-green-500" />}
-                value={settings.currencyCode || "USD"}
-                options={currencies}
-                onChange={val => updateSetting("currencyCode", val)}
-              />
-              <SettingSelect
-                label="Theme"
-                icon={<FaAdjust className="text-indigo-500" />}
-                value={settings.theme || "system"}
-                options={themes}
-                onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
-              />
-
-              <div>
-                <label className="block mb-2 text-base font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2"
-                  style={{ fontSize: "var(--body)" }}>
-                  <FaFont className="text-yellow-500" /> Font Size
-                </label>
-                <FontSizeDropdown
-                  value={settings.fontSize || "base"}
-                  onChange={val => updateSetting("fontSize", val)}
-                  label={undefined}
-                />
-              </div>
-            </div>
-            {/* No save button needed – settings are saved instantly */}
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-2xl">⚙️</span>
+            <h3 className="font-bold text-gray-800 dark:text-white text-lg" style={{ fontSize: "var(--h2)" }}>
+              Settings
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <SettingSelect
+              label="Timezone"
+              icon={<FaClock className="text-blue-500" />}
+              value={settings.timezone || "America/New_York"}
+              options={timezones}
+              onChange={val => updateSetting("timezone", val)}
+            />
+            <SettingSelect
+              label="Default Currency"
+              icon={<FaDollarSign className="text-green-500" />}
+              value={settings.currencyCode || "USD"}
+              options={currencies}
+              onChange={val => updateSetting("currencyCode", val)}
+            />
+            <SettingSelect
+              label="Theme"
+              icon={<FaAdjust className="text-indigo-500" />}
+              value={settings.theme || "system"}
+              options={themes}
+              onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
+            />
+            <SettingSelect
+              label="Font Size"
+              icon={<FaFont className="text-yellow-500" />}
+              value={settings.fontSize || "base"}
+              options={[
+                { value: "sm", label: "Small (12px)" },
+                { value: "base", label: "Default (14px)" },
+                { value: "lg", label: "Large (16px)" },
+                { value: "xl", label: "Extra Large (18px)" },
+              ]}
+              onChange={val => updateSetting("fontSize", val)}
+            />
           </div>
         </GlassCard>
 
@@ -301,7 +288,6 @@ export default function ProfilePage() {
                 <ModalItem icon={<FaUserEdit />} label="Change Username" />
                 <ModalItem icon={<FaEnvelope />} label="Change Email" />
                 <ModalItem icon={<FaKey />} label="Reset Password" />
-                <ModalItem icon={<FaClock />} label="Set Timezone (Coming Soon)" disabled />
               </div>
               <hr className="my-6 border-gray-200 dark:border-gray-700" />
               <button className="flex items-center gap-3 w-full text-left px-3 py-2 rounded hover:bg-red-50 dark:hover:bg-red-900 text-red-600 font-semibold"
@@ -339,7 +325,7 @@ function SettingSelect({
 }) {
   return (
     <div>
-      <label className="block mb-2 text-base font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2"
+      <label className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-200 mb-1"
         style={{ fontSize: "var(--body)" }}>
         {icon} {label}
       </label>

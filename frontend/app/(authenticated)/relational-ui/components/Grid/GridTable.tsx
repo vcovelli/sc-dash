@@ -30,6 +30,10 @@ interface GridTableProps {
     name: string,
     updated: { columns: CustomColumnDef<Row>[]; data: Row[] }
   ) => void;
+  onRenameColumn: (accessorKey: string, newHeader: string) => void;
+  onReorderColumns: (newColumns: CustomColumnDef<Row>[]) => void;
+  onAddColumn: (newCol: CustomColumnDef<Row>) => void;
+  onDeleteColumn: (accessorKey: string) => void;
 }
 
 const GridTable: React.FC<GridTableProps> = ({
@@ -39,6 +43,10 @@ const GridTable: React.FC<GridTableProps> = ({
   onOpenSettingsPanel,
   isSettingsPanelOpen,
   onUpdateTable,
+  onRenameColumn,
+  onReorderColumns,
+  onAddColumn,
+  onDeleteColumn,
 }) => {
   // Local columns state to enable immediate updates and control
   const [rawColumns, setRawColumns] = useState<CustomColumnDef<Row>[]>(
@@ -251,73 +259,95 @@ const GridTable: React.FC<GridTableProps> = ({
   );
 
   return (
-    <div className="relative">
+    <div className="flex-1 min-h-0 flex flex-col w-full">
       <div
-        ref={scrollContainerRef}
-        className="relative h-[calc(100vh-3rem)] w-full overflow-auto bg-white dark:bg-gray-950 text-black dark:text-white rounded-xl shadow border border-gray-200 dark:border-gray-800 px-4 pt-4 pb-4"
+        className="flex-1 min-h-0 bg-white dark:bg-gray-950 text-black dark:text-white rounded-xl shadow border border-gray-200 dark:border-gray-800 px-4 pt-4 pb-4 flex flex-col"
         style={{
           ...fontVars,
           fontSize: `${fontSize}px`,
           lineHeight: `${rowHeight}px`,
         }}
       >
-        <div className="min-w-max">
-          <GridTableHeader
-            table={table}
-            rawColumns={rawColumns}
-            containerRef={scrollContainerRef}
-            setRenamePosition={setRenamePosition}
-            setColumnBeingRenamed={setRenameTarget}
-            setShowRenameModal={setShowRenameModal}
-            handleContextMenu={handleContextMenu}
-            getTouchHandlers={getTouchHandlers}    // <-- pass here!
-            setRawColumns={(colsOrUpdater) => {
-              const nextCols =
-                typeof colsOrUpdater === "function"
-                  ? colsOrUpdater(rawColumns)
-                  : colsOrUpdater;
-              setRawColumns(colsOrUpdater);
-              onUpdateTable(tableName, { columns: nextCols, data: dataState });
-            }}
-            setData={(rowsOrUpdater) => {
-              const nextRows =
-                typeof rowsOrUpdater === "function"
-                  ? rowsOrUpdater(dataState)
-                  : rowsOrUpdater;
-              setDataState(rowsOrUpdater);
-              onUpdateTable(tableName, { columns: rawColumns, data: nextRows });
-            }}
-            focusedColIndex={focusedColIndex}
-            setFocusedRowIndex={setFocusedRowIndex}
-            onFocusColumn={useCallback(
-              (col, index) => {
-                if (showRenameModal) return;
-                setFocusedColIndex(index);
-                setFocusedColumn(col);
-                setColumnHighlightMode(true);
-              },
-              [showRenameModal]
-            )}
-            onOpenSettingsPanel={onOpenSettingsPanel}
-            columnWidths={columnWidths}
-          />
-
-          <GridTableRows
-            table={table}
-            listHeight={scrollContainerRef.current?.clientHeight || 0}
-            focusedCell={focusedCell}
-            handleCellClick={handleCellClick}
-            handleContextMenu={handleContextMenu}
-            getTouchHandlers={getTouchHandlers}
-            focusedColIndex={focusedColIndex}
-            focusedRowIndex={focusedRowIndex}
-            setFocusedRowIndex={setFocusedRowIndex}
-            setFocusedColIndex={setFocusedColIndex}
-            columnHighlightMode={columnHighlightMode}
-            columnWidths={columnWidths}
-          />
+        {/* HORIZONTAL scroll only here */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-hidden" // <-- ONLY overflow-x-auto!
+          style={{ position: "relative" }}
+        >
+          {/* The TABLE AREA (min-w-max to allow wide columns) */}
+          <div className="min-w-max flex flex-col flex-1 min-h-0">
+            {/* HEADER: Not scrollable vertically, sticky if desired */}
+            <div className="flex-none">
+              <GridTableHeader
+                table={table}
+                rawColumns={rawColumns}
+                containerRef={scrollContainerRef}
+                setRenamePosition={setRenamePosition}
+                setColumnBeingRenamed={setRenameTarget}
+                setShowRenameModal={setShowRenameModal}
+                handleContextMenu={handleContextMenu}
+                getTouchHandlers={getTouchHandlers}
+                setRawColumns={(colsOrUpdater) => {
+                  const nextCols =
+                    typeof colsOrUpdater === "function"
+                      ? colsOrUpdater(rawColumns)
+                      : colsOrUpdater;
+                  setRawColumns(colsOrUpdater);
+                  onUpdateTable(tableName, { columns: nextCols, data: dataState });
+                }}
+                setData={(rowsOrUpdater) => {
+                  const nextRows =
+                    typeof rowsOrUpdater === "function"
+                      ? rowsOrUpdater(dataState)
+                      : rowsOrUpdater;
+                  setDataState(rowsOrUpdater);
+                  onUpdateTable(tableName, { columns: rawColumns, data: nextRows });
+                }}
+                focusedColIndex={focusedColIndex}
+                setFocusedRowIndex={setFocusedRowIndex}
+                onFocusColumn={useCallback(
+                  (col, index) => {
+                    if (showRenameModal) return;
+                    setFocusedColIndex(index);
+                    setFocusedColumn(col);
+                    setColumnHighlightMode(true);
+                  },
+                  [showRenameModal]
+                )}
+                onOpenSettingsPanel={onOpenSettingsPanel}
+                columnWidths={columnWidths}
+                rowNumberWidth={rowNumberWidth}
+                onRenameColumn={onRenameColumn}
+                onReorderColumns={onReorderColumns}
+                onAddColumn={onAddColumn}
+                onDeleteColumn={onDeleteColumn}
+              />
+            </div>
+            {/* ROWS: ONLY THIS gets overflow-y-auto! */}
+            <div
+              className="flex-1 min-h-0 overflow-y-auto"
+              style={{ paddingBottom: `${rowHeight}px` }}
+            >
+              <GridTableRows
+                table={table}
+                listHeight={scrollContainerRef.current?.clientHeight || 0}
+                focusedCell={focusedCell}
+                handleCellClick={handleCellClick}
+                handleContextMenu={handleContextMenu}
+                getTouchHandlers={getTouchHandlers}
+                focusedColIndex={focusedColIndex}
+                focusedRowIndex={focusedRowIndex}
+                setFocusedRowIndex={setFocusedRowIndex}
+                setFocusedColIndex={setFocusedColIndex}
+                columnHighlightMode={columnHighlightMode}
+                columnWidths={columnWidths}
+                rowNumberWidth={rowNumberWidth}
+              />
+            </div>
+          </div>
         </div>
 
+        {/* Modals and context menu as before */}
         {showRenameModal && renameTarget && (
           <RenameModal
             position={renamePosition}
@@ -326,7 +356,6 @@ const GridTable: React.FC<GridTableProps> = ({
             onRename={handleRename}
           />
         )}
-
         {showContextMenu && contextTarget && (
           <ContextMenu
             position={contextMenuPosition}

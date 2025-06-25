@@ -22,7 +22,7 @@ export default function RelationalWorkspaceLayout({
             </aside>
           )}
           {/* Main Grid Area */}
-          <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <main className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
             {children}
           </main>
           {/* Right Panel */}
