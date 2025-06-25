@@ -17,7 +17,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 type Props = {
   settings: PieChartSettings;
   onChange: (next: PieChartSettings) => void;
-  mockTables: TableMeta[]
+  mockTables: TableMeta[];
   defaultColors?: string[];
   xColumns: { name: string; type: string }[];
   yColumns: { name: string; type: string }[];
@@ -32,44 +32,42 @@ export default function PieChartSettingsPanel({
   yColumns,
   updateSetting
 }: Props) {
-  // Only render if settings is a PieChartSettings
   if (settings.type !== "pie") return null;
-  // settings is now PieChartSettings
 
   return (
     <>
       {/* Data Section */}
       <Section title="Data">
-        <div className="mb-2">
-          <label className="block text-xs mb-1">Table:</label>
+        <div className="mb-3">
+          <label className="block text-xs mb-1 text-gray-700 dark:text-gray-300">Table:</label>
           <select
             value={settings.table}
             onChange={e => updateSetting("table", e.target.value)}
-            className="p-2 rounded border w-full"
+            className="p-2 rounded border w-full bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
           >
             {mockTables.map(t => (
               <option key={t.name} value={t.name}>{t.name}</option>
             ))}
           </select>
         </div>
-        <div className="mb-2">
-          <label className="block text-xs mb-1">Category (X):</label>
+        <div className="mb-3">
+          <label className="block text-xs mb-1 text-gray-700 dark:text-gray-300">Category (X):</label>
           <select
             value={settings.xField}
             onChange={e => updateSetting("xField", e.target.value)}
-            className="p-2 rounded border w-full"
+            className="p-2 rounded border w-full bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
           >
             {xColumns.map(col => (
               <option key={col.name} value={col.name}>{col.name}</option>
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-xs mb-1">Value (Y):</label>
+        <div className="mb-1">
+          <label className="block text-xs mb-1 text-gray-700 dark:text-gray-300">Value (Y):</label>
           <select
             value={settings.yFields?.[0] ?? ""}
             onChange={e => updateSetting("yFields", [e.target.value])}
-            className="p-2 rounded border w-full"
+            className="p-2 rounded border w-full bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
           >
             <option value="">Select metric...</option>
             {yColumns.map(col => (
@@ -85,7 +83,7 @@ export default function PieChartSettingsPanel({
           <div className="flex flex-wrap gap-3">
             {(settings.yFields ?? []).map((field, idx) => (
               <div key={field} className="flex items-center gap-2">
-                <span className="text-xs">{field}</span>
+                <span className="text-xs text-gray-700 dark:text-gray-300">{field}</span>
                 <input
                   type="color"
                   value={settings.pieColors?.[idx] || defaultColors[idx % defaultColors.length]}
@@ -94,7 +92,7 @@ export default function PieChartSettingsPanel({
                     colorArr[idx] = e.target.value;
                     updateSetting("pieColors", colorArr);
                   }}
-                  className="w-6 h-6 border-0 rounded"
+                  className="w-6 h-6 border-0 rounded cursor-pointer"
                   title={`Color for ${field}`}
                 />
               </div>
@@ -105,11 +103,12 @@ export default function PieChartSettingsPanel({
 
       {/* Options Section */}
       <Section title="Options">
-        <label className="flex items-center gap-1">
+        <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
           <input
             type="checkbox"
             checked={!!settings.showLegend}
             onChange={e => updateSetting("showLegend", e.target.checked)}
+            className="accent-blue-600"
           />
           Show Legend
         </label>

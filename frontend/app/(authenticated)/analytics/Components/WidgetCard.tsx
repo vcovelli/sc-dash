@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { WidgetConfig } from "../types";
 import {
@@ -93,98 +95,95 @@ export default function WidgetCard({
         </div>
       </div>
 
-      {/* Header, with handle gap! */}
+      {/* Header Row with Title + Controls */}
       <div className="flex justify-between items-center mb-2 pl-9 md:pl-10">
         <h3 className="text-lg font-semibold truncate">{widget.title}</h3>
-        {/* Chevron for controls */}
-        <button
-          className="p-1 ml-2 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
-          onClick={() => setControlsOpen((v) => !v)}
-          aria-label={controlsOpen ? "Hide controls" : "Show controls"}
-          title={controlsOpen ? "Hide controls" : "Show controls"}
-        >
-          {controlsOpen ? (
-            <ChevronUp className="w-5 h-5" />
-          ) : (
-            <ChevronDown className="w-5 h-5" />
-          )}
-        </button>
-        {/* Controls Popover */}
-        <div
-          className={`
-            absolute right-3 top-10 flex gap-1 items-center
-            transition-all duration-200
-            ${controlsOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
-            bg-white/95 dark:bg-gray-900/95 px-2 py-1 rounded-lg shadow z-20
-          `}
-          style={{
-            minWidth: 170,
-            boxShadow: controlsOpen
-              ? "0 4px 20px 0 rgba(59,130,246,0.08)"
-              : undefined,
-          }}
-        >
+
+        <div className="flex items-center gap-2 relative">
+          {/* Chevron for controls */}
           <button
-            className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
-            onClick={e => {
-              e.stopPropagation();
-              onFocus?.();
-              setControlsOpen(false);
-            }}
-            aria-label="Focus chart"
-            title="Focus"
+            className="p-2 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
+            onClick={() => setControlsOpen(v => !v)}
+            aria-label={controlsOpen ? "Hide controls" : "Show controls"}
+            title={controlsOpen ? "Hide controls" : "Show controls"}
           >
-            <span role="img" aria-label="focus">🔍</span>
+            {controlsOpen ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
           </button>
-          <button
-            className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
-            onClick={e => {
-              e.stopPropagation();
-              onOpenInsight?.();
-              setControlsOpen(false);
-            }}
-            aria-label="Show insights"
-            title="Insights"
-          >
-            <span role="img" aria-label="insight">📊</span>
-          </button>
-          <button
-            className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
-            onClick={e => {
-              e.stopPropagation();
-              onOpenSettings?.();
-              setControlsOpen(false);
-            }}
-            aria-label="Widget settings"
-            title="Settings"
-          >
-            <span role="img" aria-label="settings">⚙️</span>
-          </button>
-          {onRemove && !focused && (
-            <button
-              className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800 transition"
-              onClick={e => {
-                e.stopPropagation();
-                onRemove(widget.id);
-                setControlsOpen(false);
-              }}
-              aria-label="Remove widget"
-              title="Remove"
-            >
-              <span role="img" aria-label="remove">🗑️</span>
-            </button>
-          )}
+
+          {/* Close focus button */}
           {focused && onCloseFocus && (
             <button
-              className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition ml-2"
               onClick={onCloseFocus}
-              aria-label="Close focus"
-              title="Close"
-              style={{ fontSize: 22, lineHeight: 1 }}
+              className="p-2 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition text-gray-400 hover:text-black dark:text-gray-300 dark:hover:text-white"
+              aria-label="Exit focus mode"
+              title="Exit Focus Mode"
             >
               ✖️
             </button>
           )}
+
+          {/* Controls Popover */}
+          <div
+            className={`absolute right-0 top-10 flex gap-2 items-center
+              transition-all duration-200
+              ${controlsOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
+              bg-white/95 dark:bg-gray-900/95 px-3 py-2 rounded-lg shadow z-20`}
+            style={{
+              minWidth: 180,
+              boxShadow: controlsOpen ? "0 4px 20px 0 rgba(59,130,246,0.08)" : undefined,
+            }}
+          >
+            <button
+              className="p-2 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
+              onClick={e => {
+                e.stopPropagation();
+                onFocus?.();
+                setControlsOpen(false);
+              }}
+              aria-label="Focus chart"
+              title="Focus"
+            >
+              🔍
+            </button>
+            <button
+              className="p-2 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
+              onClick={e => {
+                e.stopPropagation();
+                onOpenInsight?.();
+                setControlsOpen(false);
+              }}
+              aria-label="Show insights"
+              title="Insights"
+            >
+              📊
+            </button>
+            <button
+              className="p-2 rounded hover:bg-neutral-100 dark:hover:bg-gray-800 transition"
+              onClick={e => {
+                e.stopPropagation();
+                onOpenSettings?.();
+                setControlsOpen(false);
+              }}
+              aria-label="Widget settings"
+              title="Settings"
+            >
+              ⚙️
+            </button>
+            {onRemove && !focused && (
+              <button
+                className="p-2 rounded hover:bg-red-100 dark:hover:bg-red-800 transition"
+                onClick={e => {
+                  e.stopPropagation();
+                  onRemove(widget.id);
+                  setControlsOpen(false);
+                }}
+                aria-label="Remove widget"
+                title="Remove"
+              >
+                🗑️
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

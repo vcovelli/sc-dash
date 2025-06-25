@@ -98,3 +98,22 @@ body {
 .animate-pulse-slow {
   animation: pulse-slow 2.2s cubic-bezier(0.4,0,0.6,1) infinite;
 }
+
+.react-resizable-handle-e {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 28px;  /* widen for touch */
+  cursor: ew-resize;
+  z-index: 50;
+  background: transparent;
+  transition: background 0.12s;
+}
+.react-resizable-handle-e:hover {
+  background: rgba(59,130,246,0.10);
+}
+
+/* Optional: Make the SE handle more visible if you want */
+.react-resizable-handle-se {
+  /* Default is good, but you can bump up z-index if needed */
+  z-index: 60;
+}

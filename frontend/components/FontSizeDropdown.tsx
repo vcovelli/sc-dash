@@ -15,12 +15,9 @@ interface FontSizeDropdownProps {
   label?: string;
 }
 
-export default function FontSizeDropdown({ value, onChange, label = "Font Size" }: FontSizeDropdownProps) {
+export default function FontSizeDropdown({ value, onChange }: FontSizeDropdownProps) {
   return (
     <div>
-      <label className="block mb-2 text-base font-semibold text-gray-700 dark:text-gray-200">
-        {label}
-      </label>
       <div className="relative">
         <select
           className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100 py-3 px-4 text-base shadow focus:ring-2 focus:ring-blue-400 transition"

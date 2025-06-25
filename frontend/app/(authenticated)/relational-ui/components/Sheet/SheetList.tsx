@@ -31,21 +31,17 @@ export default function SheetList() {
     const fetchSheets = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("http://backend:8000/api/sheets/");
+        const res = await axios.get("/api/sheets/");
         setSheets(res.data);
 
-        // Fetch columns and data for each sheet
         const allSheetData: Record<string, SheetData> = {};
 
         await Promise.all(
           res.data.map(async (sheet: Sheet) => {
-            const [colsRes, dataRes] = await Promise.all([
-              axios.get(`http://backend:8000/api/sheets/${sheet.id}/columns/`),
-              axios.get(`http://backend:8000/api/sheets/${sheet.id}/rows/`)
-            ]);
+            const schemaRes = await axios.get(`/api/schema/${sheet.name}/`);
             allSheetData[sheet.id] = {
-              columns: colsRes.data,
-              data: dataRes.data,
+              columns: schemaRes.data.columns,
+              data: schemaRes.data.rows,
             };
           })
         );
@@ -60,28 +56,20 @@ export default function SheetList() {
     fetchSheets();
   }, []);
 
-  // Update a column's properties (e.g., type, currencyCode, header)
-  const handleUpdateColumn = useCallback((updatedCol: CustomColumnDef<unknown>) => {
-    if (!columnSettingsSheetId) {
-      console.warn("[handleUpdateColumn] No sheet selected");
-      setIsSettingsPanelOpen(false);
-      return;
-    }
-    console.log("[handleUpdateColumn] Updating column:", updatedCol, "for sheet:", columnSettingsSheetId);
+  // --- COLUMN OPERATIONS ---
 
-    setSheetData((prev) => {
+  // Edit/update column (type, etc.)
+  const handleUpdateColumn = useCallback(async (updatedCol: CustomColumnDef<unknown>) => {
+    if (!columnSettingsSheetId) return;
+    const sheet = sheets.find(s => s.id === columnSettingsSheetId);
+    if (!sheet) return;
+
+    setSheetData(prev => {
       const prevSheet = prev[columnSettingsSheetId];
-      if (!prevSheet) {
-        console.warn("[handleUpdateColumn] No previous sheet data for:", columnSettingsSheetId);
-        return prev;
-      }
-
+      if (!prevSheet) return prev;
       const newColumns = prevSheet.columns.map(col =>
         col.accessorKey === updatedCol.accessorKey ? { ...col, ...updatedCol } : col
       );
-
-      console.log("[handleUpdateColumn] New columns array:", newColumns);
-
       return {
         ...prev,
         [columnSettingsSheetId]: {
@@ -92,8 +80,114 @@ export default function SheetList() {
       };
     });
 
+    try {
+      await axios.patch(`/api/schema/${sheet.name}/columns/${updatedCol.accessorKey}/`, {
+        column: updatedCol
+      });
+    } catch (e) {
+      console.error("Failed to update column:", e);
+    }
     setIsSettingsPanelOpen(false);
-  }, [columnSettingsSheetId]);
+  }, [columnSettingsSheetId, sheets]);
+
+  // Rename column
+  const handleRenameColumn = useCallback(async (sheetId: string, accessorKey: string, newHeader: string) => {
+    const sheet = sheets.find(s => s.id === sheetId);
+    if (!sheet) return;
+
+    setSheetData(prev => {
+      const prevSheet = prev[sheetId];
+      if (!prevSheet) return prev;
+      const newColumns = prevSheet.columns.map(col =>
+        col.accessorKey === accessorKey ? { ...col, header: newHeader } : col
+      );
+      return {
+        ...prev,
+        [sheetId]: {
+          ...prevSheet,
+          columns: newColumns,
+          data: prevSheet.data,
+        }
+      };
+    });
+
+    try {
+      await axios.patch(`/api/schema/${sheet.name}/columns/${accessorKey}/rename/`, {
+        newName: newHeader
+      });
+    } catch (e) {
+      console.error("Failed to rename column:", e);
+    }
+  }, [sheets]);
+
+  // Reorder columns (you’ll call this after drag-and-drop, pass the new array order)
+  const handleReorderColumns = useCallback(async (sheetId: string, newColumns: CustomColumnDef<unknown>[]) => {
+    const sheet = sheets.find(s => s.id === sheetId);
+    if (!sheet) return;
+
+    setSheetData(prev => ({
+      ...prev,
+      [sheetId]: {
+        ...prev[sheetId],
+        columns: newColumns,
+        data: prev[sheetId].data,
+      }
+    }));
+
+    try {
+      await axios.patch(`/api/schema/${sheet.name}/columns/reorder/`, {
+        columns: newColumns
+      });
+    } catch (e) {
+      console.error("Failed to reorder columns:", e);
+    }
+  }, [sheets]);
+
+  // Add new column
+  const handleAddColumn = useCallback(async (sheetId: string, newColumn: CustomColumnDef<unknown>) => {
+    const sheet = sheets.find(s => s.id === sheetId);
+    if (!sheet) return;
+
+    setSheetData(prev => ({
+      ...prev,
+      [sheetId]: {
+        ...prev[sheetId],
+        columns: [...prev[sheetId].columns, newColumn],
+        data: prev[sheetId].data,
+      }
+    }));
+
+    try {
+      await axios.post(`/api/schema/${sheet.name}/columns/`, {
+        column: newColumn
+      });
+    } catch (e) {
+      console.error("Failed to add column:", e);
+    }
+  }, [sheets]);
+
+  // Delete column
+  const handleDeleteColumn = useCallback(async (sheetId: string, accessorKey: string) => {
+    const sheet = sheets.find(s => s.id === sheetId);
+    if (!sheet) return;
+
+    setSheetData(prev => ({
+      ...prev,
+      [sheetId]: {
+        ...prev[sheetId],
+        columns: prev[sheetId].columns.filter(col => col.accessorKey !== accessorKey),
+        data: prev[sheetId].data,
+      }
+    }));
+
+    try {
+      await axios.delete(`/api/schema/${sheet.name}/columns/${accessorKey}/`);
+    } catch (e) {
+      console.error("Failed to delete column:", e);
+    }
+  }, [sheets]);
+
+  // --- UI ---
 
   return (
     <div className="relative p-8">
@@ -131,6 +225,11 @@ export default function SheetList() {
                     setColumnSettingsSheetId(sheet.id);
                     setIsSettingsPanelOpen(true);
                   }}
+                  // Add these props to wire up to the new handlers as needed:
+                  onRenameColumn={(accessorKey, newHeader) => handleRenameColumn(sheet.id, accessorKey, newHeader)}
+                  onReorderColumns={(newColumns) => handleReorderColumns(sheet.id, newColumns)}
+                  onAddColumn={(newCol) => handleAddColumn(sheet.id, newCol)}
+                  onDeleteColumn={(accessorKey) => handleDeleteColumn(sheet.id, accessorKey)}
                 />
               </div>
             </div>

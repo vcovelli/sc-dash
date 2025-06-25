@@ -29,6 +29,7 @@ export interface CustomColumnDef<TData = Row> {
   id?: string;
   choices?: string[] | Option[];
   referenceData?: Option[];
+  reference_table?: string;
   formula?: string;
   currencyCode?: string;
 }

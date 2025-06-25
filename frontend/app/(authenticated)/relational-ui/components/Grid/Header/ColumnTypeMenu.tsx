@@ -22,7 +22,7 @@ export default function ColumnTypeMenu({ anchorPos, onSelect }: Props) {
   return (
     <div
       id="add-column-dropdown"
-      className="absolute z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow rounded text-sm text-gray-800 dark:text-gray-200"
+      className="fixed z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg rounded text-sm text-gray-800 dark:text-gray-200"
       style={{
         position: "fixed",
         top: anchorPos.y,

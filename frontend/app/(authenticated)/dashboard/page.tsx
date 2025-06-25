@@ -13,47 +13,74 @@ import api from "@/lib/axios";
 
 const PLAN_LIMIT = 10000;
 const PLAN_TYPE = "Pro";
-const ROWS_USED = 2430;
 const DAYS_LEFT = 3;
 const ONBOARDING_STEPS = 5;
-const COMPLETED_STEPS = 3;
-const ACTIVITY_FEED = [
-  { text: "✅ Uploaded <b>orders.csv</b>", time: "2 hours ago" },
-  { text: "⚙️ Settings updated", time: "Yesterday" },
-  { text: "📤 Uploaded <b>inventory.csv</b>", time: "2 days ago" },
-];
 const ALERTS: Alert[] = [];
-const COMPLETED_KEYS = ["add_users", "upload_data", "verify_data"]; // Demo
 
 export default function DashboardPage() {
   const [fileCount, setFileCount] = useState<number | null>(null);
   const [storageUsed, setStorageUsed] = useState<string | null>(null);
   const [uptime, setUptime] = useState<string | null>(null);
   const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
+  const [completedKeys, setCompletedKeys] = useState<string[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [rowsUsed, setRowsUsed] = useState<number>(0);
+  const [activityFeed, setActivityFeed] = useState<{ text: string; time: string }[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (!token) return;
-    api.get("/api/dashboard-overview")
+
+    api.get("/dashboard-overview/")
       .then((res) => {
         setFileCount(res.data.total_files);
         setRecentFiles(res.data.recent_uploads || []);
         setStorageUsed(res.data.storage_used);
         setUptime(res.data.system_uptime);
+        setRowsUsed(res.data.usage || 0);
       })
       .catch(() => setRecentFiles([]));
+
+    api.get("/onboarding/progress/")
+      .then((res) => {
+        setCompletedKeys(res.data.completed_keys || []);
+      })
+      .catch((err) => {
+        console.warn("Could not fetch onboarding progress", err);
+      });
+
+    // Fetch activity feed
+    api.get("/activity-feed/")
+      .then((res) => {
+        setActivityFeed(
+          res.data.map((item: any) => ({
+            text: renderActivityText(item),
+            time: new Date(item.timestamp).toLocaleString(),
+          }))
+        );
+      })
+      .catch(() => setActivityFeed([]));
   }, []);
+
+  // Helper function to prettify activity feed
+  function renderActivityText(item: any) {
+    switch (item.verb) {
+      case "uploaded file":
+        return `✅ Uploaded <b>${item.target}</b>`;
+      case "file marked success":
+        return `🎉 Processed <b>${item.target}</b>${item.meta?.row_count ? ` (${item.meta.row_count} rows)` : ""}`;
+      case "downloaded file":
+        return `⬇️ Downloaded <b>${item.target}</b>`;
+      case "updated settings":
+        return `⚙️ Settings updated`;
+      default:
+        return `${item.verb} ${item.target ? `<b>${item.target}</b>` : ""}`;
+    }
+  }
 
   return (
     <section
-      className="
-        min-h-screen w-full
-        bg-gradient-to-br from-blue-50 to-indigo-100
-        dark:from-gray-900 dark:to-gray-950
-        transition-colors duration-500
-        px-2 sm:px-4 py-6 sm:py-10
-      "
+      className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950 transition-colors duration-500 px-2 sm:px-4 py-6 sm:py-10"
       style={{ fontSize: "var(--body)" }}
     >
       {/* Header & Quick Actions */}
@@ -73,7 +100,7 @@ export default function DashboardPage() {
               className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 shadow transition flex items-center gap-1 justify-center"
               style={{ fontSize: "var(--body)" }}
             >
-              <span style={{ fontSize: "var(--h2)" }}>➕</span> Upload File
+              <span style={{ fontSize: "var(--h2)" }}>+</span> Upload File
             </button>
           </Link>
           <button
@@ -95,27 +122,20 @@ export default function DashboardPage() {
 
       {/* Main Responsive Grid */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 gap-4 sm:gap-6 px-0">
-        <StatCards
-          fileCount={fileCount}
-          storageUsed={storageUsed}
-          uptime={uptime}
-        />
+        <StatCards fileCount={fileCount} storageUsed={storageUsed} uptime={uptime} />
         <SetupAndPlan
           planType={PLAN_TYPE}
           planLimit={PLAN_LIMIT}
-          rowsUsed={ROWS_USED}
+          rowsUsed={rowsUsed}
           daysLeft={DAYS_LEFT}
           onboardingSteps={ONBOARDING_STEPS}
-          completedSteps={COMPLETED_STEPS}
-          completedKeys={COMPLETED_KEYS}
+          completedSteps={completedKeys.length}
+          completedKeys={completedKeys}
           showOnboarding={showOnboarding}
           setShowOnboarding={setShowOnboarding}
         />
         <AlertsCard alerts={ALERTS} />
-        <ActivityAndUploads
-          activityFeed={ACTIVITY_FEED}
-          recentFiles={recentFiles}
-        />
+        <ActivityAndUploads activityFeed={activityFeed} recentFiles={recentFiles} />
         <InsightsFeedbackHelp />
       </div>
     </section>

@@ -47,9 +47,39 @@ function getSafePosition(x: number, y: number) {
   if (y + MENU_HEIGHT + MENU_MARGIN > winH) {
     newY = winH - MENU_HEIGHT - MENU_MARGIN;
   }
-  newX = Math.max(newX, MENU_MARGIN);
-  newY = Math.max(newY, MENU_MARGIN);
-  return { x: newX, y: newY };
+  return {
+    x: Math.max(newX, MENU_MARGIN),
+    y: Math.max(newY, MENU_MARGIN),
+  };
+}
+
+function generateBlankRow(columns: CustomColumnDef<Row>[]): Row {
+  const newRow: Row = { __rowId: uuidv4() };
+  for (const col of columns) {
+    const key = col.accessorKey;
+    const type = col.type?.toLowerCase();
+
+    switch (type) {
+      case "number":
+      case "currency":
+        newRow[key] = null;
+        break;
+      case "boolean":
+        newRow[key] = false;
+        break;
+      case "choice_list":
+      case "reference_list":
+        newRow[key] = [];
+        break;
+      case "choice":
+      case "reference":
+        newRow[key] = null;
+        break;
+      default:
+        newRow[key] = "";
+    }
+  }
+  return newRow;
 }
 
 export default function useContextMenu({
@@ -66,22 +96,15 @@ export default function useContextMenu({
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [contextTarget, setContextTarget] = useState<ContextTarget | null>(null);
-
-  // -- Long press state for mobile touch --
   const longPressTimeout = useRef<number | null>(null);
 
-  // Opens the menu at the specified screen coords
-  const openMenuAt = useCallback(
-    (clientX: number, clientY: number, rowIndex: number, colIndex: number) => {
-      const safePos = getSafePosition(clientX, clientY);
-      setContextMenuPosition(safePos);
-      setContextTarget({ rowIndex, colIndex });
-      setShowContextMenu(true);
-    },
-    []
-  );
+  const openMenuAt = useCallback((clientX: number, clientY: number, rowIndex: number, colIndex: number) => {
+    const safePos = getSafePosition(clientX, clientY);
+    setContextMenuPosition(safePos);
+    setContextTarget({ rowIndex, colIndex });
+    setShowContextMenu(true);
+  }, []);
 
-  // For mouse (right click)
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, rowIndex: number, colIndex: number) => {
       e.preventDefault();
@@ -92,7 +115,6 @@ export default function useContextMenu({
 
   const getTouchHandlers = (rowIndex: number, colIndex: number) => ({
     onTouchStart: (e: React.TouchEvent) => {
-      // iOS: prevent text selection/callout right away
       e.preventDefault();
       longPressTimeout.current = window.setTimeout(() => {
         const touch = e.touches[0];
@@ -103,7 +125,6 @@ export default function useContextMenu({
       if (longPressTimeout.current) clearTimeout(longPressTimeout.current);
     },
     onTouchMove: () => {
-      // If finger moves, cancel long-press!
       if (longPressTimeout.current) clearTimeout(longPressTimeout.current);
     },
     onTouchCancel: () => {
@@ -111,7 +132,6 @@ export default function useContextMenu({
     },
   });
 
-  // Actions
   const handleContextAction = useCallback(
     (action: ContextMenuAction) => {
       if (!contextTarget) return;
@@ -122,23 +142,25 @@ export default function useContextMenu({
       switch (action) {
         case "insertAbove":
         case "insertBelow": {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { __rowId, ...rest } = data[rowIndex];
+          const newRow = generateBlankRow(rawColumns);
           const insertAt = action === "insertAbove" ? rowIndex : rowIndex + 1;
-          const newRow: Row = { ...rest, __rowId: uuidv4() };
           setData([...data.slice(0, insertAt), newRow, ...data.slice(insertAt)]);
           break;
         }
+
         case "duplicateRow": {
+          const original = data[rowIndex];
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { __rowId, ...rest } = data[rowIndex];
-          const newRow: Row = { ...rest, __rowId: uuidv4() };
-          setData([...data.slice(0, rowIndex + 1), newRow, ...data.slice(rowIndex + 1)]);
+          const { __rowId: _, ...rest } = original;
+          const clone = { ...rest, __rowId: uuidv4() };
+          setData([...data.slice(0, rowIndex + 1), clone, ...data.slice(rowIndex + 1)]);
           break;
         }
+
         case "deleteRow":
-          setData(data.filter((__, i) => i !== rowIndex));
+          setData(data.filter((_, i) => i !== rowIndex));
           break;
+
         case "insertColLeft":
         case "insertColRight": {
           if (colIndex === 0) return;
@@ -149,12 +171,8 @@ export default function useContextMenu({
             header: "New Column",
             type: "text",
           };
+          const insertIdx = action === "insertColLeft" ? colIndex - 1 : colIndex;
 
-          const insertIdx = 
-            action === "insertColLeft"
-              ? colIndex - 1
-              : colIndex;
-              
           setRawColumns([
             ...rawColumns.slice(0, insertIdx),
             newCol,
@@ -163,25 +181,27 @@ export default function useContextMenu({
           setData(data.map(row => ({ ...row, [newKey]: "" })));
           break;
         }
+
         case "deleteCol": {
           const key = getColumnKey();
           if (!key) return;
           setRawColumns(rawColumns.filter((_col, i) => i !== colIndex - 1));
           setData(data.map(row => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [key]: _, __rowId, ...rest } = row;
-            return { ...rest, __rowId };
+            const { [key]: _, ...rest } = row;
+            return { ...rest, __rowId: row.__rowId };
           }));
           break;
         }
+
         case "renameColumn": {
           const col = rawColumns[colIndex - 1];
           if (!col || !containerRef.current) return;
 
           setRenameTarget({ index: colIndex, name: col.header as string });
+
           const cells = containerRef.current.querySelectorAll(".grid > div");
           const cell = cells[colIndex] as HTMLElement;
-
           if (cell) {
             const cellRect = cell.getBoundingClientRect();
             const containerRect = containerRef.current.getBoundingClientRect();
@@ -193,7 +213,7 @@ export default function useContextMenu({
           setShowRenameModal(true);
           break;
         }
-        // Future case handlers...
+
         default:
           break;
       }

@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, JSX } from "react";
 import TextCell from "./Text/TextCell";
 import ChoiceCell from "./Choice/ChoiceCell";
 import DateCell from "./Date/DateCell";
@@ -12,7 +12,7 @@ import AttachmentCell from "./Attachment/AttachmentCell";
 import ChoiceTag from "./Choice/ChoiceTag";
 import ReferenceTag from "./Reference/ReferenceTag";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
 
 function TruncatedCell({
@@ -43,6 +43,20 @@ function TruncatedCell({
   );
 }
 
+function getFormattedDate(value: unknown): string | JSX.Element {
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    value instanceof Date
+  ) {
+    const date = new Date(value);
+    if (isValid(date)) {
+      return format(date, "MM-dd-yyyy");
+    }
+  }
+  return <span className="text-gray-400 dark:text-gray-600">—</span>;
+}
+
 export default function EditableCell({
   value,
   rowId,
@@ -61,16 +75,6 @@ export default function EditableCell({
   onEditComplete?: () => void;
   onStartEdit?: () => void;
 }) {
-
-  // LOG: Every render
-  console.log('[EditableCell]', {
-    value,
-    rowId,
-    accessorKey: column.accessorKey,
-    type: column.type,
-    editing,
-  });
-
   const normalizedType = useMemo(() => column.type?.toLowerCase(), [column.type]);
   const { fontSize, rowHeight } = useTableSettings();
 
@@ -93,10 +97,11 @@ export default function EditableCell({
       />
     );
   }
+
   if (normalizedType === "currency") {
     return (
       <CurrencyCell
-        value={typeof value === "number" ? value : 0}
+        value={typeof value === "number" ? value : null}
         rowId={rowId}
         column={column}
         onSave={handleSave}
@@ -112,13 +117,7 @@ export default function EditableCell({
     if (["reference", "reference_list"].includes(normalizedType) && column.referenceData) {
       return (
         <ReferenceCell
-          value={
-            typeof value === "string" || typeof value === "number"
-              ? value
-              : value === undefined || value === null
-              ? null
-              : ""
-          }
+          value={typeof value === "string" || typeof value === "number" ? value : null}
           rowId={rowId}
           column={column as CustomColumnDef<unknown>}
           onSave={handleSave}
@@ -130,6 +129,7 @@ export default function EditableCell({
         />
       );
     }
+
     if (["choice", "choice_list"].includes(normalizedType) && column.choices) {
       return (
         <ChoiceCell
@@ -145,10 +145,11 @@ export default function EditableCell({
         />
       );
     }
+
     if (normalizedType === "number") {
       return (
         <NumberCell
-          value={typeof value === "number" ? value : 0}
+          value={typeof value === "number" ? value : null}
           rowId={rowId}
           column={column}
           onSave={handleSave}
@@ -159,6 +160,7 @@ export default function EditableCell({
         />
       );
     }
+
     if (normalizedType === "link") {
       return (
         <LinkCell
@@ -173,16 +175,11 @@ export default function EditableCell({
         />
       );
     }
+
     if (normalizedType === "formula") {
       return (
         <FormulaCell
-          value={
-            typeof value === "string" ||
-            typeof value === "number" ||
-            value == null
-              ? value ?? ""
-              : String(value)
-          }
+          value={typeof value === "string" || typeof value === "number" || value == null ? value ?? "" : String(value)}
           rowId={rowId}
           column={column}
           onSave={handleSave}
@@ -193,6 +190,7 @@ export default function EditableCell({
         />
       );
     }
+
     if (normalizedType === "attachment") {
       return (
         <AttachmentCell
@@ -207,15 +205,11 @@ export default function EditableCell({
         />
       );
     }
+
     if (normalizedType === "date") {
-      console.log("[EditableCell] Render DateCell: editing?", editing, { value, rowId, col: column.accessorKey });
       return (
         <DateCell
-          value={
-            typeof value === "string" || typeof value === "number" || value instanceof Date
-              ? value
-              : undefined
-          }
+          value={typeof value === "string" || typeof value === "number" || value instanceof Date ? value : undefined}
           rowId={rowId}
           column={column}
           onSave={handleSave}
@@ -227,6 +221,7 @@ export default function EditableCell({
         />
       );
     }
+
     return (
       <TextCell
         value={typeof value === "string" || typeof value === "number" ? value : ""}
@@ -242,7 +237,6 @@ export default function EditableCell({
     );
   }
 
-  // Non-editing cell wrapper
   const wrapperProps = {
     className: "w-full flex items-center px-2 select-none cursor-pointer",
     onDoubleClick: (e: React.MouseEvent) => {
@@ -257,24 +251,6 @@ export default function EditableCell({
     style: { fontSize, minHeight: rowHeight },
   };
 
-  if (normalizedType === "boolean") {
-    return (
-      <div
-        {...wrapperProps}
-        className="flex justify-center items-center h-full w-full cursor-pointer"
-        style={{ ...wrapperProps.style }}
-      >
-        <input
-          type="checkbox"
-          checked={!!value}
-          readOnly
-          tabIndex={-1}
-          className="w-4 h-4 cursor-not-allowed opacity-60"
-        />
-      </div>
-    );
-  }
-
   if (normalizedType === "date") {
     return (
       <div
@@ -283,21 +259,13 @@ export default function EditableCell({
         style={{ ...wrapperProps.style }}
       >
         <span className="truncate w-full block" style={{ lineHeight: `${rowHeight}px` }}>
-          {typeof value === "string" || typeof value === "number" || value instanceof Date
-            ? format(new Date(value), "MM-dd-yyyy")
-            : (
-              <span className="text-gray-400 dark:text-gray-600">—</span>
-            )
-          }
+          {getFormattedDate(value)}
         </span>
       </div>
     );
   }
 
-  if (
-    ["reference", "reference_list"].includes(normalizedType) &&
-    Array.isArray(column.referenceData)
-  ) {
+  if (["reference", "reference_list"].includes(normalizedType) && Array.isArray(column.referenceData)) {
     const renderReference = (v: string) => {
       const opt = column.referenceData!.find((c) => String(c.id) === String(v));
       return (
@@ -328,11 +296,7 @@ export default function EditableCell({
     );
   }
 
-  // --- Choice display ---
-  if (
-    ["choice", "choice_list"].includes(normalizedType) &&
-    Array.isArray(column.choices)
-  ) {
+  if (["choice", "choice_list"].includes(normalizedType) && Array.isArray(column.choices)) {
     const choicesArr = column.choices as
       | { id: string; name: string; color?: string }[]
       | string[];
@@ -372,24 +336,14 @@ export default function EditableCell({
     );
   }
 
-  if (typeof value === "string" || typeof value === "number") {
-    return (
-      <TruncatedCell
-        value={value}
-        fontSize={fontSize}
-        rowHeight={rowHeight}
-        title={String(value)}
-      />
-    );
-  }
+  const val = value == null || value === "" ? "" : String(value);
 
   return (
     <TruncatedCell
-      value={`[Uneditable: ${column.type}]`}
+      value={val || <span className="text-gray-400 dark:text-gray-600">—</span>}
       fontSize={fontSize}
       rowHeight={rowHeight}
-      className="text-xs text-gray-400 select-none"
-      title={column.type}
+      title={val || ""}
     />
   );
 }
