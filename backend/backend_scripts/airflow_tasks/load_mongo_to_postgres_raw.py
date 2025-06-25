@@ -27,8 +27,8 @@ LOG_TABLE = "raw_orders_log"
 
 # Load user-defined schema utility
 def load_user_schema_columns(client_name):
-    schema_dir = os.environ.get("SCHEMA_DIR", "/opt/airflow/user_schemas")
-    schema_path = Path(schema_dir) / f"{client_name.lower()}_schema.csv"
+    SCHEMA_DIR = Path(os.environ.get("SCHEMA_DIR", BASE_DIR / "user_schemas"))
+    schema_path = Path(SCHEMA_DIR) / f"{client_name.lower()}_schema.csv"
     if not os.path.exists(schema_path):
         raise FileNotFoundError(f"Schema not found: {schema_path}")
 
