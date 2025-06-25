@@ -4,9 +4,11 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.http import JsonResponse
-from api.views.schema_wizard import generate_full_workbook
-from api.views.table_creation import create_table_for_client
+from api.views.schema.schema_wizard import generate_full_workbook
+from api.views.user.table_creation import create_table_for_client
+from api.models import OnboardingProgress
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -81,3 +83,23 @@ def map_schema_and_create(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+    
+class OnboardingStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        progress, _ = OnboardingProgress.objects.get_or_create(user=request.user)
+        return Response({"completed_keys": progress.completed_steps})
+
+    def post(self, request):
+        key = request.data.get("key")
+        if not key:
+            return Response({"error": "Missing 'key'"}, status=400)
+
+        progress, _ = OnboardingProgress.objects.get_or_create(user=request.user)
+
+        if key not in progress.completed_steps:
+            progress.completed_steps.append(key)
+            progress.save()
+
+        return Response({"completed_keys": progress.completed_steps})

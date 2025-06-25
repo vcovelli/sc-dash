@@ -101,14 +101,25 @@ class UploadedFile(models.Model):
     def __str__(self):
         return f"{self.file_name} - {self.status}"
 
-class UserSchema(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="schema")
-    expected_headers = models.JSONField()
+class UserTableSchema(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="table_schemas")
+    table_name = models.CharField(max_length=128)
+    db_table_name = models.CharField(max_length=128, blank=True, null=True)
+    primary_key = models.CharField(max_length=128, default="id")
+    columns = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    grist_doc_id = models.CharField(max_length=255, null=True, blank=True)
-    grist_doc_url = models.URLField(null=True, blank=True)
-    grist_view_url = models.URLField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("user", "table_name")
 
     def __str__(self):
-        return f"Schema for {self.user.email or self.user.username}"
+        return f"{self.user.email or self.user.username} - {self.table_name} schema"
+    
+class OnboardingProgress(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    completed_steps = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s onboarding progress"

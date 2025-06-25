@@ -3,9 +3,17 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from api.models import UploadedFile
 
 User = get_user_model()
+
+# Plan quota (rows) per plan type — easy to update in one place
+PLAN_ROW_QUOTAS = {
+    "Free": 1000,
+    "Pro": 10000,
+    "Enterprise": 1000000,
+}
 
 class UserProfileView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -13,16 +21,33 @@ class UserProfileView(APIView):
 
     def get(self, request):
         user = request.user
-        upload_count = UploadedFile.objects.filter(user=user).count()
 
+        # User's uploads
+        uploads_qs = UploadedFile.objects.filter(user=user)
+        upload_count = uploads_qs.count()
+
+        # Rows used: sum row_count of *successful* files (skip files not processed yet)
+        rows_used = (
+            uploads_qs.filter(status="success").aggregate(total=Sum("row_count"))["total"] or 0
+        )
+
+        # Plan, quota, and days left (trial logic here if desired)
+        plan = getattr(user, "plan", "Free")
+        row_quota = PLAN_ROW_QUOTAS.get(plan, PLAN_ROW_QUOTAS["Free"])
+        days_left = 3 if plan == "Pro" else 0
+
+        # Compose response
         return Response({
             "username": user.username,
             "email": user.email,
-            "role": user.role,
-            "business_name": user.business_name,
-            "plan": user.plan,
+            "role": getattr(user, "role", ""),
+            "business_name": getattr(user, "business_name", ""),
+            "plan": plan,
             "joined": user.date_joined.strftime("%B %Y"),
             "uploads": upload_count,
+            "usage": rows_used, 
+            "usage_quota": row_quota, 
+            "days_left": days_left,
         })
 
     def patch(self, request):
@@ -36,7 +61,7 @@ class UserProfileView(APIView):
             user.business_name = business_name.strip()
             updated = True
 
-        if plan and plan in ["Free", "Pro", "Enterprise"]:
+        if plan and plan in PLAN_ROW_QUOTAS.keys():
             user.plan = plan
             updated = True
         elif plan:

@@ -1,5 +1,6 @@
 from api.models import UploadedFile
 from api.serializers import UploadedFileSerializer
+from accounts.models import UserActivity
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.generics import ListAPIView
@@ -44,10 +45,20 @@ class UploadCSVView(APIView):
                 aws_secret_access_key=settings.MINIO_SECRET_KEY,
             )
 
+            bucket_name = settings.MINIO_BUCKET_NAME
+            try:
+                s3.head_bucket(Bucket=bucket_name)
+            except s3.exceptions.ClientError as e:
+                error_code = int(e.response['Error']['Code'])
+                if error_code == 404:
+                    s3.create_bucket(Bucket=bucket_name)
+                elif error_code != 301 and error_code != 403:
+                    raise
+
             # Upload to MinIO
             s3.upload_fileobj(
                 csv_file,
-                settings.MINIO_BUCKET_NAME,
+                bucket_name,
                 minio_path,
                 ExtraArgs={"ContentType": "text/csv"}
             )
@@ -59,6 +70,18 @@ class UploadCSVView(APIView):
                 minio_path=minio_path,
                 status="pending",
                 file_size=file_size
+            )
+
+            # Log user activity
+            UserActivity.objects.create(
+                user=request.user,
+                verb="uploaded file",
+                target=file_name,
+                meta={
+                    "file_id": uploaded_file.id,
+                    "file_size": file_size,
+                    "minio_path": minio_path
+                }
             )
 
             # Airflow Trigger

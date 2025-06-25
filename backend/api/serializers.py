@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     Supplier, Warehouse, Product, Inventory,
     Customer, Order, OrderItem, Shipment,
-    UploadedFile, UserSchema
+    UploadedFile, UserTableSchema
 )
 
 # ========== Basic Serializers ==========
@@ -88,7 +88,31 @@ class StartIngestionSerializer(serializers.Serializer):
 
 # ========== User Schema ==========
 
-class UserSchemaSerializer(serializers.ModelSerializer):
+from api.models import UserTableSchema
+
+class UserTableSchemaSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    columns = serializers.JSONField()
+    expected_headers = serializers.SerializerMethodField()
+
     class Meta:
-        model = UserSchema
-        fields = ["expected_headers", "grist_doc_id", "grist_doc_url", "grist_view_url"]
+        model = UserTableSchema
+        fields = [
+            'id',
+            'user',
+            'table_name',
+            'db_table_name',
+            'primary_key',
+            'columns',
+            'created_at',
+            'updated_at',
+            'expected_headers',  # <-- add this line
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def get_expected_headers(self, obj):
+        cols = obj.columns or []
+        # If dicts (modern style): extract accessorKey, else just string
+        if cols and isinstance(cols[0], dict):
+            return [col.get('accessorKey') for col in cols if col.get('accessorKey')]
+        return cols
