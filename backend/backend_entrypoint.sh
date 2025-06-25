@@ -19,6 +19,7 @@ psql -h "$PG_HOST" -U "$APP_DB_USER" -d postgres -c "CREATE DATABASE $APP_DB_NAM
 # Apply migrations
 python manage.py makemigrations api
 python manage.py makemigrations accounts
+python manage.py makemigrations ai
 python manage.py migrate
 
 # Create superuser if needed

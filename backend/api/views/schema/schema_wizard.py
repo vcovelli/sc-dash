@@ -8,14 +8,18 @@ from minio import Minio
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
-from api.views.table_creation import create_table_for_client
-from api.models import UserSchema
+from api.views.user.table_creation import create_table_for_client
+from api.models import UserTableSchema
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 load_dotenv()
 
-SCHEMA_DIR = Path(os.environ.get("SCHEMA_DIR", "/opt/airflow/user_schemas"))
-SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
+# Use project-relative dir by default, can be overridden by env
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+SCHEMA_DIR = Path(os.environ.get("SCHEMA_DIR", BASE_DIR / "user_schemas"))
+
+def ensure_schema_dir():
+    SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
 
 SCHEMA_FEATURES = {
     "orders": {
@@ -50,13 +54,11 @@ SCHEMA_FEATURES = {
 REQUIRED_KEYS = ["order_id", "product_id", "order_date"]
 INTERNAL_COLUMNS = ["version", "uuid", "ingested_at", "client_name"]
 
-
 def style_header(cell):
     cell.font = Font(bold=True)
     cell.alignment = Alignment(horizontal="center")
     cell.fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
     cell.protection = Protection(locked=True)
-
 
 def generate_sample_row(columns, client_name):
     row = []
@@ -113,25 +115,20 @@ def generate_sample_row(columns, client_name):
 
 def write_sheet(wb, sheet_name, columns, client_name, num_rows=10):
     ws = wb.create_sheet(title=sheet_name)
-
     for col_idx, col_name in enumerate(columns, start=1):
         cell = ws.cell(row=1, column=col_idx, value=col_name)
         style_header(cell)
-
     for row_num in range(2, 2 + num_rows):
         row_data = generate_sample_row(columns, client_name)
         for col_idx, value in enumerate(row_data, start=1):
             cell = ws.cell(row=row_num, column=col_idx, value=value)
-
-            # Set number formats
             if "date" in columns[col_idx-1]:
                 cell.number_format = "yyyy-mm-dd"
             elif "price" in columns[col_idx-1]:
                 cell.number_format = '"$"#,##0.00'
 
 def generate_full_workbook(client_name, selected_features, include_sample_data=True):
-    from openpyxl.formula.translate import Translator
-
+    ensure_schema_dir()
     file_path = SCHEMA_DIR / f"{client_name}_full_template.xlsx"
     wb = Workbook()
     wb.remove(wb.active)
@@ -142,7 +139,6 @@ def generate_full_workbook(client_name, selected_features, include_sample_data=T
         if config:
             included_sheets[config["sheet"]] = config["columns"]
 
-    # Define logical order and remove backend-only fields
     logical_order = [
         "order_id", "order_date", "product_id", "product_name",
         "customer_id", "customer_name",
@@ -152,39 +148,31 @@ def generate_full_workbook(client_name, selected_features, include_sample_data=T
     ]
     master_fields = [col for col in logical_order if col in {col for cols in included_sheets.values() for col in cols} or col in REQUIRED_KEYS]
 
-    # 1. MASTER_Orders Sheet with sample values
+    # MASTER_Orders Sheet with sample values
     ws_master = wb.create_sheet("MASTER_Orders")
-
     for col_idx, col_name in enumerate(master_fields, start=1):
         cell = ws_master.cell(row=1, column=col_idx, value=col_name)
         style_header(cell)
-
     if include_sample_data:
         for row_num in range(2, 12):
             row_data = generate_sample_row(master_fields, client_name)
             for col_idx, value in enumerate(row_data, start=1):
                 cell = ws_master.cell(row=row_num, column=col_idx, value=value)
+                if "date" in master_fields[col_idx - 1]:
+                    cell.number_format = "yyyy-mm-dd"
+                elif "price" in master_fields[col_idx - 1]:
+                    cell.number_format = '"$"#,##0.00'
 
-            # Format cells
-            if "date" in master_fields[col_idx - 1]:
-                cell.number_format = "yyyy-mm-dd"
-            elif "price" in master_fields[col_idx - 1]:
-                cell.number_format = '"$"#,##0.00'
-
-    # 2. Relational sheets using formulas
+    # Relational sheets using formulas
     for sheet_name, columns in included_sheets.items():
         if sheet_name == "MASTER_Orders":
             continue
         ws = wb.create_sheet(sheet_name)
-
-        # Write headers
         for col_idx, col_name in enumerate(columns, start=1):
             cell = ws.cell(row=1, column=col_idx, value=col_name)
             style_header(cell)
-
-        # Relate each cell in this sheet to MASTER_Orders if the column exists there
         if include_sample_data:
-            for row_num in range(2, 7):  # 5 rows
+            for row_num in range(2, 7):
                 for col_idx, col_name in enumerate(columns, start=1):
                     if col_name in master_fields:
                         ref_col_idx = master_fields.index(col_name) + 1
@@ -197,29 +185,27 @@ def generate_full_workbook(client_name, selected_features, include_sample_data=T
 
     # Upload to MinIO
     minio_client = Minio(
-        os.getenv("MINIO_ENDPOINT").replace("http://", "").replace("https://", ""),
-        access_key=os.getenv("MINIO_ROOT_USER"),
-        secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
+        "minio:9000",
+        access_key=os.getenv("MINIO_ACCESS_KEY"),
+        secret_key=os.getenv("MINIO_SECRET_KEY"),
         secure=False,
     )
-
     bucket_name = "templates"
     object_name = file_path.name
-
     if not minio_client.bucket_exists(bucket_name):
         minio_client.make_bucket(bucket_name)
-
     minio_client.fput_object(bucket_name, object_name, str(file_path))
 
     url = minio_client.presigned_get_object(bucket_name, object_name, expires=timedelta(minutes=30))
 
-    public_minio_url = os.getenv("PUBLIC_MINIO_URL")
+    url = minio_client.presigned_get_object(bucket_name, object_name, expires=timedelta(minutes=30))
+    public_minio_url = os.getenv("PUBLIC_MINIO_URL")  # set to "https://minio.supplywise.ai"
     if public_minio_url:
         url = url.replace("http://minio:9000", public_minio_url)
 
     return {
         "download_url": url,
-        "file_path": str(file_path)  # actual local .xlsx path
+        "file_path": str(file_path)
     }
 
 @csrf_exempt
@@ -228,6 +214,7 @@ def generate_schema(request):
         return JsonResponse({"error": "Invalid method"}, status=405)
 
     try:
+        # --- 1. Parse Request Data ---
         data = json.loads(request.body)
         raw_client_name = data.get("client_name") or data.get("business_name")
         selected_features = data.get("features")
@@ -243,22 +230,23 @@ def generate_schema(request):
         if not selected_features:
             return JsonResponse({"error": "No valid features selected"}, status=400)
 
-        # Step 1: Write schema CSV
+        # --- 2. Compute All Columns (Union) ---
+        all_columns = set()
+        for feature in selected_features:
+            config = SCHEMA_FEATURES.get(feature)
+            if config:
+                all_columns.update(config["columns"])
+        all_columns.update(REQUIRED_KEYS)
+        all_columns.update(INTERNAL_COLUMNS)
+        sorted_columns = sorted(all_columns)
+
+        # --- 3. Write schema CSV (optional, just for export/debug) ---
+        ensure_schema_dir()
         schema_path = SCHEMA_DIR / f"{client_name}_schema.csv"
         with open(schema_path, mode="w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["column_name", "data_type"])
-
-            all_columns = set()
-            for feature in selected_features:
-                config = SCHEMA_FEATURES.get(feature)
-                if config:
-                    all_columns.update(config["columns"])
-
-            all_columns.update(REQUIRED_KEYS)
-            all_columns.update(INTERNAL_COLUMNS)
-
-            for col in sorted(all_columns):
+            for col in sorted_columns:
                 if "date" in col:
                     dtype = "DATE"
                 elif "id" in col or col == "uuid":
@@ -271,66 +259,43 @@ def generate_schema(request):
                     dtype = "TEXT"
                 writer.writerow([col, dtype])
 
-        # Step 2: Collect expected headers
-        expected_headers_set = set()
-        for feature in selected_features:
-            config = SCHEMA_FEATURES.get(feature)
-            if config:
-                expected_headers_set.update(config["columns"])
-
-        expected_headers_set.update(REQUIRED_KEYS)
-        expected_headers = sorted(list(expected_headers_set))
-
-        # Step 3: Auth & DB update
+        # --- 4. Authenticate User ---
         user = None
         try:
             authenticator = JWTAuthentication()
             user_auth_tuple = authenticator.authenticate(request)
             if user_auth_tuple:
                 user, _ = user_auth_tuple
-                UserSchema.objects.update_or_create(
-                    user=user,
-                    defaults={"expected_headers": expected_headers}
-                )
         except Exception as auth_err:
             print(f"[schema_wizard] ⚠️ User authentication failed: {auth_err}")
+            # You might want to return here, but can let guest users generate files if you want
 
-        # Step 4: Generate workbook (.xlsx)##################################################################
-        create_table_for_client(client_name)##################################################################
-        workbook = generate_full_workbook(client_name, selected_features, include_sample_data)##################################################################
-        download_url = workbook["download_url"]##################################################################
-
-        # Step 5: Download from MinIO for Grist upload##################################################################
-        import requests##################################################################
-        local_temp_path = f"/tmp/{client_name}_upload.xlsx" # This all has to change to use the new system
-        r = requests.get(download_url) ##################################################################
-        with open(local_temp_path, "wb") as f: ##################################################################
-            f.write(r.content)##################################################################
-
-        # Step 6: Generate .grist file from schema + sample data##################################################################
-        schema, sample_data = generate_grist_schema_and_data(selected_features, client_name)##################################################################
-        grist_path = f"/tmp/{client_name}.grist"##################################################################
-        create_grist_file(grist_path, schema, sample_data)##################################################################
-        grist_doc = upload_grist_file(grist_path)##################################################################
-
-        # Step 7: Save Grist view to DB if authenticated
+        # --- 5. Save User Schema (if authenticated) ---
         if user:
-            UserSchema.objects.update_or_create(
-                user=user,
-                defaults={
-                    "expected_headers": expected_headers,##################################################################
-                    "grist_doc_id": grist_doc["doc_id"],##################################################################
-                    "grist_doc_url": grist_doc["doc_url"],##################################################################
-                    "grist_view_url": grist_doc["view_url"]##################################################################
-                }##################################################################
-            )
+            for feature in selected_features:
+                config = SCHEMA_FEATURES.get(feature)
+                if config:
+                    table_name = feature
+                    columns = list(config["columns"])
+                    # Add any global or table-specific columns as needed
+                    columns += [c for c in (REQUIRED_KEYS + INTERNAL_COLUMNS) if c not in columns]
+                    columns = sorted(set(columns))
+                    UserTableSchema.objects.update_or_create(
+                        user=user,
+                        table_name=table_name,
+                        defaults={"columns": columns}
+                    )
 
+        # --- 6. Generate the Excel Workbook, Upload to Minio ---
+        create_table_for_client(client_name)
+        workbook = generate_full_workbook(client_name, selected_features, include_sample_data)
+        download_url = workbook["download_url"]
+
+        # --- 7. Respond with Success/Download URL ---
         return JsonResponse({
             "success": True,
-            "message": f"Workbook and Grist doc generated for {client_name}",
-            "download_url": download_url,
-            "grist_doc_url": grist_doc["doc_url"],
-            "grist_view_url": grist_doc["view_url"]
+            "message": f"Workbook generated for {client_name}",
+            "download_url": download_url
         })
 
     except Exception as e:

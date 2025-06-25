@@ -1,7 +1,7 @@
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from ..models import Order, OrderItem
-from ..serializers import OrderSerializer, OrderItemSerializer
+from ...models import Order, OrderItem
+from ...serializers import OrderSerializer, OrderItemSerializer
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.select_related('customer').prefetch_related('orderitem_set__product')

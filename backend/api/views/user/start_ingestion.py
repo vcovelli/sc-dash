@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import UploadedFile
-from .serializers import StartIngestionSerializer
-from .tasks import trigger_ingestion_pipeline  #######
+from api.models import UploadedFile
+from api.serializers import StartIngestionSerializer
+#from api.tasks import trigger_ingestion_pipeline  #######
 
 class StartIngestionView(APIView):
     permission_classes = [IsAuthenticated]
@@ -18,7 +18,7 @@ class StartIngestionView(APIView):
                 uploaded_file.status = "processing"
                 uploaded_file.save()
 
-                trigger_ingestion_pipeline(uploaded_file.minio_path, uploaded_file.id)
+                #trigger_ingestion_pipeline(uploaded_file.minio_path, uploaded_file.id)
 
                 return Response({"message": "Ingestion started."}, status=status.HTTP_200_OK)
             except UploadedFile.DoesNotExist:

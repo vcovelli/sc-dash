@@ -1,7 +1,7 @@
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from ..models import Supplier
-from ..serializers import SupplierSerializer
+from ...models import Supplier
+from ...serializers import SupplierSerializer
 
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.all()

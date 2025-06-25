@@ -3,9 +3,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from api.models import UploadedFile
-from django.db import models
-import psutil
-import time
+from django.db.models import Sum
+from django.utils.timezone import now
 
 def format_size(bytes_value):
     if bytes_value < 1024:
@@ -24,19 +23,38 @@ class DashboardOverviewView(APIView):
         try:
             user = request.user
 
+            # All uploads for this user
             uploads_qs = UploadedFile.objects.filter(user=user).order_by("-uploaded_at")
             total_uploads = uploads_qs.count()
             recent_uploads = uploads_qs[:5]
 
-            # Storage used (human-readable)
-            total_size_bytes = uploads_qs.aggregate(total_size=models.Sum("file_size"))["total_size"] or 0
+            # Total storage used
+            total_size_bytes = uploads_qs.aggregate(
+                total_size=Sum("file_size")
+            )["total_size"] or 0
             storage_used = format_size(total_size_bytes)
 
-            # System uptime (static for now, replace with real % if monitored)
+            # Total rows used (only successful ingestions)
+            total_rows_used = uploads_qs.filter(status="success").aggregate(
+                total=Sum("row_count")
+            )["total"] or 0
+
+            # Optionally update user profile with stats
+            user.total_files = total_uploads
+            user.storage_used_bytes = total_size_bytes
+            user.last_dashboard_update = now()
+            user.save(update_fields=["total_files", "storage_used_bytes", "last_dashboard_update"])
+
+            # Static for now, but you can make this dynamic later
             system_uptime = "99.99%"
+            usage_quota = 10000  # Change if you want a different plan limit
 
             return Response({
                 "total_files": total_uploads,
+                "storage_used": storage_used,
+                "system_uptime": system_uptime,
+                "usage": total_rows_used,
+                "usage_quota": usage_quota,
                 "recent_uploads": [
                     {
                         "file_name": f.file_name,
@@ -45,8 +63,6 @@ class DashboardOverviewView(APIView):
                     }
                     for f in recent_uploads
                 ],
-                "storage_used": storage_used,
-                "system_uptime": system_uptime,
             })
         except Exception as e:
             print(f"[dashboard-overview] ERROR: {e}")
