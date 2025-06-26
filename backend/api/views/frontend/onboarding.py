@@ -8,7 +8,14 @@ from rest_framework.views import APIView
 from django.http import JsonResponse
 from api.views.schema.schema_wizard import generate_full_workbook
 from api.views.user.table_creation import create_table_for_client
-from api.models import OnboardingProgress
+from api.models import OnboardingProgress, User
+from accounts.helpers.onboarding_utils import (
+    has_uploaded_file,
+    has_created_schema,
+    has_created_dashboard,
+    has_set_alerts,
+    has_invited_users,
+)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -84,22 +91,35 @@ def map_schema_and_create(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
     
+ONBOARDING_STEP_KEYS = [
+    "upload_data",
+    "verify_schema",
+    "dashboard",
+    "alerts",
+    "add_users",  # Optional—show conditionally
+]
+
 class OnboardingStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        progress, _ = OnboardingProgress.objects.get_or_create(user=request.user)
-        return Response({"completed_keys": progress.completed_steps})
+        user = request.user
+        completed_keys = []
 
-    def post(self, request):
-        key = request.data.get("key")
-        if not key:
-            return Response({"error": "Missing 'key'"}, status=400)
+        if has_uploaded_file(user):
+            completed_keys.append("upload_data")
 
-        progress, _ = OnboardingProgress.objects.get_or_create(user=request.user)
+        if has_created_schema(user):
+            completed_keys.append("verify_schema")
 
-        if key not in progress.completed_steps:
-            progress.completed_steps.append(key)
-            progress.save()
+        if has_created_dashboard(user):
+            completed_keys.append("dashboard")
 
-        return Response({"completed_keys": progress.completed_steps})
+        if has_set_alerts(user):
+            completed_keys.append("alerts")
+
+        # Optional: add "add_users" logic if you want to keep it
+        if User.objects.filter(business_name=user.business_name).count() > 1:
+            completed_keys.append("add_users")
+
+        return Response({"completed_keys": completed_keys})

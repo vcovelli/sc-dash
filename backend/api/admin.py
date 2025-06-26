@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Supplier, Warehouse, Product, Inventory, Customer, Order, OrderItem, Shipment, UploadedFile, UserTableSchema
+from .models import Supplier, Warehouse, Product, Inventory, Customer, Order, OrderItem, Shipment, UploadedFile, UserTableSchema, OnboardingProgress
 
 admin.site.register(Supplier)
 admin.site.register(Warehouse)
@@ -14,3 +14,4 @@ admin.site.register(UploadedFile)
 
 admin.site.register(UserTableSchema)
 
+admin.site.register(OnboardingProgress)
