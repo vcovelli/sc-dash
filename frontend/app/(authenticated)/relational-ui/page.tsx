@@ -9,6 +9,7 @@ import { TableSettingsProvider } from "@/app/(authenticated)/relational-ui/compo
 import { useNavbarVisibility } from "@/components/ClientLayoutWrapper";
 import TableSelectorPanel from "@/app/(authenticated)/relational-ui/components/UX/TableSelectorPanel";
 import { useUserSettings } from "@/components/UserSettingsContext";
+import { useProfile } from "@/hooks/useProfile";
 import { FONT_SIZE_PRESETS } from "@/components/FontSizeDropdown";
 import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
 import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
@@ -72,7 +73,7 @@ export default function SheetsPage() {
   const [isTablePanelOpen, setIsTablePanelOpen] = useState(true);
   const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
   const { showNavbar, setShowNavbar } = useNavbarVisibility();
-
+  const { profile } = useProfile();
   const { settings } = useUserSettings();
   const userFontSize = settings.fontSize || "base";
   const userFontSizeIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((v) => v.value === userFontSize));
@@ -145,6 +146,11 @@ export default function SheetsPage() {
             onSelectTable={setActiveTableName}
             onClose={() => setIsTablePanelOpen((v) => !v)}
             tableFontSize={FONT_SIZE_PRESETS[fontSizeIdx]?.value ?? "base"}
+            isProUser={profile?.plan === "pro" || profile?.plan === "enterprise"}
+            onAddTable={() => {
+              // Replace with your logic or just a stub for now:
+              console.log("Add table clicked!");
+            }}
           />
         }
         rightPanel={
@@ -200,16 +206,20 @@ export default function SheetsPage() {
 
         <div className="flex-1 min-h-0 flex flex-col">
           <GridTable
-            tableName={activeTableName}
-            columns={columns}
-            data={rows}
-            onUpdateTable={() => {}}
-            onOpenSettingsPanel={(col) => {
-              setColumnSettingsTarget(col);
-              setIsSettingsPanelOpen(true);
-            }}
-            isSettingsPanelOpen={isSettingsPanelOpen}
-          />
+              tableName={activeTableName}
+              columns={columns}
+              data={rows}
+              onUpdateTable={() => {}} // stub
+              onOpenSettingsPanel={(col) => {
+                setColumnSettingsTarget(col);
+                setIsSettingsPanelOpen(true);
+              }}
+              isSettingsPanelOpen={isSettingsPanelOpen}
+              onRenameColumn={() => {}}        // stub, no lint error
+              onReorderColumns={() => {}}      // stub, no lint error
+              onAddColumn={() => {}}           // stub, no lint error
+              onDeleteColumn={() => {}}        // stub, no lint error
+            />
         </div>
       </RelationalWorkspaceLayout>
     </TableSettingsProvider>

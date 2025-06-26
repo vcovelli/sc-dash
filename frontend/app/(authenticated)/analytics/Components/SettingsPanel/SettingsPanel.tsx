@@ -54,7 +54,7 @@ export default function SettingsPanel({
   onSave,
   onExitFocus,
   onLiveUpdate,
-  isMobile = false,
+  //isMobile = false,
 }: {
   widget?: WidgetConfig<AllWidgetSettings>;
   open: boolean;
@@ -62,7 +62,7 @@ export default function SettingsPanel({
   onSave: (settings: AllWidgetSettings) => void;
   onExitFocus?: () => void;
   onLiveUpdate?: (draft: AllWidgetSettings) => void;
-  isMobile?: boolean;
+  //isMobile?: boolean;
 }) {
   const [draft, setDraft] = useState<AllWidgetSettings>(
     () => widget?.settings ?? getDefaultChartSettings(widget?.type ?? "bar")
@@ -88,7 +88,7 @@ export default function SettingsPanel({
     setDraftType(widget?.type ?? "bar");
     setDirty(false);
     setShowTypeChanger(false);
-  }, [widget?.id]);
+  }, [widget?.id, widget?.settings, widget?.type]);
 
   const toggleYField = (field: string) => {
     setDraft(d => {

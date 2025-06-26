@@ -3,13 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios, { AxiosError } from "axios";
-import { FaUser, FaLock, FaGithub, FaApple, FaGoogle } from "react-icons/fa";
+import { FaUser, FaLock, FaGithub, FaGoogle } from "react-icons/fa";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Script from "next/script";
 
+interface GoogleCredentialResponse {
+  credential?: string;
+  [key: string]: unknown;
+}
 declare global {
   interface Window {
-    onGoogleSignIn: (response: any) => void;
+    onGoogleSignIn: (response: GoogleCredentialResponse) => void;
   }
 }
 
@@ -30,7 +34,6 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string | null>(null);
-  const [googleReady, setGoogleReady] = useState(false);
   const router = useRouter();
 
   // If redirected back from GitHub, handle tokens & profile fetch
@@ -71,14 +74,12 @@ export default function LoginPage() {
     setMessage("");
     setLoading(true);
     setLoadingStep("Connecting to Google…");
-    // @ts-ignore
     if (!window.google || !GOOGLE_CLIENT_ID) {
       setLoading(false);
       setLoadingStep(null);
       setMessage("❌ Google not loaded.");
       return;
     }
-    // @ts-ignore
     window.google.accounts.id.prompt((notification) => {
       if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
         setLoading(false);
@@ -115,7 +116,7 @@ export default function LoginPage() {
         setTimeout(() => {
           router.push(data.new ? "/welcome" : "/dashboard");
         }, 900);
-      } catch (err) {
+      } catch {
         setLoadingStep(null);
         setMessage("❌ Google login failed (backend error)");
         setLoading(false);
@@ -178,12 +179,12 @@ export default function LoginPage() {
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
         onLoad={() => {
-          // @ts-ignore
-          window.google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: (response: any) => window.onGoogleSignIn(response),
-          });
-          setGoogleReady(true);
+          if (window.google && window.google.accounts && window.google.accounts.id) {
+            window.google.accounts.id.initialize({
+              client_id: GOOGLE_CLIENT_ID,
+              callback: (response: GoogleCredentialResponse) => window.onGoogleSignIn(response),
+            });
+          }
         }}
       />
       <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-100 to-blue-50 dark:from-gray-950 dark:to-gray-900">
