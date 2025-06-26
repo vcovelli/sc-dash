@@ -9,9 +9,15 @@ import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
 import api from "@/lib/axios";
 import { Download, UploadCloud } from "lucide-react";
 
+type TableSchema = {
+  table_name: string;
+  expected_headers?: string[];
+  columns?: string[];
+};
+
 // Fetches all user schemas
 const useUserSchemas = () => {
-  const [schemas, setSchemas] = useState<any[]>([]);
+  const [schemas, setSchemas] = useState<TableSchema[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -344,7 +350,3 @@ export default function UploadsPage() {
     </FontSizeVarsProvider>
   );
 }
-function setUploading(arg0: boolean) {
-  throw new Error("Function not implemented.");
-}
-

@@ -16,7 +16,6 @@ interface TableSelectorPanelProps {
   tableFontSize: string;
   isProUser: boolean;
   onAddTable: () => void;
-  onUpgrade: () => void;
 }
 
 export default function TableSelectorPanel({
@@ -28,7 +27,6 @@ export default function TableSelectorPanel({
   tableFontSize,
   isProUser,
   onAddTable,
-  onUpgrade,
 }: TableSelectorPanelProps) {
   const fontVars = getFontVars(tableFontSize || "base");
   const [showPaywallMsg, setShowPaywallMsg] = useState(false);

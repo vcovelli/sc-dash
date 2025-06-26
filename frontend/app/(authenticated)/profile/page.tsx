@@ -7,9 +7,8 @@ import { Cog6ToothIcon } from "@heroicons/react/24/solid";
 import OutsideClickModal from "@/components/OutsideClickModal";
 import {
   FaUserEdit, FaEnvelope, FaKey, FaClock, FaTrashAlt,
-  FaDollarSign, FaFont, FaAdjust, FaChevronDown, FaChevronUp
+  FaDollarSign, FaFont, FaAdjust
 } from "react-icons/fa";
-import FontSizeDropdown from "@/components/FontSizeDropdown";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
 

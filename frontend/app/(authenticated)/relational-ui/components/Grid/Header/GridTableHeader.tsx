@@ -74,10 +74,8 @@ const GridTableHeader: React.FC<Props> = ({
   getTouchHandlers,
   setFocusedRowIndex,
   rowNumberWidth,
-  onRenameColumn,
   onReorderColumns,
   onAddColumn,
-  onDeleteColumn,
 }) => {
   const { fontSize, rowHeight } = useTableSettings();
   const fontVars = getFontVars(fontSize, rowHeight);
@@ -90,7 +88,7 @@ const GridTableHeader: React.FC<Props> = ({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Add Column Logic
+  // Add Column Logic (calls both local state and parent CRUD handler)
   const handleAddColumn = (type: ColumnDataType) => {
     const newKey = `col_${Date.now()}`;
     const newCol: CustomColumnDef<Row> = {
@@ -99,6 +97,7 @@ const GridTableHeader: React.FC<Props> = ({
       type,
     };
 
+    // Update local UI instantly
     setRawColumns((prev) => [...prev, newCol]);
     setData((prev) =>
       prev.map((row) => ({
@@ -111,6 +110,8 @@ const GridTableHeader: React.FC<Props> = ({
           "",
       }))
     );
+    // Call parent handler for backend sync
+    onAddColumn(newCol);
   };
 
   if (!headerGroups) return null;
@@ -133,7 +134,9 @@ const GridTableHeader: React.FC<Props> = ({
                   const oldIdx = oldCols.findIndex(col => String(col.accessorKey) === String(active.id));
                   const newIdx = oldCols.findIndex(col => String(col.accessorKey) === String(over.id));
                   if (oldIdx === -1 || newIdx === -1) return oldCols;
-                  return arrayMove(oldCols, oldIdx, newIdx);
+                  const newCols = arrayMove(oldCols, oldIdx, newIdx)
+                  onReorderColumns(newCols);
+                  return newCols;
                 });
               }
             }}

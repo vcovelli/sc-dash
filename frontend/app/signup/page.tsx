@@ -1,19 +1,44 @@
 "use client";
 
-declare global {
-  interface Window {
-    google?: any;
-  }
-}
-
 import axios, { AxiosError } from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaEnvelope, FaLock, FaCheckCircle, FaTimesCircle, FaGithub, FaGoogle } from "react-icons/fa";
 import Script from "next/script";
 import zxcvbn from "zxcvbn";
 import { HiOutlineCube } from "react-icons/hi";
 import { ThemeToggle } from "@/components/ThemeToggle";
+
+interface SignupErrorResponse {
+  non_field_errors?: string[];
+  email?: string[];
+  username?: string[];
+  password1?: string[];
+  [key: string]: unknown;
+}
+
+interface GoogleCredentialResponse {
+  credential?: string;
+  [key: string]: unknown;
+}
+
+type PromptMomentNotification = {
+  isNotDisplayed: () => boolean;
+  isSkippedMoment: () => boolean;
+};
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (options: { client_id: string; callback: (response: GoogleCredentialResponse) => void }) => void;
+          prompt: (callback: (notification: PromptMomentNotification) => void) => void;
+        };
+      };
+    };
+  }
+}
 
 const SOCIALS = [
   {
@@ -48,35 +73,25 @@ export default function SignupPage() {
   const [pwScore, setPwScore] = useState(0);
   const [googleReady, setGoogleReady] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.google && GOOGLE_CLIENT_ID) {
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredentialResponse,
-      });
-      setGoogleReady(true);
-    }
-  }, []);
-
-  function handleGoogleCredentialResponse(response: { credential: any; }) {
-    handleGoogleSuccess({ credential: response.credential });
-  }
-
   const handleCustomGoogleLogin = () => {
     setMessage("");
     setLoading(true);
     setTimeout(() => {
-      // @ts-ignore
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          setLoading(false);
-          setMessage("❌ Google signup was cancelled or blocked.");
-        }
-      });
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            setLoading(false);
+            setMessage("❌ Google signup was cancelled or blocked.");
+          }
+        });
+      } else {
+        setLoading(false);
+        setMessage("❌ Google API is not ready.");
+      }
     }, 100);
   };
 
-  const handleChange = (e: { target: { name: any; value: any; }; }) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
 
@@ -120,7 +135,7 @@ export default function SignupPage() {
       setMessage("✅ Account created! Check your email to verify your account.");
       setTimeout(() => router.push("/login"), 2500);
     } catch (err) {
-      const error = err as AxiosError<any>;
+      const error = err as AxiosError<SignupErrorResponse>;
       setMessage(
         error.response?.data?.non_field_errors?.[0] ||
         error.response?.data?.email?.[0] ||
@@ -133,7 +148,7 @@ export default function SignupPage() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: { credential: any; }) => {
+  const handleGoogleSuccess = useCallback(async (credentialResponse: GoogleCredentialResponse) => {
     setMessage("");
     setLoading(true);
 
@@ -183,7 +198,20 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    function handleGoogleCredentialResponse(response: GoogleCredentialResponse) {
+      handleGoogleSuccess({ credential: response.credential });
+    }
+    if (typeof window !== "undefined" && window.google && GOOGLE_CLIENT_ID) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+      });
+      setGoogleReady(true);
+    }
+  }, [handleGoogleSuccess]);
 
   return (
     <>

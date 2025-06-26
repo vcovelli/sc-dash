@@ -58,6 +58,18 @@ export default function SheetList() {
 
   // --- COLUMN OPERATIONS ---
 
+  // Helper: Fetch latest schema and rows after any operation
+  const fetchAndSetSheetSchema = useCallback(async (sheet: Sheet) => {
+    const schemaRes = await axios.get(`/api/schema/${sheet.name}/`);
+    setSheetData(prev => ({
+      ...prev,
+      [sheet.id]: {
+        columns: schemaRes.data.columns,
+        data: schemaRes.data.rows,
+      }
+    }));
+  }, []);
+
   // Edit/update column (type, etc.)
   const handleUpdateColumn = useCallback(async (updatedCol: CustomColumnDef<unknown>) => {
     if (!columnSettingsSheetId) return;
@@ -94,98 +106,49 @@ export default function SheetList() {
   const handleRenameColumn = useCallback(async (sheetId: string, accessorKey: string, newHeader: string) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
-
-    setSheetData(prev => {
-      const prevSheet = prev[sheetId];
-      if (!prevSheet) return prev;
-      const newColumns = prevSheet.columns.map(col =>
-        col.accessorKey === accessorKey ? { ...col, header: newHeader } : col
-      );
-      return {
-        ...prev,
-        [sheetId]: {
-          ...prevSheet,
-          columns: newColumns,
-          data: prevSheet.data,
-        }
-      };
-    });
-
     try {
-      await axios.patch(`/api/schema/${sheet.name}/columns/${accessorKey}/rename/`, {
-        newName: newHeader
-      });
+      await axios.patch(`/api/schema/${sheet.name}/columns/${accessorKey}/rename/`, { newName: newHeader });
+      await fetchAndSetSheetSchema(sheet);
     } catch (e) {
       console.error("Failed to rename column:", e);
     }
-  }, [sheets]);
+  }, [sheets, fetchAndSetSheetSchema]);
 
   // Reorder columns (you’ll call this after drag-and-drop, pass the new array order)
   const handleReorderColumns = useCallback(async (sheetId: string, newColumns: CustomColumnDef<unknown>[]) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
-
-    setSheetData(prev => ({
-      ...prev,
-      [sheetId]: {
-        ...prev[sheetId],
-        columns: newColumns,
-        data: prev[sheetId].data,
-      }
-    }));
-
     try {
-      await axios.patch(`/api/schema/${sheet.name}/columns/reorder/`, {
-        columns: newColumns
-      });
+      await axios.patch(`/api/schema/${sheet.name}/columns/reorder/`, { columns: newColumns });
+      await fetchAndSetSheetSchema(sheet);
     } catch (e) {
       console.error("Failed to reorder columns:", e);
     }
-  }, [sheets]);
+  }, [sheets, fetchAndSetSheetSchema]);
 
   // Add new column
   const handleAddColumn = useCallback(async (sheetId: string, newColumn: CustomColumnDef<unknown>) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
-
-    setSheetData(prev => ({
-      ...prev,
-      [sheetId]: {
-        ...prev[sheetId],
-        columns: [...prev[sheetId].columns, newColumn],
-        data: prev[sheetId].data,
-      }
-    }));
-
     try {
-      await axios.post(`/api/schema/${sheet.name}/columns/`, {
-        column: newColumn
-      });
+      await axios.post(`/api/schema/${sheet.name}/columns/`, { column: newColumn });
+      await fetchAndSetSheetSchema(sheet);
     } catch (e) {
       console.error("Failed to add column:", e);
     }
-  }, [sheets]);
+  }, [sheets, fetchAndSetSheetSchema]);
 
   // Delete column
   const handleDeleteColumn = useCallback(async (sheetId: string, accessorKey: string) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
-
-    setSheetData(prev => ({
-      ...prev,
-      [sheetId]: {
-        ...prev[sheetId],
-        columns: prev[sheetId].columns.filter(col => col.accessorKey !== accessorKey),
-        data: prev[sheetId].data,
-      }
-    }));
-
     try {
       await axios.delete(`/api/schema/${sheet.name}/columns/${accessorKey}/`);
+      await fetchAndSetSheetSchema(sheet);
     } catch (e) {
       console.error("Failed to delete column:", e);
     }
-  }, [sheets]);
+  }, [sheets, fetchAndSetSheetSchema]);
 
   // --- UI ---
 
