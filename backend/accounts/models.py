@@ -33,7 +33,7 @@ class CustomUser(AbstractUser):
 
     def is_client(self):
         return self.role == "client"
-    
+
 class UserActivity(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,  # references CustomUser
