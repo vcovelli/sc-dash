@@ -34,6 +34,7 @@ const baseBtn =
 
 function MobileRotatePrompt() {
   const [show, setShow] = useState(false);
+
   useEffect(() => {
     const check = () => {
       const isMobile =
@@ -50,17 +51,29 @@ function MobileRotatePrompt() {
       window.removeEventListener("orientationchange", check);
     };
   }, []);
+
+  // Use the Next.js router for going back
+  const router = typeof window !== "undefined"
+    ? require("next/navigation").useRouter()
+    : { back: () => {} };
+
   if (!show) return null;
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
       <span className="text-6xl mb-4 animate-bounce">🔄</span>
-      <div className="text-white text-2xl font-bold text-center">
+      <div className="text-white text-2xl font-bold text-center mb-2">
         Please rotate your device
         <br />
         <span className="text-base font-normal text-gray-300">
           Landscape mode is required for this view on mobile.
         </span>
       </div>
+      <button
+        onClick={() => router.back()}
+        className="mt-6 px-6 py-3 bg-white/90 text-blue-700 dark:bg-gray-800 dark:text-blue-300 rounded-xl font-bold shadow-lg hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-all text-base"
+      >
+        ← Go Back
+      </button>
     </div>
   );
 }

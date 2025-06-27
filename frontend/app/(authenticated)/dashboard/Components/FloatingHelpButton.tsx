@@ -1,11 +1,30 @@
-// components/FloatingHelpButton.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LifeBuoy } from "lucide-react";
 import Link from "next/link";
 
 export default function FloatingHelpButton() {
   const [open, setOpen] = useState(false);
+  const [hide, setHide] = useState(false);
+
+  // Listen for menu-open class on body
+  useEffect(() => {
+    const checkMenuOpen = () => {
+      setHide(typeof window !== "undefined" && document.body.classList.contains("menu-open"));
+    };
+
+    // Initial check
+    checkMenuOpen();
+
+    // Listen for changes (menu toggle)
+    const observer = new MutationObserver(checkMenuOpen);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+
+    // Clean up
+    return () => observer.disconnect();
+  }, []);
+
+  if (hide) return null;
 
   return (
     <>
@@ -48,7 +67,7 @@ export default function FloatingHelpButton() {
               className="absolute top-2 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none"
               aria-label="Close"
             >
-              ×
+              x
             </button>
           </div>
         </div>
