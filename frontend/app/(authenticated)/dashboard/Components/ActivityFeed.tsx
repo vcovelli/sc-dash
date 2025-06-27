@@ -9,9 +9,35 @@ export default function ActivityFeed({ activityFeed }) {
       <ul className="space-y-2 text-gray-700 dark:text-gray-200 min-h-[56px] flex flex-col justify-center">
         {activityFeed.length > 0 ? (
           activityFeed.map((item, idx) => (
-            <li key={idx} className="flex items-center" style={{ fontSize: "var(--body)" }}>
-              <span className="mr-2" dangerouslySetInnerHTML={{ __html: item.text }} />
-              <span className="ml-2 text-gray-400 dark:text-gray-400" style={{ fontSize: "var(--small)" }}>{item.time}</span>
+            <li
+              key={idx}
+              className="
+                flex flex-col sm:flex-row sm:items-center sm:justify-between
+                border-b border-gray-800/10 dark:border-gray-700/30 pb-1
+                last:border-none
+              "
+              style={{ fontSize: "var(--body)" }}
+            >
+              {/* Activity text left, time right (desktop) or stacked (mobile) */}
+              <span
+                className="block sm:flex-1"
+                dangerouslySetInnerHTML={{ __html: item.text }}
+              />
+              <span
+                className="
+                  text-gray-400 dark:text-gray-400
+                  mt-0.5 sm:mt-0 sm:ml-6
+                  text-xs sm:text-sm
+                  sm:text-right
+                  whitespace-nowrap
+                "
+                style={{
+                  minWidth: "135px",
+                  fontSize: "var(--small)",
+                }}
+              >
+                {item.time}
+              </span>
             </li>
           ))
         ) : (

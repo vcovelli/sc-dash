@@ -20,11 +20,38 @@ export function useProfile() {
 
   useEffect(() => {
     let isMounted = true;
-    axios.get("/api/profile/")
-      .then((res) => { if (isMounted) setProfile(res.data); })
-      .catch(() => { if (isMounted) setProfile(null); })
-      .finally(() => { if (isMounted) setLoading(false); });
-    return () => { isMounted = false; };
+
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        if (isMounted) {
+          setProfile(null);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL || ""}/auth/me/`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (isMounted) setProfile(res.data);
+      } catch (err) {
+        if (isMounted) setProfile(null);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchProfile();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { profile, loading };

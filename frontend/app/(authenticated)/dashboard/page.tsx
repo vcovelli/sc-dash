@@ -66,7 +66,7 @@ export default function DashboardPage() {
         console.warn("Could not fetch onboarding progress", err);
       });
 
-    api.get("/activity-feed/")
+    api.get("/accounts/activity-feed/")
       .then((res) => {
         setActivityFeed(
           res.data.map((item: ActivityItem) => ({
@@ -79,19 +79,52 @@ export default function DashboardPage() {
   }, []);
 
   function renderActivityText(item: ActivityItem) {
-    switch (item.verb) {
-      case "uploaded file":
-        return `✅ Uploaded <b>${item.target}</b>`;
-      case "file marked success":
-        return `🎉 Processed <b>${item.target}</b>${item.meta?.row_count ? ` (${item.meta.row_count} rows)` : ""}`;
-      case "downloaded file":
-        return `⬇️ Downloaded <b>${item.target}</b>`;
-      case "updated settings":
-        return `⚙️ Settings updated`;
-      default:
-        return `${item.verb} ${item.target ? `<b>${item.target}</b>` : ""}`;
-    }
+  switch (item.verb) {
+    case "uploaded file":
+      return `✅ Uploaded <b>${item.target}</b>`;
+    case "file marked success":
+      return `🎉 Processed <b>${item.target}</b>${item.meta?.row_count ? ` (${item.meta.row_count} rows)` : ""}`;
+    case "downloaded file":
+      return `⬇️ Downloaded <b>${item.target}</b>`;
+    case "updated settings":
+      return `⚙️ Settings updated`;
+    case "downloaded template":
+      return `📄 Downloaded template <b>${item.target}</b>`;
+    case "completed onboarding":
+      return `🎉 Onboarding completed`;
+    case "added user":
+      return `🧑‍🤝‍🧑 Added teammate <b>${item.target}</b>`;
+    case "activated pro version":
+      return `💎 Upgraded to <b>Pro</b>`;
+    //case "exported data":
+      //return `📤 Exported <b>${item.target}</b>`;
+    //case "finished tour":
+      //return `🗺️ Finished interactive tour`;
+    //case "changed password":
+      //return `🔑 Password changed`;
+    //case "verified email":
+      //return `✅ Email verified`;
+    case "support ticket submitted":
+      return `🛟 Support ticket submitted${item.target ? `: <b>${item.target}</b>` : ""}`;
+    case "deleted file":
+      return `🗑️ Deleted <b>${item.target}</b>`;
+    case "archived file":
+      return `📦 Archived <b>${item.target}</b>`;
+    //case "restored file":
+      //return `♻️ Restored <b>${item.target}</b>`;
+    //case "imported contacts":
+      //return `📥 Imported contacts`;
+    //case "invited user":
+      //return `✉️ Invited <b>${item.target}</b>`;
+    //case "connected integration":
+      //return `🔌 Connected <b>${item.target}</b> integration`;
+    default:
+      // Capitalize and fallback elegantly
+      return `${
+        item.verb.charAt(0).toUpperCase() + item.verb.slice(1)
+      }${item.target ? ` <b>${item.target}</b>` : ""}`;
   }
+}
 
   return (
     <section className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 transition-colors duration-500 px-2 sm:px-4 py-6 sm:py-10">
