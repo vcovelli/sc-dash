@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser
+from .models import CustomUser, UserActivity
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
@@ -30,3 +30,13 @@ class CustomUserAdmin(UserAdmin):
             ),
         }),
     )
+
+
+@admin.register(UserActivity)
+class UserActivityAdmin(admin.ModelAdmin):
+    list_display = ("user", "verb", "target", "timestamp")
+    list_filter = ("verb", "timestamp")
+    search_fields = ("user__username", "verb", "target")
+    readonly_fields = ("user", "verb", "target", "timestamp", "meta")
+    ordering = ("-timestamp",)
+    date_hierarchy = "timestamp"

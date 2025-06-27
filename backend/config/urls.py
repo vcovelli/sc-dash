@@ -4,6 +4,7 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+    path('api/accounts/', include('accounts.urls')),
     path("api/ai/", include("ai.urls")),
 
     # Your custom account logic (signup, login, profile)

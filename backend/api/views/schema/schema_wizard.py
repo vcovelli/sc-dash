@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 from api.views.user.table_creation import create_table_for_client
 from api.models import UserTableSchema
+from accounts.models import UserActivity
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 load_dotenv()
@@ -272,6 +273,16 @@ def generate_schema(request):
 
         # --- 5. Save User Schema (if authenticated) ---
         if user:
+            # Log onboarding complete
+            UserActivity.objects.create(
+                user=user,
+                verb="completed onboarding",
+                target=client_name,
+                meta={
+                    "features": selected_features,
+                    "include_sample_data": include_sample_data,
+                }
+            )
             for feature in selected_features:
                 config = SCHEMA_FEATURES.get(feature)
                 if config:
@@ -290,6 +301,15 @@ def generate_schema(request):
         create_table_for_client(client_name)
         workbook = generate_full_workbook(client_name, selected_features, include_sample_data)
         download_url = workbook["download_url"]
+
+        # Log template download if user is authenticated
+        if user and download_url:
+            UserActivity.objects.create(
+                user=user,
+                verb="downloaded template",
+                target=os.path.basename(download_url),
+                meta={"download_url": download_url, "client_name": client_name}
+            )
 
         # --- 7. Respond with Success/Download URL ---
         return JsonResponse({
