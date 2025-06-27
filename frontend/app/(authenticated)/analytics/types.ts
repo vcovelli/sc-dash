@@ -65,6 +65,7 @@ export interface WidgetConfig<T = AllWidgetSettings> {
   title: string;
   data?: unknown[]; // Optional: for injected/mock data
   settings: T;
+  sample?: boolean;
 }
 
 export interface TableMeta {

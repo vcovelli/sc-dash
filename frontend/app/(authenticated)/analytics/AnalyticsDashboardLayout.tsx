@@ -23,6 +23,45 @@ import {
 
 const ResponsiveGridLayout = WidthProvider(RGL);
 
+// --- SAMPLE CHARTS ---
+const SAMPLE_WIDGETS: WidgetConfig<AllWidgetSettings>[] = [
+  {
+    id: "sample-bar",
+    type: "bar",
+    title: "Orders by Status",
+    settings: { type: "bar", table: "orders", xField: "status", yFields: ["count"], showLegend: true },
+    sample: true,
+  },
+  {
+    id: "sample-line",
+    type: "line",
+    title: "Revenue Trend",
+    settings: { type: "line", table: "orders", xField: "date", yFields: ["revenue"], showLegend: true },
+    sample: true,
+  },
+  {
+    id: "sample-pie",
+    type: "pie",
+    title: "Customers by Region",
+    settings: { type: "pie", table: "customers", xField: "region", yFields: ["count"], showLegend: true },
+    sample: true,
+  },
+  {
+    id: "sample-table",
+    type: "table",
+    title: "Top Products",
+    settings: { type: "table", table: "products", xField: "name", yFields: ["revenue"] },
+    sample: true,
+  },
+];
+
+const SAMPLE_LAYOUT: Layout[] = [
+  { i: "sample-bar", x: 0, y: 0, w: 2, h: 3, minW: 1, minH: 2 },
+  { i: "sample-line", x: 2, y: 0, w: 2, h: 3, minW: 1, minH: 2 },
+  { i: "sample-pie", x: 0, y: 3, w: 1, h: 2, minW: 1, minH: 2 },
+  { i: "sample-table", x: 1, y: 3, w: 3, h: 2, minW: 1, minH: 2 },
+];
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -45,13 +84,46 @@ export default function AnalyticsDashboardLayout() {
   const [gridWidth, setGridWidth] = useState<number | null>(null);
   const [originalWidgetSettings, setOriginalWidgetSettings] = useState<AllWidgetSettings | null>(null);
   const isMobile = useIsMobile();
+  const [dashboardSetupState, setDashboardSetupState] = useState<"empty" | "ready">("ready");
+  const [completedKeys, setCompletedKeys] = useState<string[]>([]);
 
-  // --- LOAD DASHBOARD on mount ---
+ // --- LOAD DASHBOARD on mount ---
   useEffect(() => {
     getDashboard().then((data) => {
-      setDashboardId(data.id);
-      setWidgets(data.charts || []);
-      setLayout(data.layout || []);
+      const dashboard = Array.isArray(data) ? data[0] : data;
+
+      if (!dashboard) {
+        setDashboardId(null);
+        setWidgets(SAMPLE_WIDGETS);
+        setLayout(SAMPLE_LAYOUT);
+        setDashboardSetupState("empty");
+        setCompletedKeys([]);
+        return;
+      }
+
+      setDashboardId(dashboard.id);
+
+      // Onboarding step logic
+      let steps: string[] = [];
+      if (dashboard.charts && dashboard.charts.length > 0) {
+        steps.push("dashboard"); // Your "Set Up Your First Dashboard" step
+      }
+      // If you can detect more steps (e.g. uploaded data, mapped schema), add them here.
+      setCompletedKeys(steps);
+
+      if (!dashboard.charts || dashboard.charts.length === 0) {
+        setWidgets(SAMPLE_WIDGETS);
+        setLayout(SAMPLE_LAYOUT);
+        setDashboardSetupState("empty");
+      } else {
+        setWidgets(dashboard.charts);
+        setLayout(
+          Array.isArray(dashboard.layout)
+            ? dashboard.layout.map(l => ({ ...l, i: String(l.i) }))
+            : []
+        );
+        setDashboardSetupState("ready");
+      }
     });
   }, []);
 
@@ -83,17 +155,34 @@ export default function AnalyticsDashboardLayout() {
 
   // --- ADD Widget ---
   const handleAddWidget = async (widget: WidgetConfig) => {
-    const res = await createChart({ ...widget, dashboard: dashboardId });
-    const newWidgets = [...widgets, res];
-    const newLayout = [
-      ...layout,
-      { i: res.id, x: 0, y: Infinity, w: 1, h: 3, minW: 1, minH: 2 },
-    ];
-    setWidgets(newWidgets);
-    setLayout(newLayout);
-    await updateDashboardLayout(dashboardId, newLayout);
+    const payload = {
+      dashboard: dashboardId,
+      chart_type: widget.type,
+      title: widget.title,
+      settings: widget.settings,
+      position: 0,          // or however you want to order
+      size: "medium",
+      data_source: {},
+    };
+    // Only send what backend expects!
+    const res = await createChart(payload);
+
+    // If showing samples, replace with real chart(s)
+    if (widgets.length > 0 && widgets.every(w => w.sample)) {
+      setWidgets([res]);
+      setLayout([{ i: String(res.id), x: 0, y: 0, w: 1, h: 3, minW: 1, minH: 2 }]);
+    } else {
+      const newWidgets = [...widgets, res];
+      const newLayout = [
+        ...layout,
+        { i: String(res.id), x: 0, y: Infinity, w: 1, h: 3, minW: 1, minH: 2 },
+      ];
+      setWidgets(newWidgets);
+      setLayout(newLayout);
+    }
+    await updateDashboardLayout(dashboardId, layout);
     // Mark onboarding when first chart is created
-    if (widgets.length === 0) await markOnboardingStep("created_first_chart");
+    if (widgets.length === 0 || widgets.every(w => w.sample)) await markOnboardingStep("created_first_chart");
   };
 
   // --- Layout changes (resize, move) ---
@@ -191,7 +280,7 @@ export default function AnalyticsDashboardLayout() {
               focused
               onOpenInsight={() => setOpenPanel("insights")}
               onOpenSettings={() => openSettingsPanel(focusedWidget.id)}
-              onRemove={handleRemoveWidget}
+              onRemove={focusedWidget.sample ? undefined : handleRemoveWidget}
               handleClassName="card-handle"
               onCloseFocus={exitFocus}
             />
@@ -271,8 +360,8 @@ export default function AnalyticsDashboardLayout() {
                     setFocusedWidgetId(widget.id);
                     setOpenPanel("insights");
                   }}
-                  onOpenSettings={() => openSettingsPanel(widget.id)}
-                  onRemove={handleRemoveWidget}
+                  onOpenSettings={widget.sample ? () => setShowAddModal(true) : () => openSettingsPanel(widget.id)}
+                  onRemove={widget.sample ? undefined : handleRemoveWidget}
                   handleClassName="card-handle"
                 />
               </div>
