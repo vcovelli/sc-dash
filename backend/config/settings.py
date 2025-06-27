@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "api",
     "accounts",
     "ai",
+    "analytics",
 ]
 
 # ======================
