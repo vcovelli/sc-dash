@@ -9,16 +9,16 @@ class AnalyticsDashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get or create the user's dashboard
         dashboard, _ = AnalyticsDashboard.objects.get_or_create(user=request.user)
         serializer = AnalyticsDashboardSerializer(dashboard)
         return Response(serializer.data)
 
-    def patch(self, request):
-        dashboard = AnalyticsDashboard.objects.filter(user=request.user).first()
-        if not dashboard:
+    def patch(self, request, pk=None):
+        # PATCH /api/analytics/dashboard/<pk>/
+        try:
+            dashboard = AnalyticsDashboard.objects.get(pk=pk, user=request.user)
+        except AnalyticsDashboard.DoesNotExist:
             return Response({"error": "Dashboard not found"}, status=404)
-        # Only update layout for now
         layout = request.data.get("layout")
         if layout is not None:
             dashboard.layout = layout
@@ -26,11 +26,17 @@ class AnalyticsDashboardView(APIView):
         serializer = AnalyticsDashboardSerializer(dashboard)
         return Response(serializer.data)
 
+
 class DashboardChartView(APIView):
+    """
+    GET: List all charts for the authenticated user's dashboard.
+    POST: Create a new chart for the user's dashboard.
+    PATCH: Update a chart by its ID (pk).
+    DELETE: Delete a chart by its ID (pk).
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Return all charts for the current user's dashboard
         dashboard = AnalyticsDashboard.objects.filter(user=request.user).first()
         if not dashboard:
             return Response([], status=200)
@@ -39,7 +45,6 @@ class DashboardChartView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        # Add new chart for current user's dashboard
         dashboard, _ = AnalyticsDashboard.objects.get_or_create(user=request.user)
         data = request.data.copy()
         data['dashboard'] = dashboard.id
@@ -50,6 +55,8 @@ class DashboardChartView(APIView):
         return Response(serializer.errors, status=400)
 
     def patch(self, request, pk=None):
+        if pk is None:
+            return Response({'error': 'Chart ID required for PATCH'}, status=400)
         try:
             chart = DashboardChart.objects.get(pk=pk, dashboard__user=request.user)
         except DashboardChart.DoesNotExist:
@@ -61,6 +68,8 @@ class DashboardChartView(APIView):
         return Response(serializer.errors, status=400)
 
     def delete(self, request, pk=None):
+        if pk is None:
+            return Response({'error': 'Chart ID required for DELETE'}, status=400)
         try:
             chart = DashboardChart.objects.get(pk=pk, dashboard__user=request.user)
         except DashboardChart.DoesNotExist:
