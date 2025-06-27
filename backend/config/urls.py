@@ -6,6 +6,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     path('api/accounts/', include('accounts.urls')),
     path("api/ai/", include("ai.urls")),
+    path('api/analytics/', include('analytics.urls')),
 
     # Your custom account logic (signup, login, profile)
     path('auth/', include('accounts.urls')),
