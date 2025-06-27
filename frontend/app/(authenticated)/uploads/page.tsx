@@ -230,7 +230,7 @@ export default function UploadsPage() {
             {/* Schema template display */}
             {selectedSchema && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className="font-medium text-gray-700 dark:text-gray-300 text-xs">Template:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300 text-xs">Template Columns:</span>
                 {(selectedSchema.expected_headers || selectedSchema.columns || []).map((h: string) => (
                   <span key={h} className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-xs font-mono text-blue-900 dark:text-blue-100 border dark:border-blue-700">
                     {h}
