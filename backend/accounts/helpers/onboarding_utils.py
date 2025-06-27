@@ -2,6 +2,7 @@
 
 from api.models import UploadedFile, UserTableSchema
 from django.contrib.auth import get_user_model
+from analytics.models import AnalyticsDashboard, DashboardChart
 
 User = get_user_model()
 
@@ -13,8 +14,9 @@ def has_created_schema(user):
     return UserTableSchema.objects.filter(user=user).exists()
 
 def has_created_dashboard(user):
-    # For now, just return False or True as appropriate until you add dashboard tracking
-    return False  # or True
+    # There must be a dashboard and at least one chart attached
+    dashboard = AnalyticsDashboard.objects.filter(user=user).first()
+    return dashboard is not None and DashboardChart.objects.filter(dashboard=dashboard).exists()
 
 def has_set_alerts(user):
     # For now, just return False or True as appropriate until you add alert settings
