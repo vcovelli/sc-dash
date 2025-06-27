@@ -1,21 +1,39 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import SignupView, LoginView, UserProfileView
-from accounts.views import ReactConfirmEmailView, GoogleLoginAPIView
-from accounts.views import GitHubLoginStartView, GitHubCallbackView
-from .views import ActivityFeedView
+
+# Auth-related views
+from .views.auth_views import (
+    SignupView,
+    LoginView,
+    ReactConfirmEmailView,
+    GoogleLoginAPIView,
+    GitHubLoginStartView,
+    GitHubCallbackView,
+)
+
+# Account-related views
+from .views.account_views import (
+    UserProfileView,
+    ActivityFeedView,
+)
 
 urlpatterns = [
+    # Email confirmation (AllAuth)
     path('account-confirm-email/<key>/', ReactConfirmEmailView.as_view(), name='account_confirm_email'),
+
+    # Auth endpoints
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('me/', UserProfileView.as_view(), name='me'),
+
+    # Social Auth
     path('google/', GoogleLoginAPIView.as_view(), name='google-login'),
+    path('github/login/', GitHubLoginStartView.as_view(), name='github_login'),
+    path('github/callback/', GitHubCallbackView.as_view(), name='github_callback'),
 
-    # GitHub OAuth endpoints (no custom logic needed)
-    path("github/login/", GitHubLoginStartView.as_view(), name="github_login"),
-    path("github/callback/", GitHubCallbackView.as_view(), name="github_callback"),
+    # Account info
+    path('me/', UserProfileView.as_view(), name='me'),
 
-    path("activity-feed/", ActivityFeedView.as_view(), name="activity-feed"),
+    # Activity feed
+    path('activity-feed/', ActivityFeedView.as_view(), name='activity-feed'),
 ]
