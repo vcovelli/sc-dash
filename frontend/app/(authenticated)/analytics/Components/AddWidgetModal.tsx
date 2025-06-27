@@ -36,6 +36,28 @@ type AddWidgetModalProps = {
   onClose: () => void;
 };
 
+// --- Settings templates for each type ---
+const DEFAULT_SETTINGS: Record<WidgetType, AllWidgetSettings> = {
+  bar:   { type: "bar",   table: "orders",    xField: "status",  yFields: ["count"], showLegend: true },
+  line:  { type: "line",  table: "orders",    xField: "date",    yFields: ["revenue"], showLegend: true },
+  pie:   { type: "pie",   table: "customers", xField: "region",  yFields: ["count"], showLegend: true },
+  table: { type: "table", table: "products",  xField: "name",    yFields: ["revenue"] }
+};
+
+const TITLES: Record<WidgetType, string> = {
+  bar: "Bar Widget",
+  line: "Line Widget",
+  pie: "Pie Widget",
+  table: "Table Widget"
+};
+
+const PREVIEW_TEXT: Record<WidgetType, string> = {
+  bar: "Bar Chart Preview",
+  line: "Line Chart Preview",
+  pie: "Pie Chart Preview",
+  table: "Table Preview"
+};
+
 export default function AddWidgetModal({ onAdd, onClose }: AddWidgetModalProps) {
   const [type, setType] = useState<WidgetType>("bar");
   const pos = useDockedPosition();
@@ -105,7 +127,7 @@ export default function AddWidgetModal({ onAdd, onClose }: AddWidgetModalProps) 
         </div>
 
         <div className="rounded-xl bg-neutral-100 dark:bg-gray-800 flex items-center justify-center h-28 text-gray-400 mb-4 text-center text-base">
-          {type.charAt(0).toUpperCase() + type.slice(1)} Preview
+          {PREVIEW_TEXT[type]}
         </div>
 
         <button
@@ -114,14 +136,8 @@ export default function AddWidgetModal({ onAdd, onClose }: AddWidgetModalProps) 
             onAdd({
               id: uuidv4(),
               type,
-              title: `${type.charAt(0).toUpperCase() + type.slice(1)} Widget`,
-              settings: {
-                type,
-                table: "orders",
-                xField: "status",
-                yFields: ["count"],
-                showLegend: true,
-              },
+              title: TITLES[type],
+              settings: { ...DEFAULT_SETTINGS[type] }
             });
           }}
         >Add Widget</button>

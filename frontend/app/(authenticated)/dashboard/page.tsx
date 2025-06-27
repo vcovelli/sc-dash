@@ -138,7 +138,7 @@ export default function DashboardPage() {
                 Welcome back, Vincent!
               </h2>
               <div className="text-gray-600 dark:text-gray-300 text-sm">
-                Here’s a quick overview of your workspace. Let’s get productive! 🚀
+                Here's a quick overview of your workspace. Let's get productive! 🚀
               </div>
             </div>
           </div>

@@ -27,9 +27,15 @@ export const deleteChart = async (id) => {
   await axios.delete(`/api/analytics/chart/${id}/`, authHeaders());
 };
 
+// ----- Use this if your PATCH is to /dashboard/<id>/ -----
 export const updateDashboardLayout = async (dashboardId, layout) => {
   await axios.patch(`/api/analytics/dashboard/${dashboardId}/`, { layout }, authHeaders());
 };
+
+// ----- Or this if your PATCH is to /dashboard/ (no id) -----
+// export const updateDashboardLayout = async (layout) => {
+//   await axios.patch(`/api/analytics/dashboard/`, { layout }, authHeaders());
+// };
 
 export const markOnboardingStep = async (step) => {
   await axios.post("/api/onboarding/progress/", { step }, authHeaders());
