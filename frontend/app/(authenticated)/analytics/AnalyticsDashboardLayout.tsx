@@ -84,8 +84,8 @@ export default function AnalyticsDashboardLayout() {
   const [gridWidth, setGridWidth] = useState<number | null>(null);
   const [originalWidgetSettings, setOriginalWidgetSettings] = useState<AllWidgetSettings | null>(null);
   const isMobile = useIsMobile();
-  const [dashboardSetupState, setDashboardSetupState] = useState<"empty" | "ready">("ready");
-  const [completedKeys, setCompletedKeys] = useState<string[]>([]);
+  const [, setDashboardSetupState] = useState<"empty" | "ready">("ready");
+  const [, setCompletedKeys] = useState<string[]>([]);
 
  // --- LOAD DASHBOARD on mount ---
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function AnalyticsDashboardLayout() {
       setDashboardId(dashboard.id);
 
       // Onboarding step logic
-      let steps: string[] = [];
+      const steps: string[] = [];
       if (dashboard.charts && dashboard.charts.length > 0) {
         steps.push("dashboard"); // Your "Set Up Your First Dashboard" step
       }
@@ -119,7 +119,7 @@ export default function AnalyticsDashboardLayout() {
         setWidgets(dashboard.charts);
         setLayout(
           Array.isArray(dashboard.layout)
-            ? dashboard.layout.map(l => ({ ...l, i: String(l.i) }))
+            ? dashboard.layout.map((l: { i: string | number }) => ({ ...l, i: String(l.i) }))
             : []
         );
         setDashboardSetupState("ready");
@@ -130,7 +130,7 @@ export default function AnalyticsDashboardLayout() {
   // --- Responsive grid width ---
   useEffect(() => {
     function updateWidth() {
-      let w = window.innerWidth - 48;
+      const w = window.innerWidth - 48;
       setGridWidth(w > 0 ? w : 800);
     }
     updateWidth();
@@ -139,7 +139,8 @@ export default function AnalyticsDashboardLayout() {
   }, []);
 
   // --- REMOVE Widget ---
-  const handleRemoveWidget = async (id: string) => {
+  const handleRemoveWidget = async (id: string | null) => {
+    if (!id) return;
     await deleteChart(id);
     const newWidgets = widgets.filter(w => w.id !== id);
     const newLayout = layout.filter(l => l.i !== id);
@@ -150,7 +151,9 @@ export default function AnalyticsDashboardLayout() {
       setOpenPanel(null);
       setOriginalWidgetSettings(null);
     }
-    await updateDashboardLayout(dashboardId, newLayout);
+    if (dashboardId) {
+      await updateDashboardLayout(dashboardId, newLayout);
+    }
   };
 
   // --- ADD Widget ---
@@ -160,35 +163,48 @@ export default function AnalyticsDashboardLayout() {
       chart_type: widget.type,
       title: widget.title,
       settings: widget.settings,
-      position: 0,          // or however you want to order
+      position: 0,
       size: "medium",
       data_source: {},
     };
-    // Only send what backend expects!
+    // Only send what backend expects
     const res = await createChart(payload);
+
+    let newWidgets: WidgetConfig<AllWidgetSettings>[];
+    let newLayout: Layout[];
 
     // If showing samples, replace with real chart(s)
     if (widgets.length > 0 && widgets.every(w => w.sample)) {
-      setWidgets([res]);
-      setLayout([{ i: String(res.id), x: 0, y: 0, w: 1, h: 3, minW: 1, minH: 2 }]);
+      newWidgets = [res];
+      newLayout = [{ i: String(res.id), x: 0, y: 0, w: 1, h: 3, minW: 1, minH: 2 }];
     } else {
-      const newWidgets = [...widgets, res];
-      const newLayout = [
+      newWidgets = [...widgets, res];
+      newLayout = [
         ...layout,
         { i: String(res.id), x: 0, y: Infinity, w: 1, h: 3, minW: 1, minH: 2 },
       ];
-      setWidgets(newWidgets);
-      setLayout(newLayout);
     }
-    await updateDashboardLayout(dashboardId, layout);
+
+    setWidgets(newWidgets);
+    setLayout(newLayout);
+
+    // Only call updateDashboardLayout if dashboardId exists
+    if (dashboardId) {
+      await updateDashboardLayout(dashboardId, newLayout);
+    }
+
     // Mark onboarding when first chart is created
-    if (widgets.length === 0 || widgets.every(w => w.sample)) await markOnboardingStep("created_first_chart");
+    if (widgets.length === 0 || widgets.every(w => w.sample)) {
+      await markOnboardingStep("created_first_chart");
+    }
   };
 
   // --- Layout changes (resize, move) ---
   const handleLayoutChange = async (newLayout: Layout[]) => {
     setLayout(newLayout);
-    await updateDashboardLayout(dashboardId, newLayout);
+    if (dashboardId) {
+      await updateDashboardLayout(dashboardId, newLayout);
+    }
   };
 
   // --- Panel Logic ---
@@ -361,7 +377,7 @@ export default function AnalyticsDashboardLayout() {
                     setOpenPanel("insights");
                   }}
                   onOpenSettings={widget.sample ? () => setShowAddModal(true) : () => openSettingsPanel(widget.id)}
-                  onRemove={widget.sample ? undefined : handleRemoveWidget}
+                  onRemove={widget.sample ? undefined : () => handleRemoveWidget(widget.id)}
                   handleClassName="card-handle"
                 />
               </div>

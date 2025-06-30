@@ -1,7 +1,11 @@
 import GlassCard from "./GlassCard";
 import type { RecentFile } from "../types";
 
-export default function RecentUploads({ recentFiles }) {
+type RecentUploadsProps = {
+  recentFiles: RecentFile[];
+};
+
+export default function RecentUploads({ recentFiles }: RecentUploadsProps) {
   return (
     <GlassCard>
       <h2 className="font-semibold mb-2 text-gray-700 dark:text-gray-100 flex items-center gap-2"

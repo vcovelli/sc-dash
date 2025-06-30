@@ -6,7 +6,7 @@ const ONBOARDING_STEPS = [
   {
     key: "verify_schema",
     label: "Map & Verify Your Data",
-    description: "Confirm your columns and data mappings.",
+    description: "Confirm your data structure and column headers.",
     action: (
       <Link href="/onboarding" className="onboarding-action-link">
         Review
@@ -16,7 +16,7 @@ const ONBOARDING_STEPS = [
   {
     key: "upload_data",
     label: "Upload Initial Data",
-    description: "Import your first orders, inventory, or products.",
+    description: "Import your first file to get started.",
     action: (
       <Link href="/uploads" className="onboarding-action-link">
         Upload
@@ -26,7 +26,7 @@ const ONBOARDING_STEPS = [
   {
     key: "dashboard",
     label: "Set Up Your First Dashboard",
-    description: "Create your first analytics dashboard.",
+    description: "Create your first analytics dashboard chart.",
     action: (
       <Link href="/analytics" className="onboarding-action-link">
         Create
@@ -69,7 +69,7 @@ export default function SetupProgressPanel({
   return (
     <div className="w-full rounded-2xl p-4 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-blue-950 dark:via-gray-950 dark:to-indigo-900 shadow-lg border border-gray-200 dark:border-gray-800 transition-all">
       <ol className="space-y-4 mb-2">
-        {ONBOARDING_STEPS.map((step, idx) => {
+        {ONBOARDING_STEPS.map((step) => {
           const isDone = completedKeys.includes(step.key);
           const isCurrent = nextStep?.key === step.key;
 

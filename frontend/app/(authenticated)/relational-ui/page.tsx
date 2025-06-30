@@ -10,6 +10,7 @@ import { useNavbarVisibility } from "@/components/ClientLayoutWrapper";
 import TableSelectorPanel from "@/app/(authenticated)/relational-ui/components/UX/TableSelectorPanel";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useRouter } from "next/navigation";
 import { FONT_SIZE_PRESETS } from "@/components/FontSizeDropdown";
 import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
 import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
@@ -34,6 +35,7 @@ const baseBtn =
 
 function MobileRotatePrompt() {
   const [show, setShow] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const check = () => {
@@ -51,11 +53,6 @@ function MobileRotatePrompt() {
       window.removeEventListener("orientationchange", check);
     };
   }, []);
-
-  // Use the Next.js router for going back
-  const router = typeof window !== "undefined"
-    ? require("next/navigation").useRouter()
-    : { back: () => {} };
 
   if (!show) return null;
   return (
