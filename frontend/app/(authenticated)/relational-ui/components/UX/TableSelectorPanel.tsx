@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { XIcon, MenuIcon, PlusIcon } from "lucide-react";
-import { getFontVars } from "@/components/FontSizeVarsProvider";
+import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 const SIDEBAR_WIDTH = 256;
 const SIDEBAR_COLLAPSED = 48;

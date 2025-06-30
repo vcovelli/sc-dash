@@ -10,7 +10,7 @@ import {
   FaDollarSign, FaFont, FaAdjust
 } from "react-icons/fa";
 import { useUserSettings } from "@/components/UserSettingsContext";
-import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
+import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
 
 // ---- Option arrays ----
 const timezones = [

@@ -6,7 +6,7 @@ import { AnimatePresence } from "framer-motion";
 import { Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import { FixedSizeList as List } from "react-window";
 import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
-import { getFontVars } from "@/components/FontSizeVarsProvider";
+import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 interface Props {
   table: Table<Row>;

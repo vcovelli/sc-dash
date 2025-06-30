@@ -6,12 +6,12 @@ import GridTable from "@/app/(authenticated)/relational-ui/components/Grid/GridT
 import ColumnSettingsPanel from "@/app/(authenticated)/relational-ui/components/UX/ColumnSettingsPanel";
 import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import { TableSettingsProvider } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
-import { useNavbarVisibility } from "@/components/ClientLayoutWrapper";
+import { useNavContext } from "@/components/nav/NavbarContext";
 import TableSelectorPanel from "@/app/(authenticated)/relational-ui/components/UX/TableSelectorPanel";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useRouter } from "next/navigation";
-import { FONT_SIZE_PRESETS } from "@/components/FontSizeDropdown";
+import { FONT_SIZE_PRESETS } from "@/components/settings/font/FontSizeDropdown";
 import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
 import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
 
@@ -82,7 +82,7 @@ export default function SheetsPage() {
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isTablePanelOpen, setIsTablePanelOpen] = useState(true);
   const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
-  const { showNavbar, setShowNavbar } = useNavbarVisibility();
+  const { showDesktopNav, setShowDesktopNav } = useNavContext();
   const { profile } = useProfile();
   const { settings } = useUserSettings();
   const userFontSize = settings.fontSize || "base";
@@ -195,13 +195,14 @@ export default function SheetsPage() {
             </button>
           </div>
           <div className="flex gap-2 items-center">
+            {/* DESKTOP NAVBAR TOGGLE BUTTON */}
             <button
-              onClick={() => setShowNavbar(!showNavbar)}
-              className={`${baseBtn} ${!showNavbar ? activeBtn : inactiveBtn}`}
-              title={showNavbar ? "Hide Navbar" : "Show Navbar"}
+              onClick={() => setShowDesktopNav(!showDesktopNav)}
+              className={`${baseBtn} ${!showDesktopNav ? activeBtn : inactiveBtn}`}
+              title={showDesktopNav ? "Hide Desktop Navbar" : "Show Desktop Navbar"}
               style={{ fontSize: toolbarFontSize }}
             >
-              {showNavbar ? "Hide Navbar" : "👁️ Show Navbar"}
+              {showDesktopNav ? "Hide Navbar" : "👁️ Show Navbar"}
             </button>
             <button
               onClick={() => setIsSettingsPanelOpen((v) => !v)}

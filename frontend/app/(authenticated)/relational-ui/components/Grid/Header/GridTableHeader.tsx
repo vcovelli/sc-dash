@@ -24,7 +24,7 @@ import HeaderCellContent from "./HeaderCellContent";
 import AddColumnButton from "./AddColumnButton";
 
 // Import your global fontVars helper
-import { getFontVars } from "@/components/FontSizeVarsProvider";
+import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 // --- Types
 interface Props {

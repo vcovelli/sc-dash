@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PaperClipIcon } from "@heroicons/react/20/solid";
-import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
+import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
 
 export default function RequestAssistPage() {
   const [fileName, setFileName] = useState("");
