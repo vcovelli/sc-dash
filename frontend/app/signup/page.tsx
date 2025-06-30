@@ -7,7 +7,7 @@ import { FaUser, FaEnvelope, FaLock, FaCheckCircle, FaTimesCircle, FaGithub, FaG
 import Script from "next/script";
 import zxcvbn from "zxcvbn";
 import { HiOutlineCube } from "react-icons/hi";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/settings/theme/ThemeToggle";
 
 interface SignupErrorResponse {
   non_field_errors?: string[];

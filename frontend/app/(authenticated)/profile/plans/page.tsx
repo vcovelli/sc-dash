@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
+import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
 
 // Plan definitions
 const PLANS = [

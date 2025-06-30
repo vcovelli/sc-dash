@@ -1,6 +1,6 @@
 "use client";
 
-import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
+import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
 
 export default function ProPlanPage() {
 

@@ -18,7 +18,7 @@ import useContextMenu from "./useContextMenu";
 import RenameModal from "@/app/(authenticated)/relational-ui/components/UI/RenameColumnModal";
 import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
 import { useUserSettings } from "@/components/UserSettingsContext";
-import { getFontVars } from "@/components/FontSizeVarsProvider";
+import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 interface GridTableProps {
   tableName: string;

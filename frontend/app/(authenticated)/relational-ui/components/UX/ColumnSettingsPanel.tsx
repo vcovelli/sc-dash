@@ -5,7 +5,7 @@ import { XIcon } from "lucide-react";
 import { nanoid } from "nanoid";
 import { ColumnDataType, CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
-import { getFontVars } from "@/components/FontSizeVarsProvider";
+import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 // --- Color palette ---
 const CHOICE_COLOR_PALETTE = [

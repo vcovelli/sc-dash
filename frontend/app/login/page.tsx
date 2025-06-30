@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios, { AxiosError } from "axios";
 import { FaUser, FaLock, FaGithub, FaGoogle } from "react-icons/fa";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/settings/theme/ThemeToggle";
 import Script from "next/script";
 
 interface GoogleCredentialResponse {

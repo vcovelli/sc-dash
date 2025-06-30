@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import Papa from "papaparse";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import FontSizeVarsProvider from "@/components/FontSizeVarsProvider";
+import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
 import api from "@/lib/axios";
 import { Download, UploadCloud } from "lucide-react";
 
