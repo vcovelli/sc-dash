@@ -5,9 +5,9 @@ import AssistantHeader from "./components/AssistantHeader";
 import ChatMessages from "./components/ChatMessages";
 import ChatInput from "./components/ChatInput";
 import { streamAssistantReply } from "./components/streamAssistantReply";
+import { useKeyboardSafePadding } from "@/hooks/useKeyboardSafePadding";
 import axios from "axios";
 
-// ---- Types
 type Message = {
   sender: "ai" | "user";
   text: string;
@@ -15,8 +15,16 @@ type Message = {
   id: number | null;
 };
 
+// Detect iOS (iPhone, iPad, iPod, and iPadOS)
+function isIOS() {
+  if (typeof window === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.userAgent.includes("Macintosh") && 'ontouchend' in document)
+  );
+}
+
 export default function AssistantPage() {
-  // --- AI chat state ---
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -31,63 +39,20 @@ export default function AssistantPage() {
   const chatRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // --- Dynamic chat height (with visualViewport for iOS/Android keyboard) ---
-  const [viewportHeight, setViewportHeight] = useState("100vh");
-  const updateHeight = useCallback(() => {
-    if (typeof window !== "undefined" && window.visualViewport) {
-      setViewportHeight(`${window.visualViewport.height}px`);
-    } else if (typeof window !== "undefined") {
-      setViewportHeight(`${window.innerHeight}px`);
-    }
-  }, []);
-  useEffect(() => {
-    updateHeight();
-    if (typeof window !== "undefined" && window.visualViewport) {
-      window.visualViewport.addEventListener("resize", updateHeight);
-      window.visualViewport.addEventListener("scroll", updateHeight);
-    } else if (typeof window !== "undefined") {
-      window.addEventListener("resize", updateHeight);
-    }
-    return () => {
-      if (typeof window !== "undefined" && window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", updateHeight);
-        window.visualViewport.removeEventListener("scroll", updateHeight);
-      } else if (typeof window !== "undefined") {
-        window.removeEventListener("resize", updateHeight);
-      }
-    };
-  }, [updateHeight]);
+  // Keyboard padding for mobile (doesn't affect desktop)
+  const keyboardOffset = useKeyboardSafePadding(20);
 
-  // --- Always scroll chat to bottom when messages/height change
+  // Always scroll to bottom on new message or input focus
   const scrollToBottom = useCallback(() => {
-    setTimeout(() => {
-      chatRef.current?.scrollTo({
-        top: chatRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }, 45);
-  }, []);
-  useEffect(() => { scrollToBottom(); }, [messages, loading, viewportHeight, scrollToBottom]);
-
-  // --- Keyboard-aware scroll (scroll input into view after keyboard animates)
-  useEffect(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    function scrollInputIntoView(retry = 0) {
-      setTimeout(() => {
-        if (input) {
-          input.scrollIntoView({ block: "end", behavior: "smooth" });
-          if (retry < 1) setTimeout(() => scrollInputIntoView(retry + 1), 150);
-        }
-      }, 120);
+    if (chatRef.current) {
+      chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
     }
-    input.addEventListener("focus", () => scrollInputIntoView(0));
-    return () => {
-      input.removeEventListener("focus", () => scrollInputIntoView(0));
-    };
   }, []);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading, keyboardOffset, scrollToBottom]);
 
-  // --- Feedback & regenerate logic ---
+  // Feedback & regenerate logic
   const postFeedback = async (msgIndex: number, rating: string) => {
     const lastMsg = messages[msgIndex];
     if (!lastMsg || lastMsg.sender !== "ai") return;
@@ -99,9 +64,11 @@ export default function AssistantPage() {
         regenerated: false,
         actions_taken: [],
       });
-      const updated = [...messages];
-      updated[msgIndex] = { ...updated[msgIndex], showFeedback: false };
-      setMessages(updated);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[msgIndex] = { ...updated[msgIndex], showFeedback: false };
+        return updated;
+      });
     } catch (err) {
       console.error("Feedback failed:", err);
     }
@@ -160,7 +127,6 @@ export default function AssistantPage() {
     }
   };
 
-  // Only show feedback on the most recent AI response
   const lastAiIndex = (() => {
     for (let i = messages.length - 1; i >= 0; --i) {
       if (messages[i].sender === "ai") return i;
@@ -169,23 +135,34 @@ export default function AssistantPage() {
   })();
 
   return (
-    <>
+    <div className="flex flex-col h-[100dvh] min-h-0 w-full">
       <AssistantHeader />
-      <ChatMessages
-        messages={messages}
-        loading={loading}
-        chatRef={chatRef}
-        lastAiIndex={lastAiIndex}
-        postFeedback={postFeedback}
-        regenerate={regenerate}
-      />
-      <ChatInput
-        input={input}
-        setInput={setInput}
-        handleSend={handleSend}
-        loading={loading}
-        inputRef={inputRef}
-      />
-    </>
+      <div
+        ref={chatRef}
+        className="flex-1 overflow-y-auto min-h-0"
+        style={{
+          paddingBottom: isIOS() ? 0 : Math.min(keyboardOffset, 420),
+          transition: "padding-bottom 0.3s cubic-bezier(.4,0,.2,1)",
+        }}
+      >
+        <ChatMessages
+          messages={messages}
+          loading={loading}
+          chatRef={chatRef}
+          lastAiIndex={lastAiIndex}
+          postFeedback={postFeedback}
+          regenerate={regenerate}
+        />
+      </div>
+      <div className="w-full">
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          handleSend={handleSend}
+          loading={loading}
+          inputRef={inputRef}
+        />
+      </div>
+    </div>
   );
 }

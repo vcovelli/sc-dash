@@ -28,7 +28,8 @@ export default function ChatMessages({
       ref={chatRef}
       className="
         flex-1 w-full overflow-y-auto px-2 py-3 sm:px-4 sm:py-4 space-y-4 bg-transparent
-        scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-gray-950
+        scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800
+        scrollbar-track-gray-100 dark:scrollbar-track-gray-950
         overscroll-none
         touch-pan-y
         transition-colors
@@ -40,13 +41,20 @@ export default function ChatMessages({
       }}
     >
       {messages.map((msg, i) => (
-        <div key={`${msg.id ?? "msg"}-${i}`} className={`flex ${msg.sender === "ai" ? "justify-start" : "justify-end"}`}>
-          <div className={`
-            relative px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap
-            ${msg.sender === "ai"
-              ? "bg-blue-950 text-blue-100 max-w-[95vw] sm:max-w-[85vw] lg:max-w-[75%]"
-              : "bg-blue-700 text-white max-w-[80vw] sm:max-w-[60vw] lg:max-w-[60%]"}
-          `}>
+        <div
+          key={`${msg.id ?? "msg"}-${i}`}
+          className={`flex ${msg.sender === "ai" ? "justify-start" : "justify-end"}`}
+        >
+          <div
+            className={`
+              relative px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap transition-colors
+              ${
+                msg.sender === "ai"
+                  ? "bg-gray-100 text-gray-900 dark:bg-blue-950 dark:text-blue-100 max-w-[95vw] sm:max-w-[85vw] lg:max-w-[75%]"
+                  : "bg-blue-600 text-white dark:bg-blue-700 dark:text-white max-w-[80vw] sm:max-w-[60vw] lg:max-w-[60%]"
+              }
+            `}
+          >
             {msg.text}
             {msg.sender === "ai" && i === lastAiIndex && msg.showFeedback && (
               <div
@@ -55,9 +63,15 @@ export default function ChatMessages({
                   bottom: "-3.2rem",
                 }}
               >
-                <button onClick={() => postFeedback(i, "thumbs_up")}><ThumbsUp className="w-4 h-4 text-green-500" /></button>
-                <button onClick={() => postFeedback(i, "thumbs_down")}><ThumbsDown className="w-4 h-4 text-red-500" /></button>
-                <button onClick={() => regenerate(i)}><RotateCcw className="w-4 h-4 text-gray-500" /></button>
+                <button onClick={() => postFeedback(i, "thumbs_up")}>
+                  <ThumbsUp className="w-4 h-4 text-green-500" />
+                </button>
+                <button onClick={() => postFeedback(i, "thumbs_down")}>
+                  <ThumbsDown className="w-4 h-4 text-red-500" />
+                </button>
+                <button onClick={() => regenerate(i)}>
+                  <RotateCcw className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                </button>
               </div>
             )}
           </div>
@@ -65,7 +79,7 @@ export default function ChatMessages({
       ))}
       {loading && (
         <div className="flex justify-start mt-16 mb-4">
-          <div className="px-4 py-2 rounded-xl bg-blue-950 text-blue-300 animate-pulse flex items-center gap-2">
+          <div className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 dark:bg-blue-950 dark:text-blue-300 animate-pulse flex items-center gap-2 transition-colors">
             <Loader2 className="w-4 h-4 animate-spin" />
           </div>
         </div>
