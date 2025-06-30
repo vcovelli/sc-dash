@@ -1,6 +1,5 @@
 // StatCard.tsx
 import GlassCard from "./GlassCard";
-import { LucideIcon } from "lucide-react";
 
 type StatCardProps = {
   label: string;

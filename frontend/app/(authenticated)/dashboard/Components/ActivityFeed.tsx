@@ -1,6 +1,15 @@
 import GlassCard from "./GlassCard";
 
-export default function ActivityFeed({ activityFeed }) {
+type ActivityFeedItem = {
+  text: string;
+  time: string;
+};
+
+type ActivityFeedProps = {
+  activityFeed: ActivityFeedItem[];
+};
+
+export default function ActivityFeed({ activityFeed }: ActivityFeedProps) {
   return (
     <GlassCard>
       <h2 className="font-semibold mb-2 text-gray-700 dark:text-gray-100" style={{ fontSize: "var(--h2)" }}>

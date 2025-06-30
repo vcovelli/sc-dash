@@ -1,4 +1,12 @@
 import axios from "axios";
+import type { Layout } from "react-grid-layout";
+
+type ChartData = {
+  chart_type: string;
+  title: string;
+  settings: object;
+  [key: string]: unknown;
+};
 
 // Helper to get Authorization headers
 function authHeaders() {
@@ -13,30 +21,24 @@ export const getDashboard = async () => {
   return res.data;
 };
 
-export const createChart = async (chartData) => {
+export const createChart = async (chartData: ChartData) => {
   const res = await axios.post("/api/analytics/chart/", chartData, authHeaders());
   return res.data;
 };
 
-export const updateChart = async (id, chartData) => {
+export const updateChart = async (id: string, chartData: Partial<ChartData>) => {
   const res = await axios.patch(`/api/analytics/chart/${id}/`, chartData, authHeaders());
   return res.data;
 };
 
-export const deleteChart = async (id) => {
+export const deleteChart = async (id: string) => {
   await axios.delete(`/api/analytics/chart/${id}/`, authHeaders());
 };
 
-// ----- Use this if your PATCH is to /dashboard/<id>/ -----
-export const updateDashboardLayout = async (dashboardId, layout) => {
+export const updateDashboardLayout = async (dashboardId: string, layout: Layout[]) => {
   await axios.patch(`/api/analytics/dashboard/${dashboardId}/`, { layout }, authHeaders());
 };
 
-// ----- Or this if your PATCH is to /dashboard/ (no id) -----
-// export const updateDashboardLayout = async (layout) => {
-//   await axios.patch(`/api/analytics/dashboard/`, { layout }, authHeaders());
-// };
-
-export const markOnboardingStep = async (step) => {
+export const markOnboardingStep = async (step: string) => {
   await axios.post("/api/onboarding/progress/", { step }, authHeaders());
 };

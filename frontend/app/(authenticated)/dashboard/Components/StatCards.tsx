@@ -33,7 +33,7 @@ export default function StatCards({
 
   return (
     <>
-      {stats.map((stat, i) => (
+      {stats.map((stat) => (
         <StatCard
           key={stat.label}
           label={stat.label}

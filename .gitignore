@@ -4,6 +4,9 @@ __pycache__/
 .env
 .env.local
 
+# Excel
+*.xlsx
+
 # Ignore virtual environments
 sc_env
 

@@ -7,15 +7,15 @@ import {
   LucideUsers,
   LucideLifeBuoy,
   LucideSparkles,
-  LucideActivity,
-  LucideBarChart
+  //LucideActivity,
+  //LucideBarChart
 } from "lucide-react";
 import type { RecentFile } from "./types";
 import StatCards from "./Components/StatCards";
 import { SetupProgressCard, PlanUsageCard } from "./Components/SetupAndPlan";
 import AlertsCard, { Alert } from "./Components/AlertsCard";
-import ActivityAndUploads from "./Components/ActivityAndUploads";
-import InsightsFeedbackHelp from "./Components/InsightsFeedbackHelp";
+//import ActivityAndUploads from "./Components/ActivityAndUploads";
+//import InsightsFeedbackHelp from "./Components/InsightsFeedbackHelp";
 import api from "@/lib/axios";
 import ActivityFeed from "./Components/ActivityFeed";
 import RecentUploads from "./Components/RecentUploads";
@@ -138,7 +138,7 @@ export default function DashboardPage() {
                 Welcome back, Vincent!
               </h2>
               <div className="text-gray-600 dark:text-gray-300 text-sm">
-                Here's a quick overview of your workspace. Let's get productive! 🚀
+                Here&apos;s a quick overview of your workspace. Let&apos;s get productive! 🚀
               </div>
             </div>
           </div>
