@@ -16,6 +16,7 @@ from .views.frontend.upload import UploadCSVView, UploadedFileListView, MarkSucc
 from .views.user.start_ingestion import StartIngestionView
 from .views.frontend.dashboard import DashboardOverviewView
 from .views.schema.schema_wizard import generate_schema
+from .views.user.download_files import download_user_file
 
 # SCHEMA MANAGEMENT (NEW)
 from .views.schema.schema import (
@@ -24,6 +25,8 @@ from .views.schema.schema import (
     SheetColumnAPIView,      # PATCH for a single column ("/api/schema/<table_name>/columns/<accessor_key>/")
 )
 from .views.schema.user_schema import UserTableSchemasView, UserTableSchemaDetailView
+
+from .views.reference.reference import ReferenceOptionsView
 
 # Auth / Profile
 from .views.frontend.profile import UserProfileView
@@ -61,12 +64,18 @@ urlpatterns = [
     path('schema/<str:sheet_name>/', SheetSchemaAPIView.as_view(), name='sheet-schema'),  # GET, PATCH, DELETE table schema
     path('schema/<str:table_name>/columns/<str:accessor_key>/', SheetColumnAPIView.as_view(), name='sheet-column-patch'),  # PATCH single column
 
+    # Reference options
+    path('refs/<str:table_name>/', ReferenceOptionsView.as_view(), name='reference-options'),
+
     # Uploads
     path('start-ingestion/', StartIngestionView.as_view(), name='start-ingestion'),
     path('ingest-csv/', UploadCSVView.as_view(), name='ingest-csv'),
     path('uploaded-files/', UploadedFileListView.as_view(), name='uploaded-files'),
     path('uploads/mark-success/', MarkSuccessView.as_view(), name='mark-success'),
+
+    # Downloads
     path('file-download/<int:file_id>/', FileDownloadView.as_view(), name='file-download'),
+    path('files/download/<int:file_id>/', download_user_file, name='download_user_file'),
 
     # Dashboard & profile
     path('dashboard-overview/', DashboardOverviewView.as_view(), name='dashboard-overview'),

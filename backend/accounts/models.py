@@ -41,7 +41,7 @@ class UserActivity(models.Model):
         related_name='activities'
     )
     verb = models.CharField(max_length=255)        # E.g. "uploaded", "updated settings", "deleted"
-    target = models.CharField(max_length=255, blank=True, null=True)  # E.g. "orders.csv"
+    target = models.CharField(max_length=1024, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     meta = models.JSONField(blank=True, null=True)  # For any extra event details (e.g. row count, IP, etc)
 
