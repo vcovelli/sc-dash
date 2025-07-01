@@ -126,7 +126,7 @@ export default function SignupPage() {
     }
 
     try {
-      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/`, {
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/signup/`, {
         username: form.username,
         email: form.email,
         password1: form.password,

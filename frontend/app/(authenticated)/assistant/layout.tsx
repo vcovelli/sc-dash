@@ -7,7 +7,6 @@ import { useKeyboardSafePadding } from "@/hooks/useKeyboardSafePadding";
 import { useEffect, useState } from "react";
 
 const EXTRA_PADDING = 0;
-const MAX_KEYBOARD_OFFSET = 420;
 
 // Mobile device detection helper
 function useIsMobile(breakpoint: number = 768) {
