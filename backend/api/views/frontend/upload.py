@@ -41,8 +41,8 @@ class UploadCSVView(APIView):
             s3 = boto3.client(
                 "s3",
                 endpoint_url=settings.MINIO_ENDPOINT,
-                aws_access_key_id=settings.MINIO_ACCESS_KEY,
-                aws_secret_access_key=settings.MINIO_SECRET_KEY,
+                aws_access_key_id=settings.MINIO_ROOT_USER,
+                aws_secret_access_key=settings.MINIO_ROOT_PASSWORD,
             )
 
             bucket_name = settings.MINIO_BUCKET_NAME
@@ -147,8 +147,8 @@ class FileDownloadView(APIView):
             s3 = boto3.client(
                 "s3",
                 endpoint_url=settings.MINIO_ENDPOINT,
-                aws_access_key_id=settings.MINIO_ACCESS_KEY,
-                aws_secret_access_key=settings.MINIO_SECRET_KEY,
+                aws_access_key_id=settings.MINIO_ROOT_USER,
+                aws_secret_access_key=settings.MINIO_ROOT_PASSWORD,
             )
 
             url = s3.generate_presigned_url(

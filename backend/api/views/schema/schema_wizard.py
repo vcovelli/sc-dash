@@ -12,6 +12,7 @@ from api.views.user.table_creation import create_table_for_client
 from api.models import UserTableSchema
 from accounts.models import UserActivity
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -184,28 +185,30 @@ def generate_full_workbook(client_name, selected_features, include_sample_data=T
 
     wb.save(file_path)
 
-    # Upload to MinIO
+     # --- MinIO connection using public host ---
     minio_client = Minio(
-        "minio:9000",
-        access_key=os.getenv("MINIO_ACCESS_KEY"),
-        secret_key=os.getenv("MINIO_SECRET_KEY"),
-        secure=False,
+        "minio.supplywise.ai",  # PUBLIC HOST for both upload and presign
+        access_key=os.getenv("MINIO_ROOT_USER", "admin"),
+        secret_key=os.getenv("MINIO_ROOT_PASSWORD", "admin123"),
+        secure=True,  # HTTPS for public-facing ops
     )
     bucket_name = "templates"
     object_name = file_path.name
+
+    # --- Ensure bucket exists ---
     if not minio_client.bucket_exists(bucket_name):
         minio_client.make_bucket(bucket_name)
+
+    # --- Upload file ---
     minio_client.fput_object(bucket_name, object_name, str(file_path))
 
-    url = minio_client.presigned_get_object(bucket_name, object_name, expires=timedelta(minutes=30))
-
-    url = minio_client.presigned_get_object(bucket_name, object_name, expires=timedelta(minutes=30))
-    public_minio_url = os.getenv("PUBLIC_MINIO_URL")  # set to "https://minio.supplywise.ai"
-    if public_minio_url:
-        url = url.replace("http://minio:9000", public_minio_url)
+    # --- Presigned URL using public host, no netloc swap needed ---
+    presigned_url = minio_client.presigned_get_object(
+        bucket_name, object_name, expires=timedelta(minutes=30)
+    )
 
     return {
-        "download_url": url,
+        "download_url": presigned_url,
         "file_path": str(file_path)
     }
 

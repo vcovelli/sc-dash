@@ -123,3 +123,9 @@ class OnboardingProgress(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s onboarding progress"
+    
+class UserFile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    object_key = models.CharField(max_length=255)  # MinIO key or file path
+    original_filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)

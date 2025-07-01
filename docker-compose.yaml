@@ -116,15 +116,15 @@ services:
   minio:
     image: minio/minio
     ports:
-      - "${MINIO_PORT:-9000}:9000"
+      - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_SERVER_URL: ${MINIO_SERVER_URL}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: https://minio.supplywise.ai/console/
     volumes:
       - minio_data:/data
-    command: server --console-address ":9001" /data
+    command: server /data --console-address ":9001" 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s

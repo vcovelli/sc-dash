@@ -36,7 +36,7 @@ export const UploadedFilesTable = () => {
     else return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   };
 
-  const getDownloadUrl = async (fileId: number) => {
+  const handleDownload = async (fileId, fileName) => {
     try {
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/file-download/${fileId}/`,
@@ -44,12 +44,18 @@ export const UploadedFilesTable = () => {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
+          responseType: "blob",
         }
       );
-      return res.data.url;
-    } catch (err) {
-      console.error("Failed to get download URL:", err);
-      return null;
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName); // or any other extension
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      alert("Download failed!");
     }
   };
 
@@ -58,36 +64,33 @@ export const UploadedFilesTable = () => {
 
   return (
     <div className="overflow-x-auto bg-white dark:bg-[#161B22] border border-gray-200 dark:border-gray-800 rounded-md shadow-sm">
-      <table className="min-w-full">
+      <table className="min-w-full text-sm text-gray-800 dark:text-gray-100"> {/* <-- ADDED text colors here */}
         <thead>
           <tr className="bg-gray-100 dark:bg-[#21262d] text-left">
-            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Filename</th>
-            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Size</th>
-            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Rows</th>
-            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Uploaded By</th>
-            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Uploaded At</th>
-            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">Status</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Filename</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Size</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Rows</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Uploaded By</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Uploaded At</th>
+            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Status</th>
           </tr>
         </thead>
         <tbody>
           {files.map((file) => (
             <tr key={file.id} className="hover:bg-gray-50 dark:hover:bg-[#22272e]">
-              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">{file.file_name}</td>
-              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">{file.file_name}</td>
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 {file.file_size ? getReadableSize(file.file_size) : "Unknown"}
               </td>
-              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">{file.row_count ?? "-"}</td>
-              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">{file.uploaded_by}</td>
-              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">{file.row_count ?? "-"}</td>
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">{file.uploaded_by}</td>
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 {new Date(file.uploaded_at).toLocaleString()}
               </td>
               <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800">
                 {file.status === "success" && file.minio_path ? (
                   <button
-                    onClick={async () => {
-                      const url = await getDownloadUrl(file.id);
-                      if (url) window.open(url, "_blank");
-                    }}
+                    onClick={() => handleDownload(file.id, file.file_name)}
                     className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-300"
                   >
                     Download CSV
