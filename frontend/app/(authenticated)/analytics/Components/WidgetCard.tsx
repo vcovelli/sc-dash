@@ -61,9 +61,8 @@ export default function WidgetCard({
     <div
       className={`
         relative bg-white dark:bg-gray-900 flex flex-col ring-2 border transition
-        ${focused
-          ? "ring-blue-500 shadow-2xl scale-[1.025] z-30 border-blue-200 dark:border-blue-800"
-          : "ring-transparent shadow border-gray-100 dark:border-gray-800"}
+        text-gray-800 dark:text-gray-100
+        ...
         h-full w-full min-h-0 min-w-0
         rounded-none md:rounded-2xl
         px-2 sm:px-4 md:px-8 py-2 md:py-4

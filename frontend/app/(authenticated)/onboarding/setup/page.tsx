@@ -13,7 +13,7 @@ export default function FirstTimeSetupPage() {
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     axios
-      .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user-table-schemas/`, {
+      .get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/datagrid/schemas/`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {

@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import ChoiceTag from "@/app/(authenticated)/relational-ui/components/Grid/EditableCell/Choice/ChoiceTag";
 import ChoiceList from "@/app/(authenticated)/relational-ui/components/Grid/EditableCell/Choice/ChoiceList";
 
+// --- Option interface ---
 interface ChoiceOption {
   id: string;
   name: string;
@@ -19,7 +20,16 @@ interface ChoiceCellProps {
   onStartEdit?: () => void;
   fontSize: number;
   rowHeight: number;
-  onAddChoice?: (newName: string) => Promise<ChoiceOption | null> | ChoiceOption | null;
+  onAddChoice?: (newName: string, color?: string) => Promise<ChoiceOption | null> | ChoiceOption | null;
+}
+
+const COLORS = [
+  "#7e5bef", "#fbbf24", "#f87171", "#10b981", "#3b82f6",
+  "#6366f1", "#eab308", "#d97706", "#ec4899", "#0ea5e9",
+];
+
+function getRandomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
 const ChoiceCell = React.memo(function ChoiceCell({
@@ -34,6 +44,13 @@ const ChoiceCell = React.memo(function ChoiceCell({
   rowHeight,
   onAddChoice,
 }: ChoiceCellProps) {
+  // ---- DEBUG LOG: at top of render ----
+  console.log("[ChoiceCell] rendering col:", column.accessorKey, {
+    ownOnAddChoice: typeof onAddChoice,
+    colOnAddChoice: typeof column.onAddChoice,
+    normalizedChoices: column.choices,
+  });
+
   const [value, setValue] = useState<string | string[] | null>(initialValue);
 
   // Normalize choices to [{id, name, color}]
@@ -56,6 +73,24 @@ const ChoiceCell = React.memo(function ChoiceCell({
     },
     [rowId, column.accessorKey, onSave, onEditComplete]
   );
+
+  // --- Blank cell display (not editing, no value) ---
+  if (!editing && (!value || value === "" || (Array.isArray(value) && value.length === 0))) {
+    return (
+      <div
+        className="w-full h-full"
+        style={{ minHeight: rowHeight, fontSize }}
+        tabIndex={0}
+        onDoubleClick={e => { e.preventDefault(); e.stopPropagation(); onStartEdit?.(); }}
+        onKeyDown={e => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onStartEdit?.();
+          }
+        }}
+      />
+    );
+  }
 
   // --- Display mode (not editing) ---
   if (!editing) {
@@ -115,19 +150,21 @@ const ChoiceCell = React.memo(function ChoiceCell({
   }
 
   // --- Edit mode ---
+  // --- DEBUG LOG: Before rendering ChoiceList ---
+  console.log("[ChoiceCell] Passing onAddChoice to ChoiceList:", onAddChoice || column.onAddChoice);
+
   return (
     <div style={{ minWidth: 160 }}>
       <ChoiceList
-        value={Array.isArray(value) ? value[0] ?? "" : value ?? ""} 
+        value={Array.isArray(value) ? value[0] ?? "" : value ?? ""}
         options={normalizedChoices}
         onChange={handleChange}
         onEditComplete={onEditComplete}
         autoFocus
         openOnFocus
-        // You can pass a getColor that uses color if you want in edit mode too, but default is fine for now
         fontSize={fontSize}
         rowHeight={rowHeight}
-        onAddChoice={onAddChoice}
+        onAddChoice={onAddChoice || column.onAddChoice}
       />
     </div>
   );

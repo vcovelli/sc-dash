@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     "accounts",
     "ai",
     "analytics",
+    "datagrid",
+    "files",
+    "helpers",
 ]
 
 # ======================

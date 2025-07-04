@@ -27,7 +27,7 @@ const useUserSchemas = () => {
       return;
     }
     api
-      .get("/user-table-schemas/")
+      .get("/datagrid/schemas/")
       .then((res) => setSchemas(Array.isArray(res.data) ? res.data : []))
       .catch(() => setSchemas([]))
       .finally(() => setLoading(false));
@@ -151,7 +151,7 @@ export default function UploadsPage() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("table_name", selectedTable);
-      await api.post("/ingest-csv/", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      await api.post("/files/upload/", formData, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("✅ Upload successful!");
       setFile(null); setCsvPreview([]); setFileName(""); setMissingHeaders([]); setExtraHeaders([]);
     } catch (err) {

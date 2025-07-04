@@ -201,6 +201,7 @@ export default function AnalyticsDashboardLayout() {
 
   // --- Layout changes (resize, move) ---
   const handleLayoutChange = async (newLayout: Layout[]) => {
+    console.log("New Layout:", newLayout);  // <-- Add this!
     setLayout(newLayout);
     if (dashboardId) {
       await updateDashboardLayout(dashboardId, newLayout);
@@ -278,15 +279,15 @@ export default function AnalyticsDashboardLayout() {
           ) : null
         }
         rightPanel={
-          openPanel === "settings" ? (
-            <SettingsPanel
-              widget={focusedWidget}
-              open
-              onClose={handleSettingsCancel}
-              onSave={handleSettingsSave}
-              onLiveUpdate={handleLiveUpdateSettings}
-            />
-          ) : null
+          openPanel === "settings" && focusedWidget
+            ? <SettingsPanel
+                widget={focusedWidget}
+                open
+                onClose={handleSettingsCancel}
+                onSave={handleSettingsSave}
+                onLiveUpdate={handleLiveUpdateSettings}
+              />
+            : null
         }
       >
         <div className="flex-1 flex flex-col min-h-0 min-w-0 w-full h-full bg-neutral-50 dark:bg-gray-950 p-2 sm:p-4 md:p-10 lg:p-16 transition-all duration-200">
@@ -312,9 +313,17 @@ export default function AnalyticsDashboardLayout() {
       leftPanel={openPanel === "insights" && !focusedWidget ? (
         <InsightPanel widget={undefined} open={false} onClose={() => setOpenPanel(null)} />
       ) : null}
-      rightPanel={openPanel === "settings" && !focusedWidget ? (
-        <SettingsPanel widget={undefined} open={false} onClose={() => setOpenPanel(null)} onSave={() => setOpenPanel(null)} />
-      ) : null}
+      rightPanel={
+        openPanel === "settings" && focusedWidget
+          ? <SettingsPanel
+              widget={focusedWidget}
+              open
+              onClose={handleSettingsCancel}
+              onSave={handleSettingsSave}
+              onLiveUpdate={handleLiveUpdateSettings}
+            />
+          : null
+      }
     >
       {/* Add Widget Button */}
       <button
@@ -360,11 +369,7 @@ export default function AnalyticsDashboardLayout() {
             }}
           >
             {widgets.map((widget) => (
-              <div
-                key={widget.id}
-                data-grid={layout.find((l) => l.i === widget.id) || { x: 0, y: Infinity, w: 1, h: 3 }}
-                style={{ height: "100%", width: "100%" }}
-              >
+               <div key={widget.id} style={{ height: "100%", width: "100%" }}>
                 <WidgetCard
                   widget={widget}
                   focused={false}

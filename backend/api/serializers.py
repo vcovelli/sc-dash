@@ -2,10 +2,9 @@ from rest_framework import serializers
 from .models import (
     Supplier, Warehouse, Product, Inventory,
     Customer, Order, OrderItem, Shipment,
-    UploadedFile, UserTableSchema
 )
 
-# ========== Basic Serializers ==========
+# --- Basic Serializers ---
 
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,7 +21,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         model = Customer
         fields = ['id', 'name', 'email', 'phone', 'address']
 
-# ========== Product & Inventory ==========
+# --- Product & Inventory ---
 
 class ProductSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source="supplier.name", read_only=True)
@@ -39,7 +38,7 @@ class InventorySerializer(serializers.ModelSerializer):
         model = Inventory
         fields = ['id', 'product', 'warehouse', 'quantity']
 
-# ========== Orders ==========
+# --- Orders ---
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
@@ -56,7 +55,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'customer', 'customer_name', 'order_date', 'status', 'client_name', 'items']
 
-# ========== Shipments ==========
+# --- Shipments ---
 
 class ShipmentSerializer(serializers.ModelSerializer):
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
@@ -69,50 +68,3 @@ class ShipmentSerializer(serializers.ModelSerializer):
             'warehouse_name', 'shipped_date',
             'estimated_arrival', 'status', 'client_name'
         ]
-
-# ========== File Uploads ==========
-
-class UploadedFileSerializer(serializers.ModelSerializer):
-    uploaded_by = serializers.CharField(source="user.username", read_only=True)
-
-    class Meta:
-        model = UploadedFile
-        fields = [
-            'id', 'user', 'uploaded_by', 'file_name',
-            'minio_path', 'uploaded_at', 'status',
-            'message', 'file_size', 'client_name', 'row_count'
-        ]
-
-class StartIngestionSerializer(serializers.Serializer):
-    file_id = serializers.IntegerField()
-
-# ========== User Schema ==========
-
-from api.models import UserTableSchema
-
-class UserTableSchemaSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
-    columns = serializers.JSONField()
-    expected_headers = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserTableSchema
-        fields = [
-            'id',
-            'user',
-            'table_name',
-            'db_table_name',
-            'primary_key',
-            'columns',
-            'created_at',
-            'updated_at',
-            'expected_headers',  # <-- add this line
-        ]
-        read_only_fields = ['created_at', 'updated_at']
-
-    def get_expected_headers(self, obj):
-        cols = obj.columns or []
-        # If dicts (modern style): extract accessorKey, else just string
-        if cols and isinstance(cols[0], dict):
-            return [col.get('accessorKey') for col in cols if col.get('accessorKey')]
-        return cols

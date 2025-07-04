@@ -18,7 +18,16 @@ interface ChoiceListProps {
   rowHeight: number;
   autoFocus?: boolean;
   openOnFocus?: boolean;
-  onAddChoice?: (newName: string) => Promise<ChoiceOption | null> | ChoiceOption | null;
+  onAddChoice?: (newName: string, color?: string) => Promise<ChoiceOption | null> | ChoiceOption | null;
+}
+
+const COLORS = [
+  "#7e5bef", "#fbbf24", "#f87171", "#10b981", "#3b82f6",
+  "#6366f1", "#eab308", "#d97706", "#ec4899", "#0ea5e9",
+];
+
+function getRandomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
 const DEFAULT_COLOR = "#2563eb"; // fallback blue
@@ -61,6 +70,19 @@ const ChoiceList: React.FC<ChoiceListProps> = React.memo(({
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const completedRef = useRef(false);
+
+  // Detect dark mode
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    window.addEventListener("transitionrun", check);
+    window.addEventListener("storage", check);
+    return () => {
+      window.removeEventListener("transitionrun", check);
+      window.removeEventListener("storage", check);
+    };
+  }, []);
 
   // Keyboard/auto-focus logic
   useEffect(() => {
@@ -110,7 +132,8 @@ const ChoiceList: React.FC<ChoiceListProps> = React.memo(({
     if (!onAddChoice || !newChoice.trim()) return;
     setLoading(true);
     try {
-      const created = await onAddChoice(newChoice.trim());
+      const color = getRandomColor();
+      const created = await onAddChoice(newChoice.trim(), color);
       if (created) {
         onChange(created.id);
         setOpen(false);
@@ -138,6 +161,10 @@ const ChoiceList: React.FC<ChoiceListProps> = React.memo(({
           color: "#fff",
         };
 
+  // Choose label text color for add button/input
+  const addTextColor = isDark ? "text-blue-400" : "text-blue-600";
+  const addHoverBg = isDark ? "hover:bg-neutral-800" : "hover:bg-blue-50";
+
   return (
     <Select.Root
       open={open}
@@ -159,22 +186,26 @@ const ChoiceList: React.FC<ChoiceListProps> = React.memo(({
           minWidth: 0,
         }}
       >
-        <span
-          className={classNames(
-            "inline-flex items-center px-2 py-0 font-medium border rounded truncate"
-          )}
-          style={{
-            maxWidth: "100%",
-            fontWeight: 500,
-            fontSize,
-            height: rowHeight - 6,
-            minHeight: rowHeight - 6,
-            lineHeight: `${rowHeight}px`,
-            ...colorStyle(getOption(value))
-          }}
-        >
-          {getOption(value)?.name ?? value}
-        </span>
+        {normalizedOptions.length === 0 ? (
+          <span className="w-full" />
+        ) : (
+          <span
+            className={classNames(
+              "inline-flex items-center px-2 py-0 font-medium border rounded truncate"
+            )}
+            style={{
+              maxWidth: "100%",
+              fontWeight: 500,
+              fontSize,
+              height: rowHeight - 6,
+              minHeight: rowHeight - 6,
+              lineHeight: `${rowHeight}px`,
+              ...colorStyle(getOption(value))
+            }}
+          >
+            {getOption(value)?.name ?? value}
+          </span>
+        )}
         <Select.Icon className="ml-1 w-4 h-4 opacity-70">
           <ChevronDownIcon />
         </Select.Icon>
@@ -191,74 +222,65 @@ const ChoiceList: React.FC<ChoiceListProps> = React.memo(({
             padding: "4px 0",
           }}
         >
-          <Select.Viewport className="p-1">
-            {normalizedOptions.map((opt) => (
-              <Select.Item
-                key={opt.id}
-                value={opt.id}
-                className={classNames(
-                  `px-2 ${py} mb-1 last:mb-0 hover:bg-blue-50 dark:hover:bg-neutral-800 focus:bg-blue-100 dark:focus:bg-neutral-800 cursor-pointer rounded flex items-center gap-2 outline-none`,
-                  value === opt.id && "ring-2 ring-blue-400"
-                )}
-                style={{
-                  fontSize,
-                  minHeight: minH,
-                  lineHeight: lh,
-                  transition: "background 0.15s",
-                }}
-              >
-                <Select.ItemText>
-                  <span
-                    className={classNames(
-                      "inline-flex items-center px-2 py-0 rounded font-medium border truncate"
-                    )}
-                    style={{
-                      fontSize,
-                      minHeight: minH - 4,
-                      height: minH - 4,
-                      lineHeight: lh,
-                      ...colorStyle(opt)
-                    }}
-                  >
-                    {opt.name}
-                  </span>
-                </Select.ItemText>
-                {value === opt.id && (
-                  <CheckIcon className="ml-2 w-4 h-4 text-blue-500" />
-                )}
-              </Select.Item>
-            ))}
-            {/* Add new option input at bottom */}
-            {adding ? (
-              <div className={`flex items-center gap-2 px-2 ${py} mt-1 bg-gray-50 dark:bg-neutral-800 rounded`}>
-                <input
-                  ref={inputRef}
-                  className="border rounded px-2 py-1 w-full bg-white dark:bg-neutral-900"
-                  style={{ fontSize, height: minH - 8 }}
-                  value={newChoice}
-                  placeholder="New option…"
-                  onChange={e => setNewChoice(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") handleAddNew();
-                    if (e.key === "Escape") { setAdding(false); setNewChoice(""); }
+          <Select.Viewport className="p-1 flex flex-col">
+            {/* Existing options */}
+            {normalizedOptions.length > 0 && !adding &&
+              normalizedOptions.map((opt) => (
+                <Select.Item
+                  key={opt.id}
+                  value={opt.id}
+                  className={classNames(
+                    `px-2 ${py} mb-1 last:mb-0 hover:bg-blue-50 dark:hover:bg-neutral-800 focus:bg-blue-100 dark:focus:bg-neutral-800 cursor-pointer rounded flex items-center gap-2 outline-none`,
+                    value === opt.id && "ring-2 ring-blue-400"
+                  )}
+                  style={{
+                    fontSize,
+                    minHeight: minH,
+                    lineHeight: lh,
+                    transition: "background 0.15s",
                   }}
-                  disabled={loading}
-                />
-                <button
-                  className="text-blue-600 text-xs px-2 py-1 rounded hover:bg-blue-100 dark:hover:bg-neutral-700"
-                  onClick={handleAddNew}
-                  disabled={loading || !newChoice.trim()}
-                  tabIndex={0}
-                >Add</button>
-                <button
-                  className="text-gray-500 text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-neutral-700"
-                  onClick={() => { setAdding(false); setNewChoice(""); }}
-                  tabIndex={0}
-                >Cancel</button>
-              </div>
-            ) : (
+                >
+                  <Select.ItemText>
+                    <span
+                      className={classNames(
+                        "inline-flex items-center px-2 py-0 rounded font-medium border truncate"
+                      )}
+                      style={{
+                        fontSize,
+                        minHeight: minH - 4,
+                        height: minH - 4,
+                        lineHeight: lh,
+                        ...colorStyle(opt)
+                      }}
+                    >
+                      {opt.name}
+                    </span>
+                  </Select.ItemText>
+                  {value === opt.id && (
+                    <CheckIcon className="ml-2 w-4 h-4 text-blue-500" />
+                  )}
+                </Select.Item>
+              ))}
+            {/* Show only the + button if no options and not adding */}
+            {normalizedOptions.length === 0 && !adding && (
               <button
-                className={`flex items-center gap-2 w-full px-2 ${py} mt-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-neutral-800 font-medium rounded`}
+                className={`flex items-center justify-center w-full h-10 ${addHoverBg} rounded`}
+                style={{ minHeight: minH }}
+                onClick={() => setAdding(true)}
+                type="button"
+                tabIndex={0}
+              >
+                <PlusCircledIcon className={`w-5 h-5 ${addTextColor}`} />
+              </button>
+            )}
+            {/* Always render add-new at bottom if options exist */}
+            {normalizedOptions.length > 0 && !adding && (
+              <button
+                className={classNames(
+                  "flex items-center gap-2 w-full px-2 mt-1 font-medium rounded",
+                  addTextColor,
+                  addHoverBg
+                )}
                 onClick={() => setAdding(true)}
                 type="button"
                 tabIndex={0}
@@ -272,6 +294,37 @@ const ChoiceList: React.FC<ChoiceListProps> = React.memo(({
                 <PlusCircledIcon className="w-4 h-4" />
                 Add new option
               </button>
+            )}
+            {/* Inline add input */}
+            {adding && (
+              <div className={`flex items-center gap-2 px-2 ${py} mt-1 bg-gray-50 dark:bg-neutral-800 rounded`}>
+                <input
+                  ref={inputRef}
+                  className="border rounded px-2 py-1 w-full bg-white dark:bg-neutral-900"
+                  style={{ fontSize, height: minH - 8, color: isDark ? "#cbd5e1" : "#1e293b" }}
+                  value={newChoice}
+                  placeholder="Add option…"
+                  onChange={e => setNewChoice(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") handleAddNew();
+                    if (e.key === "Escape") { setAdding(false); setNewChoice(""); }
+                  }}
+                  disabled={loading}
+                />
+                <button
+                  className={classNames("text-xs px-2 py-1 rounded font-semibold", addTextColor, addHoverBg)}
+                  onClick={handleAddNew}
+                  disabled={loading || !newChoice.trim()}
+                  tabIndex={0}
+                  style={{ minWidth: 44 }}
+                >Add</button>
+                <button
+                  className={classNames("text-xs px-2 py-1 rounded font-semibold", isDark ? "text-gray-400 hover:bg-neutral-700" : "text-gray-500 hover:bg-gray-100")}
+                  onClick={() => { setAdding(false); setNewChoice(""); }}
+                  tabIndex={0}
+                  style={{ minWidth: 44 }}
+                >Cancel</button>
+              </div>
             )}
           </Select.Viewport>
         </Select.Content>

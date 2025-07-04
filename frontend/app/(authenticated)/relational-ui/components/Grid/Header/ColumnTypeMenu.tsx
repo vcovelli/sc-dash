@@ -1,5 +1,6 @@
 import React from "react";
 import { ColumnDataType } from "@/app/(authenticated)/relational-ui/components/Sheet";
+import ReactDOM from "react-dom";
 
 const columnTypes: { label: string; type: ColumnDataType }[] = [
   { label: "Text", type: "text" },
@@ -19,12 +20,11 @@ interface Props {
 }
 
 export default function ColumnTypeMenu({ anchorPos, onSelect }: Props) {
-  return (
+  const menu = (
     <div
       id="add-column-dropdown"
       className="fixed z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg rounded text-sm text-gray-800 dark:text-gray-200"
       style={{
-        position: "fixed",
         top: anchorPos.y,
         left: anchorPos.x,
         width: 260,
@@ -47,4 +47,8 @@ export default function ColumnTypeMenu({ anchorPos, onSelect }: Props) {
       </div>
     </div>
   );
+
+  // Ensure document exists (skip on SSR)
+  if (typeof window === "undefined" || !document.body) return null;
+  return ReactDOM.createPortal(menu, document.body);
 }

@@ -32,4 +32,7 @@ export interface CustomColumnDef<TData = Row> {
   reference_table?: string;
   formula?: string;
   currencyCode?: string;
+
+  onAddChoice?: (newName: string, color?: string) => Promise<Option | null> | Option | null;
+  onAddReference?: (newName: string) => Promise<Option | null> | Option | null;
 }
