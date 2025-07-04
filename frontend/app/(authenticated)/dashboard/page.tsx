@@ -48,7 +48,7 @@ export default function DashboardPage() {
     const token = localStorage.getItem("access_token");
     if (!token) return;
 
-    api.get("/dashboard-overview/")
+    api.get("/accounts/dashboard-overview/")
       .then((res) => {
         setFileCount(res.data.total_files);
         setRecentFiles(res.data.recent_uploads || []);
@@ -58,7 +58,7 @@ export default function DashboardPage() {
       })
       .catch(() => setRecentFiles([]));
 
-    api.get("/onboarding/progress/")
+    api.get("/accounts/onboarding/progress/")
       .then((res) => {
         setCompletedKeys(res.data.completed_keys || []);
       })

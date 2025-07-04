@@ -17,6 +17,10 @@ from .views.account_views import (
     ActivityFeedView,
 )
 
+# Dashboard and onboarding views
+from .views.dashboard import DashboardOverviewView
+from .views.onboarding import OnboardingStatusView  # Only if you have this!
+
 urlpatterns = [
     # Email confirmation (AllAuth)
     path('account-confirm-email/<key>/', ReactConfirmEmailView.as_view(), name='account_confirm_email'),
@@ -36,4 +40,10 @@ urlpatterns = [
 
     # Activity feed
     path('activity-feed/', ActivityFeedView.as_view(), name='activity-feed'),
+
+    # Dashboard overview
+    path('dashboard-overview/', DashboardOverviewView.as_view(), name='dashboard-overview'),
+
+    # Onboarding progress
+    path('onboarding/progress/', OnboardingStatusView.as_view(), name='onboarding-progress'),
 ]

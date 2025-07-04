@@ -10,7 +10,7 @@ class AnalyticsDashboard(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     # Optionally: layout config for overall dashboard (grid, custom layouts, etc)
-    layout = JSONField(default=dict, blank=True)
+    layout = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.name}"

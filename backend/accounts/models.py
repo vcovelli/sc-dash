@@ -36,7 +36,7 @@ class CustomUser(AbstractUser):
 
 class UserActivity(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  # references CustomUser
+        settings.AUTH_USER_MODEL,  # always reference as a string or via settings for safety
         on_delete=models.CASCADE,
         related_name='activities'
     )
@@ -50,3 +50,14 @@ class UserActivity(models.Model):
 
     def __str__(self):
         return f"{self.user.username} {self.verb} {self.target or ''} at {self.timestamp:%Y-%m-%d %H:%M:%S}"
+
+class OnboardingProgress(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    completed_steps = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s onboarding progress"

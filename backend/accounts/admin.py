@@ -1,42 +1,22 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, UserActivity
+from .models import CustomUser, UserActivity, OnboardingProgress
 
 @admin.register(CustomUser)
-class CustomUserAdmin(UserAdmin):
-    model = CustomUser
-    list_display = ("username", "email", "role", "plan", "business_name", "is_staff", "is_superuser")
-    list_filter = ("role", "plan", "is_staff", "is_superuser", "is_active")
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ("id", "username", "email", "role", "plan", "business_name", "total_files", "storage_used_bytes", "last_dashboard_update")
+    list_filter = ("role", "plan")
     search_fields = ("username", "email", "business_name")
-    ordering = ("-date_joined",)
-    readonly_fields = ("date_joined", "last_login")
-
-    fieldsets = (
-        (None, {"fields": ("username", "password")}),
-        ("Personal Info", {"fields": ("email", "business_name", "plan")}),
-        ("Permissions", {
-            "fields": (
-                "role", "is_active", "is_staff", "is_superuser", "groups", "user_permissions"
-            )
-        }),
-        ("Important Dates", {"fields": ("last_login", "date_joined")}),
-    )
-
-    add_fieldsets = (
-        (None, {
-            "classes": ("wide",),
-            "fields": (
-                "username", "email", "password1", "password2", "business_name", "role", "plan", "is_staff", "is_superuser"
-            ),
-        }),
-    )
-
+    ordering = ("-last_dashboard_update",)
 
 @admin.register(UserActivity)
 class UserActivityAdmin(admin.ModelAdmin):
-    list_display = ("user", "verb", "target", "timestamp")
-    list_filter = ("verb", "timestamp")
+    list_display = ("id", "user", "verb", "target", "timestamp")
+    list_filter = ("verb",)
     search_fields = ("user__username", "verb", "target")
-    readonly_fields = ("user", "verb", "target", "timestamp", "meta")
     ordering = ("-timestamp",)
-    date_hierarchy = "timestamp"
+
+@admin.register(OnboardingProgress)
+class OnboardingProgressAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "completed_steps", "updated_at")
+    search_fields = ("user__username",)
+    ordering = ("-updated_at",)

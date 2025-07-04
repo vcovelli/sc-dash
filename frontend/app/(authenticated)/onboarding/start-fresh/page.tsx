@@ -85,7 +85,7 @@ export default function StartFreshPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/schema-wizard/generate/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/datagrid/schema-wizard/generate/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

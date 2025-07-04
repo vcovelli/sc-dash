@@ -2,7 +2,7 @@ import React, { useMemo, useCallback, JSX } from "react";
 import TextCell from "./Text/TextCell";
 import ChoiceCell from "./Choice/ChoiceCell";
 import DateCell from "./Date/DateCell";
-import ReferenceCell from "./Reference/ReferenceCell";
+import ReferenceCell from "./Reference/Single/ReferenceCell";
 import BooleanCell from "./Boolean/BooleanCell";
 import CurrencyCell from "./Currency/CurrencyCell";
 import NumberCell from "./Number/NumberCell";
@@ -10,7 +10,9 @@ import LinkCell from "./Link/LinkCell";
 import FormulaCell from "./Formula/FormulaCell";
 import AttachmentCell from "./Attachment/AttachmentCell";
 import ChoiceTag from "./Choice/ChoiceTag";
-import ReferenceTag from "./Reference/ReferenceTag";
+import ReferenceTag from "./Reference/Single/ReferenceTag";
+import MultiReferenceCell from "./Reference/Multi/MultiReferenceCell";
+import MultiReferenceTag from "./Reference/Multi/MultiReferenceTag";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import { format, isValid } from "date-fns";
 import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
@@ -78,6 +80,17 @@ export default function EditableCell({
   const normalizedType = useMemo(() => column.type?.toLowerCase(), [column.type]);
   const { fontSize, rowHeight } = useTableSettings();
 
+  // Defensive: Always ensure array fields
+  if (["choice", "choice_list"].includes(normalizedType) && !Array.isArray(column.choices)) {
+    column.choices = [];
+  }
+  if (
+    ["reference", "reference-multi", "reference_list", "reference_multi"].includes(normalizedType) &&
+    !Array.isArray(column.referenceData)
+  ) {
+    column.referenceData = [];
+  }
+
   const handleSave = useCallback(
     (id: string, key: string, newValue: unknown) => {
       if (newValue === rowId) return;
@@ -87,6 +100,7 @@ export default function EditableCell({
     [rowId, value, onSave, onEditComplete]
   );
 
+  // ---- SPECIAL: Boolean ----
   if (normalizedType === "boolean") {
     return (
       <BooleanCell
@@ -98,6 +112,7 @@ export default function EditableCell({
     );
   }
 
+  // ---- SPECIAL: Currency ----
   if (normalizedType === "currency") {
     return (
       <CurrencyCell
@@ -113,8 +128,10 @@ export default function EditableCell({
     );
   }
 
+  // ---- EDITING MODE ----
   if (editing) {
-    if (["reference", "reference_list"].includes(normalizedType) && column.referenceData) {
+    // --- Single Reference ---
+    if (normalizedType === "reference") {
       return (
         <ReferenceCell
           value={typeof value === "string" || typeof value === "number" ? value : null}
@@ -126,11 +143,32 @@ export default function EditableCell({
           onStartEdit={onStartEdit}
           fontSize={fontSize}
           rowHeight={rowHeight}
+          onAddReference={column.onAddReference}
         />
       );
     }
 
-    if (["choice", "choice_list"].includes(normalizedType) && column.choices) {
+    // --- Multi Reference ---
+    if (
+      ["reference-multi", "reference_list", "reference_multi"].includes(normalizedType)
+    ) {
+      return (
+        <MultiReferenceCell
+          value={Array.isArray(value) ? value : []}
+          rowId={rowId}
+          column={column}
+          onSave={handleSave}
+          editing
+          onEditComplete={onEditComplete}
+          onStartEdit={onStartEdit}
+          fontSize={fontSize}
+          rowHeight={rowHeight}
+        />
+      );
+    }
+
+    // --- Choice ---
+    if (["choice", "choice_list"].includes(normalizedType)) {
       return (
         <ChoiceCell
           value={Array.isArray(value) ? (value[0] ?? "") : (value ?? "")}
@@ -146,6 +184,7 @@ export default function EditableCell({
       );
     }
 
+    // --- Number ---
     if (normalizedType === "number") {
       return (
         <NumberCell
@@ -161,6 +200,7 @@ export default function EditableCell({
       );
     }
 
+    // --- Link ---
     if (normalizedType === "link") {
       return (
         <LinkCell
@@ -176,6 +216,7 @@ export default function EditableCell({
       );
     }
 
+    // --- Formula ---
     if (normalizedType === "formula") {
       return (
         <FormulaCell
@@ -191,6 +232,7 @@ export default function EditableCell({
       );
     }
 
+    // --- Attachment ---
     if (normalizedType === "attachment") {
       return (
         <AttachmentCell
@@ -206,6 +248,7 @@ export default function EditableCell({
       );
     }
 
+    // --- Date ---
     if (normalizedType === "date") {
       return (
         <DateCell
@@ -222,6 +265,7 @@ export default function EditableCell({
       );
     }
 
+    // --- Text Default ---
     return (
       <TextCell
         value={typeof value === "string" || typeof value === "number" ? value : ""}
@@ -237,6 +281,7 @@ export default function EditableCell({
     );
   }
 
+  // ---- DISPLAY MODE ----
   const wrapperProps = {
     className: "w-full flex items-center px-2 select-none cursor-pointer",
     onDoubleClick: (e: React.MouseEvent) => {
@@ -251,6 +296,7 @@ export default function EditableCell({
     style: { fontSize, minHeight: rowHeight },
   };
 
+  // --- Date display ---
   if (normalizedType === "date") {
     return (
       <div
@@ -265,11 +311,34 @@ export default function EditableCell({
     );
   }
 
-  if (["reference", "reference_list"].includes(normalizedType) && Array.isArray(column.referenceData)) {
+  // --- Single Reference display ---
+  if (normalizedType === "reference" && Array.isArray(column.referenceData)) {
+    const opt = column.referenceData.find((c) => String(c.id) === String(value));
+    return (
+      <div
+        {...wrapperProps}
+        className="flex items-center h-full w-full justify-center"
+        style={{ ...wrapperProps.style, minHeight: rowHeight }}
+      >
+        <ReferenceTag
+          value={opt?.name ?? (value as string)}
+          fontSize={fontSize}
+          rowHeight={rowHeight}
+          truncate
+        />
+      </div>
+    );
+  }
+
+  // --- Multi Reference display ---
+  if (
+    ["reference-multi", "reference_list", "reference_multi"].includes(normalizedType) &&
+    Array.isArray(column.referenceData)
+  ) {
     const renderReference = (v: string) => {
       const opt = column.referenceData!.find((c) => String(c.id) === String(v));
       return (
-        <ReferenceTag
+        <MultiReferenceTag
           key={v}
           value={opt?.name ?? v}
           fontSize={fontSize}
@@ -278,24 +347,21 @@ export default function EditableCell({
         />
       );
     };
-    const isMulti = Array.isArray(value);
     return (
       <div
         {...wrapperProps}
-        className={
-          isMulti
-            ? "flex items-center flex-wrap gap-1 h-full w-full justify-start"
-            : "flex items-center h-full w-full justify-center"
-        }
+        className="flex items-center flex-wrap gap-1 h-full w-full justify-start"
         style={{ ...wrapperProps.style, minHeight: rowHeight }}
       >
-        {isMulti
-          ? (value as string[]).map(renderReference)
-          : renderReference(typeof value === "string" ? value : "")}
+        {Array.isArray(value) && value.length
+          ? value.map(renderReference)
+          : <span className="text-gray-400">—</span>
+        }
       </div>
     );
   }
 
+  // --- Choice/Choice List ---
   if (["choice", "choice_list"].includes(normalizedType) && Array.isArray(column.choices)) {
     const choicesArr = column.choices as
       | { id: string; name: string; color?: string }[]
@@ -336,6 +402,7 @@ export default function EditableCell({
     );
   }
 
+  // --- Default (text/empty) ---
   const val = value == null || value === "" ? "" : String(value);
 
   return (

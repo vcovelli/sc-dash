@@ -12,7 +12,7 @@ export const UploadedFilesTable = () => {
     try {
       setIngesting(fileId);
       await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/start-ingestion/`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/files/ingestion/start/`,
         { file_id: fileId },
         {
           headers: {
@@ -39,7 +39,7 @@ export const UploadedFilesTable = () => {
   const handleDownload = async (fileId, fileName) => {
     try {
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/file-download/${fileId}/`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/files/download/${fileId}/`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,

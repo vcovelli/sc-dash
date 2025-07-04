@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Sum
 from django.contrib.auth import get_user_model
-from api.models import UploadedFile
+from files.models import UploadedFile
 from accounts.models import UserActivity
 from accounts.serializers import UserActivitySerializer
 

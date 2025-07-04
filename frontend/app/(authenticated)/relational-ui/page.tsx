@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import RelationalWorkspaceLayout from "@/app/(authenticated)/relational-ui/components/Sheet/RelationalWorkspaceLayout";
 import GridTable from "@/app/(authenticated)/relational-ui/components/Grid/GridTable";
 import ColumnSettingsPanel from "@/app/(authenticated)/relational-ui/components/UX/ColumnSettingsPanel";
-import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
+import { CustomColumnDef, Row, Option } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import { TableSettingsProvider } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
 import { useNavContext } from "@/components/nav/NavbarContext";
 import TableSelectorPanel from "@/app/(authenticated)/relational-ui/components/UX/TableSelectorPanel";
@@ -75,6 +75,93 @@ function MobileRotatePrompt() {
   );
 }
 
+// --- Utility for new Option IDs (shared) ---
+const makeId = (name: string, type: string = "") => {
+  const id = (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 36) +
+    "_" +
+    Math.random().toString(36).slice(2, 5)
+  );
+  console.log(`[${type}] Generated ID:`, id, "for", name);
+  return id;
+};
+
+function useAddChoice(
+  columns: CustomColumnDef<unknown>[],
+  setColumns: React.Dispatch<React.SetStateAction<CustomColumnDef<unknown>[]>>
+) {
+  return React.useCallback(
+    async (columnKey: string, newName: string, color?: string) => {
+      const id = makeId(newName, "Choice");
+      setColumns((cols) => {
+        const newCols = cols.map((col) => {
+          if (col.accessorKey === columnKey) {
+            const newChoice = { id, name: newName, color } as Option;
+            let updatedChoices: Option[] = [];
+            if (Array.isArray(col.choices)) {
+              if (typeof col.choices[0] === "string") {
+                updatedChoices = [
+                  ...(col.choices as string[]).map((name) => ({ id: makeId(name, "Choice"), name, color: undefined })),
+                  newChoice,
+                ];
+              } else {
+                updatedChoices = [
+                  ...(col.choices as Option[]),
+                  newChoice,
+                ];
+              }
+            } else {
+              updatedChoices = [newChoice];
+            }
+            return { ...col, choices: updatedChoices };
+          }
+          return col;
+        });
+        return newCols;
+      });
+      return { id, name: newName, color };
+    },
+    [setColumns]
+  );
+}
+
+// --- Reference Add Logic ---
+function useAddReference(
+  columns: CustomColumnDef<unknown>[],
+  setColumns: React.Dispatch<React.SetStateAction<CustomColumnDef<unknown>[]>>
+) {
+  return React.useCallback(
+    async (columnKey: string, newName: string) => {
+      const id = makeId(newName, "Reference");
+      setColumns((cols) => {
+        const newCols = cols.map((col) => {
+          if (col.accessorKey === columnKey) {
+            const newRef = { id, name: newName };
+            let updatedRef: Option[] = [];
+            if (Array.isArray(col.referenceData)) {
+              updatedRef = [
+                ...(col.referenceData as Option[]),
+                newRef,
+              ];
+            } else {
+              updatedRef = [newRef];
+            }
+            return { ...col, referenceData: updatedRef };
+          }
+          return col;
+        });
+        return newCols;
+      });
+      return { id, name: newName };
+    },
+    [setColumns]
+  );
+}
+
 export default function SheetsPage() {
   const [activeTableName, setActiveTableName] = useState<string>("orders");
   const [columns, setColumns] = useState<CustomColumnDef<unknown>[]>([]);
@@ -92,6 +179,10 @@ export default function SheetsPage() {
   useEffect(() => setMounted(true), []);
   useEffect(() => setFontSizeIdx(userFontSizeIdx), [userFontSizeIdx]);
 
+  // --- Adders
+  const addChoice = useAddChoice(columns, setColumns);
+  const addReference = useAddReference(columns, setColumns);
+
   useEffect(() => {
     if (!activeTableName) return;
     const fetchData = async () => {
@@ -100,7 +191,7 @@ export default function SheetsPage() {
         if (!token) return;
 
         const apiSlug = schemaNameMap[activeTableName] || activeTableName;
-        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/schema/${apiSlug}/`;
+        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/datagrid/schemas/${apiSlug}/`;
 
         const res = await fetch(url, {
           method: "GET",
@@ -143,6 +234,25 @@ export default function SheetsPage() {
     mounted && FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
       ? FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
       : 14;
+
+  // --- Add new options to both choice and reference columns
+  const columnsWithAdders = columns.map(col => {
+    if (["choice", "choice_list"].includes(col.type?.toLowerCase?.())) {
+      return {
+        ...col,
+        onAddChoice: (name: string, color?: string) =>
+          addChoice(col.accessorKey, name, color),
+      };
+    }
+    if (col.type?.toLowerCase?.() === "reference") {
+      return {
+        ...col,
+        onAddReference: (name: string) =>
+          addReference(col.accessorKey, name),
+      };
+    }
+    return col;
+  });
 
   return (
     <TableSettingsProvider fontSizeIdx={fontSizeIdx} setFontSizeIdx={setFontSizeIdx}>
@@ -195,7 +305,6 @@ export default function SheetsPage() {
             </button>
           </div>
           <div className="flex gap-2 items-center">
-            {/* DESKTOP NAVBAR TOGGLE BUTTON */}
             <button
               onClick={() => setShowDesktopNav(!showDesktopNav)}
               className={`${baseBtn} ${!showDesktopNav ? activeBtn : inactiveBtn}`}
@@ -217,20 +326,20 @@ export default function SheetsPage() {
 
         <div className="flex-1 min-h-0 flex flex-col">
           <GridTable
-              tableName={activeTableName}
-              columns={columns}
-              data={rows}
-              onUpdateTable={() => {}} // stub
-              onOpenSettingsPanel={(col) => {
-                setColumnSettingsTarget(col);
-                setIsSettingsPanelOpen(true);
-              }}
-              isSettingsPanelOpen={isSettingsPanelOpen}
-              onRenameColumn={() => {}}        // stub, no lint error
-              onReorderColumns={() => {}}      // stub, no lint error
-              onAddColumn={() => {}}           // stub, no lint error
-              onDeleteColumn={() => {}}        // stub, no lint error
-            />
+            tableName={activeTableName}
+            columns={columnsWithAdders}
+            data={rows}
+            onUpdateTable={() => {}} // stub
+            onOpenSettingsPanel={(col) => {
+              setColumnSettingsTarget(col);
+              setIsSettingsPanelOpen(true);
+            }}
+            isSettingsPanelOpen={isSettingsPanelOpen}
+            onRenameColumn={() => {}}        // stub, no lint error
+            onReorderColumns={() => {}}      // stub, no lint error
+            onAddColumn={() => {}}           // stub, no lint error
+            onDeleteColumn={() => {}}        // stub, no lint error
+          />
         </div>
       </RelationalWorkspaceLayout>
     </TableSettingsProvider>
