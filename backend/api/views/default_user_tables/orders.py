@@ -1,9 +1,10 @@
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
+from .base import TenantScopedViewSet
 from ...models import Order, OrderItem
 from ...serializers import OrderSerializer, OrderItemSerializer
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet(TenantScopedViewSet):
     queryset = Order.objects.select_related('customer').prefetch_related('orderitem_set__product')
     serializer_class = OrderSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -11,7 +12,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     search_fields = ['status', 'customer__name']
     ordering_fields = ['order_date']
 
-class OrderItemViewSet(viewsets.ModelViewSet):
+class OrderItemViewSet(TenantScopedViewSet):
     queryset = OrderItem.objects.select_related('order', 'product')
     serializer_class = OrderItemSerializer
     filter_backends = [DjangoFilterBackend]
