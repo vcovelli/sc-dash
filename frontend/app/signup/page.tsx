@@ -175,7 +175,7 @@ export default function SignupPage() {
 
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
-      localStorage.setItem("client_name", (data.user?.business_name || "").toLowerCase());
+      localStorage.setItem("client_id", (data.user?.business_name || "").toLowerCase());
 
       setMessage("✅ Google signup success!");
 

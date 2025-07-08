@@ -238,7 +238,15 @@ export default function UploadsPage() {
                 ))}
                 <button
                   className="ml-4 flex items-center gap-1 px-3 py-1 text-xs font-semibold bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-800 transition"
-                  onClick={() => downloadTemplate(selectedSchema.expected_headers || selectedSchema.columns || [], selectedSchema.table_name)}
+                  onClick={() =>
+                    downloadTemplate(
+                      (selectedSchema.expected_headers || selectedSchema.columns || []).filter(
+                        (col) =>
+                          !["version", "uuid", "ingested_at", "client_name"].includes(col.toLowerCase())
+                      ),
+                      selectedSchema.table_name
+                    )
+                  }
                   title="Download CSV template"
                   type="button"
                 >
