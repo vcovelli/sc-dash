@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import UserActivity
 from allauth.account.models import EmailAddress
+from .models import Invitation
 
 User = get_user_model()
 
@@ -40,3 +41,8 @@ class UserActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = UserActivity
         fields = ["verb", "target", "timestamp", "meta"]
+
+class InvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invitation
+        fields = ['email', 'org', 'invited_by', 'created_at', 'accepted', 'token', 'role']
