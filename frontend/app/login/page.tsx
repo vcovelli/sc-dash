@@ -54,7 +54,7 @@ export default function LoginPage() {
         .then((res) => {
           const businessName = res.data?.business_name;
           localStorage.setItem(
-            "client_name",
+            "client_id",
             businessName?.toLowerCase() || ""
           );
           setLoadingStep("All set! Redirecting…");
@@ -109,7 +109,7 @@ export default function LoginPage() {
         localStorage.setItem("access_token", data.access);
         localStorage.setItem("refresh_token", data.refresh);
         localStorage.setItem(
-          "client_name",
+          "client_id",
           (data.user?.business_name || "").toLowerCase()
         );
         setLoadingStep("All set! Redirecting…");
@@ -150,7 +150,7 @@ export default function LoginPage() {
       );
       const businessName = profileRes.data?.business_name;
       localStorage.setItem(
-        "client_name",
+        "client_id",
         businessName?.toLowerCase() || ""
       );
       setLoadingStep("All set! Redirecting…");

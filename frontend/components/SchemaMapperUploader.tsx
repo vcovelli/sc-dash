@@ -42,7 +42,7 @@ const groupedFields: Record<string, { value: string; label: string; description?
   "🛠️ System Metadata": [
     { value: "uuid", label: "UUID" },
     { value: "version", label: "Version" },
-    { value: "client_name", label: "Client Name" },
+    { value: "client_id", label: "Client Name" },
     { value: "ingested_at", label: "Ingested At" },
     { value: "last_updated", label: "Last Updated" },
     { value: "notes", label: "Notes" }

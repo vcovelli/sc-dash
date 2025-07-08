@@ -92,7 +92,7 @@ export default function StartFreshPage() {
           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
-          client_name: businessName.toLowerCase(),
+          client_id: businessName.toLowerCase(),
           features: selectedFeatures,
           include_sample_data: includeSampleData,
         }),
@@ -105,7 +105,7 @@ export default function StartFreshPage() {
         if (grist_view_url) window.open(grist_view_url, "_blank");
         if (download_url) window.open(download_url, "_blank");
 
-        localStorage.setItem("client_name", businessName.toLowerCase());
+        localStorage.setItem("client_id", businessName.toLowerCase());
         router.push("/uploads");
       } else {
         const error = await res.json();
