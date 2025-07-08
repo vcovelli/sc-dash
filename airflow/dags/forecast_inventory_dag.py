@@ -22,11 +22,11 @@ default_args = {
 }
 
 def forecast_with_env(**context):
-    client_name = context["dag_run"].conf.get("client_name")
-    if not client_name:
-        raise ValueError("Missing 'client_name' in dag_run.conf")
+    client_id = context["dag_run"].conf.get("client_id")
+    if not client_id:
+        raise ValueError("Missing 'client_id' in dag_run.conf")
 
-    os.environ["CLIENT_NAME"] = client_name
+    os.environ["CLIENT_NAME"] = client_id
     forecast_inventory()
 
 with DAG(

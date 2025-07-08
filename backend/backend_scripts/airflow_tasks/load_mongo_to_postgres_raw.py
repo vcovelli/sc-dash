@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-# Load .env file from the project root
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)
 
@@ -19,16 +18,13 @@ PG_USER = os.getenv("APP_DB_USER")
 PG_PASSWORD = os.getenv("APP_DB_PASSWORD")
 PG_HOST = os.getenv("PG_HOST")
 PG_PORT = os.getenv("PG_PORT")
-PG_DATABASE = os.getenv("PG_DATABASE")
-PG_DB_PREFIX = os.getenv("PG_DB_PREFIX", "clientdata_")
-RAW_COLLECTION = "raw_data"
+PG_DB_PREFIX = os.getenv("PG_DB_PREFIX", "orgdata_")
 RAW_TABLE = "raw_orders"
 LOG_TABLE = "raw_orders_log"
 
-# Load user-defined schema utility
-def load_user_schema_columns(client_name):
+def load_user_schema_columns(org_id):
     SCHEMA_DIR = Path(os.environ.get("SCHEMA_DIR", BASE_DIR / "user_schemas"))
-    schema_path = Path(SCHEMA_DIR) / f"{client_name.lower()}_schema.csv"
+    schema_path = Path(SCHEMA_DIR) / f"{org_id.lower()}_schema.csv"
     if not os.path.exists(schema_path):
         raise FileNotFoundError(f"Schema not found: {schema_path}")
 
@@ -48,12 +44,10 @@ def load_user_schema_columns(client_name):
     for key, dtype in dedup_keys.items():
         if key not in [col[0] for col in columns]:
             columns.append((key, dtype))
-
     return columns
 
-# Database creation utility
-def create_client_database(client_name):
-    db_name = f"{PG_DB_PREFIX}{client_name}"
+def create_org_database(org_id):
+    db_name = f"{PG_DB_PREFIX}{org_id}"
     try:
         conn = psycopg2.connect(
             dbname="postgres",
@@ -82,54 +76,43 @@ def create_client_database(client_name):
 def load_mongo_to_postgres_raw(**context):
     try:
         client = MongoClient(MONGO_URI)
-        db_names = client.list_database_names()
+        mongo_db_name = os.getenv("MONGO_DATABASE", "client_data")
+        db = client[mongo_db_name]
     except Exception as e:
         print(f"[!] Error connecting to MongoDB: {e}")
         return
 
-    for db_name in db_names:
-        db = client[db_name]
-        if RAW_COLLECTION not in db.list_collection_names():
+    for collection_name in db.list_collection_names():
+        if not collection_name.startswith("raw_"):
             continue
 
-        collection = db[RAW_COLLECTION]
+        collection = db[collection_name]
         raw_data = list(collection.find({"postgres_status": {"$ne": "ingested"}}))
 
         if not raw_data:
-            print(f"[=] No new data in {db_name}.{RAW_COLLECTION}")
+            print(f"[=] No new data in {collection_name}")
             continue
 
-        # Assign UUIDs and mark ingest status
-        for row in raw_data:
-            row['uuid'] = str(uuid.uuid4())
-            row['ingested_at'] = datetime.now(timezone.utc)
-            row['client_name'] = db_name
-
-        # Extract Mongo _ids before dropping them
-        mongo_ids = [row["_id"] for row in raw_data]
-        # Drop '_id' field for Postgres but keep in memory
-        for row in raw_data:
-            row.pop('_id', None)
-
-        # Add composite_key to each row
-        for row in raw_data:
-            if "order_id" in row and "product_name" in row:
-                row["composite_key"] = f"{row['order_id']}_{row['product_name']}"
-            else:
-                row["composite_key"] = None
-
-        # Convert to DataFrame
         df = pd.DataFrame(raw_data)
         df.columns = df.columns.str.lower()
-        df["client_name"] = db_name
 
-        if "composite_key" not in df.columns:
-            if "order_id" in df.columns and "product_name" in df.columns:
-                df["composite_key"] = df["order_id"].astype(str) + "_" + df["product_name"].astype(str)
-            else:
-                raise ValueError("Missing 'order_id' or 'product_name' column needed for composite_key.")
+        # Must have org_id in every record
+        if "org_id" not in df.columns:
+            print(f"[!] Missing org_id in collection {collection_name}, skipping.")
+            continue
+        org_id = str(df["org_id"].iloc[0])
 
-        # Ensure required deduplication columns exist
+        # Find deduplication keys (all '_id' columns except 'client_id')
+        id_cols = [col for col in df.columns if col.endswith('_id') and col != "client_id"]
+        dedup_cols = ["org_id"] + id_cols
+        dedup_cols = list(dict.fromkeys(dedup_cols))  # Remove accidental duplicates
+        if not id_cols:
+            print(f"[!] No id_cols found for deduplication in {collection_name}, skipping.")
+            continue
+
+        # Recompute composite_key in DataFrame
+        df["composite_key"] = df[dedup_cols].astype(str).agg("_".join, axis=1)
+
         required_keys = ['order_id', 'product_id', 'order_date', 'ingested_at', 'version', 'composite_key']
         for col in required_keys:
             if col not in df.columns:
@@ -140,13 +123,13 @@ def load_mongo_to_postgres_raw(**context):
                 else:
                     df[col] = None
 
-        target_pg_db = create_client_database(db_name)
+        target_pg_db = create_org_database(org_id)
         if not target_pg_db:
             continue
 
         try:
             engine = create_engine(f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{target_pg_db}")
-            schema_columns = load_user_schema_columns(db_name)
+            schema_columns = load_user_schema_columns(org_id)
             expected_columns = [name for name, _ in schema_columns]
 
             missing_cols = set(expected_columns) - set(df.columns)
@@ -174,7 +157,6 @@ def load_mongo_to_postgres_raw(**context):
                         f"CREATE INDEX IF NOT EXISTS idx_{RAW_TABLE}_composite_key ON {RAW_TABLE} (composite_key);"
                     ))
 
-                    # Create log table
                     conn.execute(text(f"""
                         CREATE TABLE IF NOT EXISTS {LOG_TABLE} (
                             composite_key TEXT,
@@ -221,22 +203,23 @@ def load_mongo_to_postgres_raw(**context):
                     print(f"[✓] Logged {len(logs_to_insert)} version changes to {LOG_TABLE}")
 
                 # Only mark as ingested if Postgres insert succeeded
-                for row, mongo_id in zip(raw_data, mongo_ids):
+                mongo_ids = df["_id"].tolist() if "_id" in df.columns else []
+                for idx, mongo_id in enumerate(mongo_ids):
                     collection.update_one(
                         {"_id": mongo_id},
                         {"$set": {
                             "status": "ingested",
                             "postgres_status": "ingested",
-                            "uuid": row["uuid"],
-                            "ingested_at": row["ingested_at"]
+                            "uuid": str(uuid.uuid4()),
+                            "ingested_at": datetime.now(timezone.utc)
                         }}
                     )
 
                 if insert_df is not None and not insert_df.empty:
-                    print(f"[✓] Pushing client_name to XCom: {db_name}")
-                    context["ti"].xcom_push(key="client_name", value=db_name)
+                    print(f"[✓] Pushing org_id to XCom: {org_id}")
+                    context["ti"].xcom_push(key="org_id", value=org_id)
                 else:
-                    print(f"[!] No rows inserted for {db_name}, skipping XCom push.")
+                    print(f"[!] No rows inserted for {org_id}, skipping XCom push.")
 
         except Exception as e:
             print(f"[!] Failed to insert into Postgres DB '{target_pg_db}': {e}")

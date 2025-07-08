@@ -9,23 +9,23 @@ load_dotenv()
 
 SCHEMA_DIR = os.environ.get("SCHEMA_DIR", "/opt/airflow/user_schemas")
 
-def create_table_for_client(client_name: str):
+def create_table_for_client(client_id: str):
     """
     Creates a dedicated database and table for a client based on a CSV schema.
 
-    - Looks for <SCHEMA_DIR>/<client_name>_schema.csv
-    - If needed, creates new database: clientdata_<client_name>
+    - Looks for <SCHEMA_DIR>/<client_id>_schema.csv
+    - If needed, creates new database: clientdata_<client_id>
     - Creates a 'raw_orders' table in that database according to the schema
     """
-    schema_path = Path(SCHEMA_DIR) / f"{client_name}_schema.csv"
-    db_name = f"clientdata_{client_name}"
+    schema_path = Path(SCHEMA_DIR) / f"{client_id}_schema.csv"
+    db_name = f"clientdata_{client_id}"
 
     print(f"[create_table_for_client] Looking for schema at: {schema_path}")
     print(f"[create_table_for_client] Target DB name: {db_name}")
 
     if not schema_path.exists():
         print(f"[create_table_for_client] ❌ Schema CSV not found: {schema_path}")
-        raise FileNotFoundError(f"Schema not found for client: {client_name}")
+        raise FileNotFoundError(f"Schema not found for client: {client_id}")
 
     # Connect to default DB to create client-specific DB if it doesn't exist
     default_conn = psycopg2.connect(

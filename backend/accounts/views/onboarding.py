@@ -22,23 +22,23 @@ from helpers.onboarding_utils import (
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def create_table_for_client_view(request):
-    client_name = request.data.get("client_name")
+    client_id = request.data.get("client_id")
     selected_features = request.data.get("features")
 
-    if not client_name or not selected_features:
-        return Response({"error": "Missing client_name or features."}, status=400)
+    if not client_id or not selected_features:
+        return Response({"error": "Missing client_id or features."}, status=400)
 
     if not request.user.business_name:
-        request.user.business_name = client_name
+        request.user.business_name = client_id
         request.user.save()
 
     try:
-        create_table_for_client(client_name)
-        download_url = generate_full_workbook(client_name, selected_features)
+        create_table_for_client(client_id)
+        download_url = generate_full_workbook(client_id, selected_features)
 
         return JsonResponse({
             "success": True,
-            "message": f"Workbook and table created for {client_name}",
+            "message": f"Workbook and table created for {client_id}",
             "download_url": download_url
         })
     except Exception as e:
@@ -50,7 +50,7 @@ def create_table_for_client_view(request):
 def map_schema_and_create(request):
     csv_file = request.FILES.get('file')
     mapping_json = request.POST.get('mapping')
-    client_name = request.user.username.lower()
+    client_id = request.user.username.lower()
 
     if not csv_file or not mapping_json:
         return Response({"error": "File and mapping required."}, status=400)
@@ -77,11 +77,11 @@ def map_schema_and_create(request):
             return Response({"error": "Could not infer any valid features from mapping."}, status=400)
 
         if not request.user.business_name:
-            request.user.business_name = client_name
+            request.user.business_name = client_id
             request.user.save()
 
-        create_table_for_client(client_name)
-        download_url = generate_full_workbook(client_name, selected_features)
+        create_table_for_client(client_id)
+        download_url = generate_full_workbook(client_id, selected_features)
 
         return JsonResponse({
             "success": True,

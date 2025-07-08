@@ -7,12 +7,12 @@ def forecast_inventory():
     pg_user = os.getenv("PG_USER", "airflow")
     pg_password = os.getenv("PG_PASSWORD", "airflow")
     pg_host = os.getenv("PG_HOST", "postgres")
-    client_name = os.getenv("CLIENT_NAME")  # e.g. "canes"
+    client_id = os.getenv("CLIENT_NAME")  # e.g. "canes"
 
-    if not client_name:
+    if not client_id:
         raise ValueError("CLIENT_NAME environment variable is required.")
 
-    pg_database = f"clientdata_{client_name}"
+    pg_database = f"clientdata_{client_id}"
 
     # Build connection string
     conn_str = f"postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}/{pg_database}"
