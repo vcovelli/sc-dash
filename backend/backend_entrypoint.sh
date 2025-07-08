@@ -12,6 +12,9 @@ until nc -z "$PG_HOST" "$PG_PORT"; do
   sleep 2
 done
 
+# Supply the password for psql!
+export PGPASSWORD="$APP_DB_PASSWORD"
+
 # Ensure DB exists
 psql -h "$PG_HOST" -U "$APP_DB_USER" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '$APP_DB_NAME'" | grep -q 1 || \
 psql -h "$PG_HOST" -U "$APP_DB_USER" -d postgres -c "CREATE DATABASE $APP_DB_NAME"
@@ -21,6 +24,9 @@ python manage.py makemigrations api
 python manage.py makemigrations accounts
 python manage.py makemigrations ai
 python manage.py makemigrations analytics
+python manage.py makemigrations datagrid
+python manage.py makemigrations files
+
 python manage.py migrate
 
 # Create superuser if needed
