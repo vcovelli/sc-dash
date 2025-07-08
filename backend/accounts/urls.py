@@ -17,6 +17,8 @@ from .views.account_views import (
     ActivityFeedView,
 )
 
+from .views.invite_views import OrgAdminInviteUserView, AcceptInviteView
+
 # Dashboard and onboarding views
 from .views.dashboard import DashboardOverviewView
 from .views.onboarding import OnboardingStatusView  # Only if you have this!
@@ -34,6 +36,10 @@ urlpatterns = [
     path('google/', GoogleLoginAPIView.as_view(), name='google-login'),
     path('github/login/', GitHubLoginStartView.as_view(), name='github_login'),
     path('github/callback/', GitHubCallbackView.as_view(), name='github_callback'),
+
+    # Invite endpoints
+    path("invite/send/", OrgAdminInviteUserView.as_view(), name="invite-user"),
+    path("invite/accept/", AcceptInviteView.as_view(), name="accept-invite"),
 
     # Account info
     path('me/', UserProfileView.as_view(), name='me'),

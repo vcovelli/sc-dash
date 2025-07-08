@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser, UserActivity, OnboardingProgress
+from .models import Organization, CustomUser, Invitation, UserActivity, OnboardingProgress
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
@@ -20,3 +20,6 @@ class OnboardingProgressAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "completed_steps", "updated_at")
     search_fields = ("user__username",)
     ordering = ("-updated_at",)
+
+admin.site.register(Organization)
+admin.site.register(Invitation)
