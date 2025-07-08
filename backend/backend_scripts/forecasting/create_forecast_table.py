@@ -2,8 +2,8 @@ import csv
 import psycopg2
 import os
 
-def create_forecast_table(client_name):
-    schema_path = f"user_schemas/{client_name}_schema.csv"
+def create_forecast_table(client_id):
+    schema_path = f"user_schemas/{client_id}_schema.csv"
 
     if not os.path.exists(schema_path):
         raise FileNotFoundError(f"Schema file not found: {schema_path}")
@@ -18,7 +18,7 @@ def create_forecast_table(client_name):
             columns.append(f"{col_name} {col_type}")
 
     # Generate table name and SQL
-    table_name = f"{client_name}_forecast_data"
+    table_name = f"{client_id}_forecast_data"
     create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} (\n  " + ",\n  ".join(columns) + "\n);"
 
     # Connect to Postgres

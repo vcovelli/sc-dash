@@ -30,7 +30,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'name', 'description', 'price',
-            'stock_quantity', 'supplier', 'supplier_name', 'client_name'
+            'stock_quantity', 'supplier', 'supplier_name', 'client_id'
         ]
 
 class InventorySerializer(serializers.ModelSerializer):
@@ -53,7 +53,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'customer_name', 'order_date', 'status', 'client_name', 'items']
+        fields = ['id', 'customer', 'customer_name', 'order_date', 'status', 'client_id', 'items']
 
 # --- Shipments ---
 
@@ -66,5 +66,5 @@ class ShipmentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'order', 'order_id', 'warehouse',
             'warehouse_name', 'shipped_date',
-            'estimated_arrival', 'status', 'client_name'
+            'estimated_arrival', 'status', 'client_id'
         ]

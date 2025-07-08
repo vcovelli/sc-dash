@@ -18,23 +18,23 @@ default_args = {
 }
 
 def check_should_trigger_forecast(**context):
-    client_name = context["ti"].xcom_pull(task_ids="load_mongo_to_postgres_raw", key="client_name")
-    print(f"[DEBUG] ShortCircuit: client_name = {client_name}")
-    return client_name is not None
+    client_id = context["ti"].xcom_pull(task_ids="load_mongo_to_postgres_raw", key="client_id")
+    print(f"[DEBUG] ShortCircuit: client_id = {client_id}")
+    return client_id is not None
 
 def trigger_forecast_dag(**context):
-    client_name = context["ti"].xcom_pull(task_ids="load_mongo_to_postgres_raw", key="client_name")
-    print(f"[DEBUG] XCom pulled client_name: {client_name}")
-    if not client_name:
+    client_id = context["ti"].xcom_pull(task_ids="load_mongo_to_postgres_raw", key="client_id")
+    print(f"[DEBUG] XCom pulled client_id: {client_id}")
+    if not client_id:
         raise ValueError("Client name not found in XCom.")
 
     trigger_dag(
         dag_id="forecast_inventory_dag",
-        conf={"client_name": client_name},
+        conf={"client_id": client_id},
         execution_date=None,
         replace_microseconds=False,
     )
-    print(f"[✓] Triggered forecast_inventory_dag for client: {client_name}")
+    print(f"[✓] Triggered forecast_inventory_dag for client: {client_id}")
 
 with DAG(
     dag_id='load_mongo_to_postgres_dag',

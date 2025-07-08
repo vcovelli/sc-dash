@@ -62,7 +62,7 @@ def save_schema_config(user_id, selected_columns):
         ("uuid", "UUID"),
         ("ingested_at", "TIMESTAMP WITH TIME ZONE"),
         ("version", "INTEGER"),
-        ("client_name", "TEXT")
+        ("client_id", "TEXT")
     ]
 
     existing_column_names = {col["column_name"] for col in selected_columns}
@@ -80,9 +80,9 @@ def save_schema_config(user_id, selected_columns):
     print(f"\nSchema saved to: {filepath}")
 
 # Generate blank data template
-def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows=10):
-    schema_path = os.path.join(SCHEMA_CONFIG_DIR, f"{client_name}_schema.csv")
-    output_path = os.path.join(output_dir, f"{client_name}_data_template.xlsx")
+def generate_template_xlsx(client_id, output_dir=TEMPLATE_OUTPUT_DIR, num_rows=10):
+    schema_path = os.path.join(SCHEMA_CONFIG_DIR, f"{client_id}_schema.csv")
+    output_path = os.path.join(output_dir, f"{client_id}_data_template.xlsx")
 
     if not os.path.exists(schema_path):
         raise FileNotFoundError(f"Schema not found: {schema_path}")
@@ -94,13 +94,13 @@ def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows
         reader = csv.DictReader(file)
         all_columns = [row['column_name'] for row in reader]
 
-    backend_fields = {"uuid", "version", "client_name", "ingested_at"}
+    backend_fields = {"uuid", "version", "client_id", "ingested_at"}
     visible_columns = ['order_id'] + [col for col in all_columns if col not in backend_fields]
 
     # Create workbook
     wb = Workbook()
     ws = wb.active
-    ws.title = f"{client_name}_data"
+    ws.title = f"{client_id}_data"
 
     # Freeze top row
     ws.freeze_panes = "A2"
@@ -128,7 +128,7 @@ def generate_template_xlsx(client_name, output_dir=TEMPLATE_OUTPUT_DIR, num_rows
     )
 
     bucket_name = "templates"
-    minio_filename = f"{client_name}_data_template.xlsx"
+    minio_filename = f"{client_id}_data_template.xlsx"
 
     # Ensure the bucket exists
     if not minio_client.bucket_exists(bucket_name):
@@ -145,7 +145,7 @@ def trigger_table_creation(user_id):
     try:
         response = requests.post(
             f"{API_BASE_URL}/api/create-table/",
-            json={"client_name": user_id}
+            json={"client_id": user_id}
         )
         if response.status_code == (200, 201):
             print(f"Table created successfully for `{user_id}`.")

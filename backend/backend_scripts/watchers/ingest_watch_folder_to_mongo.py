@@ -39,7 +39,7 @@ def process_csv(file_path):
 
         # Extract filename and infer client name (e.g., acme_corp from acme_corp_orders.csv)
         filename = os.path.basename(file_path)
-        client_name = filename.split("_")[0]  # Customize if your naming format is different
+        client_id = filename.split("_")[0]  # Customize if your naming format is different
 
         # Load CSV
         df = pd.read_csv(file_path)
@@ -49,12 +49,12 @@ def process_csv(file_path):
             data = df.to_dict(orient="records")
 
             # Connect to client-specific DB and shared 'raw_data' collection
-            client_db = client[client_name]
+            client_db = client[client_id]
             collection = client_db["raw_data"]
 
             # Insert into MongoDB
             collection.insert_many(data)
-            print(f"Inserted {len(data)} records into MongoDB database '{client_name}'.")
+            print(f"Inserted {len(data)} records into MongoDB database '{client_id}'.")
 
         # Move file to archive
         shutil.move(file_path, os.path.join(ARCHIVE_DIR, filename))
