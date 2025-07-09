@@ -1,6 +1,17 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+from accounts.models import Organization
+
+User = get_user_model()
 
 class AIFeedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_feedback')
+    org = models.ForeignKey(
+        Organization, 
+        on_delete=models.CASCADE, 
+        related_name='ai_feedback',
+        help_text="Organization this feedback belongs to"
+    )
     prompt = models.TextField()
     response = models.TextField()
     rating = models.CharField(max_length=20, choices=[('thumbs_up', 'Thumbs Up'), ('thumbs_down', 'Thumbs Down')])
@@ -9,5 +20,14 @@ class AIFeedback(models.Model):
     actions_taken = models.JSONField(default=list)
     can_affect_model = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ['-timestamp']
+
+    def save(self, *args, **kwargs):
+        # Auto-assign org from user if not set
+        if not self.org and self.user and self.user.org:
+            self.org = self.user.org
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.prompt[:50]}... ({self.rating})"
+        return f"{self.prompt[:50]}... ({self.rating}) - {self.org.name}"
