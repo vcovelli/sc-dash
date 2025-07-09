@@ -236,12 +236,12 @@ def generate_schema(request):
     try:
         # --- 1. Parse Request Data ---
         data = json.loads(request.body)
-        raw_client_name = data.get("client_name") or data.get("business_name")
+        raw_client_name = data.get("client_name") or data.get("business_name") or data.get("client_id")
         selected_features = data.get("features")
         include_sample_data = data.get("include_sample_data", True)
 
         if not raw_client_name or not selected_features:
-            return JsonResponse({"error": "Missing client_name or features"}, status=400)
+            return JsonResponse({"error": "Missing client_name/client_id or features"}, status=400)
 
         client_name = re.sub(r'[^a-z0-9]', '', raw_client_name.lower())
         allowed_keys = set(SCHEMA_FEATURES.keys())
