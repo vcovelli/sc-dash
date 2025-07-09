@@ -4,7 +4,6 @@ import requests
 from django.db import connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import StreamingHttpResponse
@@ -13,6 +12,8 @@ from api.agents.agent_tasks import detect_agent_task, AGENTING_TASKS, get_agenti
 from helpers.intent_utils import detect_topic_and_intent, is_off_topic, parse_fields_from_prompt
 from helpers.confirmation_utils import mock_confirm_action, has_all_required_fields
 from helpers.field_extraction import extract_fields_from_prompt
+from accounts.permissions import IsReadOnlyOrAbove
+from accounts.mixins import CombinedOrgMixin
 
 OLLAMA_URL = "http://ai:11434/api/chat"
 
@@ -58,8 +59,8 @@ Relationships:
 
 # ==================== VIEWS ====================
 
-class AssistantView(APIView):
-    permission_classes = [AllowAny]
+class AssistantView(CombinedOrgMixin, APIView):
+    permission_classes = [IsReadOnlyOrAbove]
 
     def post(self, request):
         prompt = request.data.get("message", "").strip()
@@ -105,7 +106,7 @@ class AssistantView(APIView):
                 return Response({"reply": f"✅ Task '{session_agent_state['task']}' confirmed and processed!"})
             elif intent == "cancel":
                 del request.session["agent_state"]
-                return Response({"reply": "❌ Okay, I’ve cancelled that task."})
+                return Response({"reply": "❌ Okay, I've cancelled that task."})
 
         # ✅ Detect new agenting task
         if is_agenting_trigger(prompt):
@@ -163,8 +164,8 @@ class AssistantView(APIView):
             }, status=500)
         
 @method_decorator(csrf_exempt, name="dispatch")
-class AssistantStreamView(APIView):
-    permission_classes = [AllowAny]
+class AssistantStreamView(CombinedOrgMixin, APIView):
+    permission_classes = [IsReadOnlyOrAbove]
 
     def post(self, request):
         try:
@@ -215,8 +216,8 @@ class AssistantStreamView(APIView):
         return StreamingHttpResponse(stream(), content_type="text/plain")
 
 
-class InsightView(APIView):
-    permission_classes = [AllowAny]
+class InsightView(CombinedOrgMixin, APIView):
+    permission_classes = [IsReadOnlyOrAbove]
 
     def post(self, request):
         chart_data = request.data.get("chartData")

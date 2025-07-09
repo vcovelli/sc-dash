@@ -1,19 +1,29 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models import JSONField
+from accounts.models import Organization
 
 User = get_user_model()
 
 class AnalyticsDashboard(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dashboards')
+    org = models.ForeignKey(
+        Organization, 
+        on_delete=models.CASCADE, 
+        related_name='dashboards',
+        help_text="Organization this dashboard belongs to"
+    )
     name = models.CharField(max_length=100, default="My Dashboard")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     # Optionally: layout config for overall dashboard (grid, custom layouts, etc)
     layout = models.JSONField(default=list, blank=True)
 
+    class Meta:
+        unique_together = [['user', 'org', 'name']]
+
     def __str__(self):
-        return f"{self.user.username} - {self.name}"
+        return f"{self.user.username} - {self.name} ({self.org.name})"
 
 class DashboardChart(models.Model):
     dashboard = models.ForeignKey(AnalyticsDashboard, on_delete=models.CASCADE, related_name='charts')
@@ -35,4 +45,4 @@ class DashboardChart(models.Model):
     # Optionally: unique_together = [dashboard, position] for no overlaps
 
     def __str__(self):
-        return f"{self.chart_type} ({self.title})"
+        return f"{self.chart_type} ({self.title}) - {self.dashboard.org.name}"

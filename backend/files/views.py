@@ -12,7 +12,6 @@ from rest_framework import status
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -21,12 +20,14 @@ from rest_framework.decorators import api_view, permission_classes
 from files.models import UploadedFile, UserFile   # Move these models to files.models!
 from files.serializers import UploadedFileSerializer, StartIngestionSerializer  # Move these serializers!
 from accounts.models import UserActivity
+from accounts.permissions import IsReadOnlyOrAbove, CanManageOrganization
+from accounts.mixins import CombinedOrgMixin
 
 logger = logging.getLogger(__name__)
 
 ### 1. Upload CSV File ###
-class UploadCSVView(APIView):
-    permission_classes = [IsAuthenticated]
+class UploadCSVView(CombinedOrgMixin, APIView):
+    permission_classes = [IsReadOnlyOrAbove]
     parser_classes = [MultiPartParser, FormParser]
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
@@ -43,7 +44,7 @@ class UploadCSVView(APIView):
                 return Response({"error": "File size exceeds limit."}, status=status.HTTP_400_BAD_REQUEST)
             timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             uid = uuid.uuid4().hex[:8]
-            minio_path = f"{request.user.id}/{timestamp}/{uid}_{file_name}"
+            minio_path = f"{request.user.org.id}/{request.user.id}/{timestamp}/{uid}_{file_name}"
             s3 = boto3.client(
                 "s3",
                 endpoint_url=settings.MINIO_ENDPOINT,
@@ -67,6 +68,7 @@ class UploadCSVView(APIView):
             )
             uploaded_file = UploadedFile.objects.create(
                 user=request.user,
+                org=request.user.org,
                 file_name=file_name,
                 minio_path=minio_path,
                 status="pending",
@@ -105,22 +107,26 @@ class UploadCSVView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 ### 2. List Uploaded Files ###
-class UploadedFileListView(ListAPIView):
+class UploadedFileListView(CombinedOrgMixin, ListAPIView):
     serializer_class = UploadedFileSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsReadOnlyOrAbove]
+    
     def get_queryset(self):
+        # CombinedOrgMixin handles org filtering automatically
         return UploadedFile.objects.filter(user=self.request.user).order_by("-uploaded_at")
 
 ### 3. Mark Upload as Success (used by Airflow or ETL job) ###
-class MarkSuccessView(APIView):
-    permission_classes = [IsAuthenticated]
+class MarkSuccessView(CombinedOrgMixin, APIView):
+    permission_classes = [CanManageOrganization]  # Only org admins can mark files as successful
+    
     def post(self, request):
         file_id = request.data.get("file_id")
         row_count = request.data.get("row_count", 0)
         if not file_id:
             return Response({"error": "file_id is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            file_record = UploadedFile.objects.get(id=file_id)
+            # CombinedOrgMixin ensures we only get files from user's org
+            file_record = UploadedFile.objects.get(id=file_id, org=request.user.org)
             file_record.status = "success"
             file_record.row_count = row_count
             file_record.save()
@@ -129,11 +135,17 @@ class MarkSuccessView(APIView):
             return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
 
 ### 4. Download File (as S3 signed URL) ###
-class FileDownloadView(APIView):
-    permission_classes = [IsAuthenticated]
+class FileDownloadView(CombinedOrgMixin, APIView):
+    permission_classes = [IsReadOnlyOrAbove]
+    
     def get(self, request, file_id):
         try:
-            file_record = UploadedFile.objects.get(id=file_id, user=request.user)
+            # Ensure user can only download files from their org
+            file_record = UploadedFile.objects.get(
+                id=file_id, 
+                user=request.user, 
+                org=request.user.org
+            )
             s3 = boto3.client(
                 "s3",
                 endpoint_url=settings.MINIO_ENDPOINT,
@@ -156,14 +168,19 @@ class FileDownloadView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 ### 5. Start Ingestion Endpoint (from start_ingestion.py) ###
-class StartIngestionView(APIView):
-    permission_classes = [IsAuthenticated]
+class StartIngestionView(CombinedOrgMixin, APIView):
+    permission_classes = [IsReadOnlyOrAbove]
+    
     def post(self, request, format=None):
         serializer = StartIngestionSerializer(data=request.data)
         if serializer.is_valid():
             file_id = serializer.validated_data['file_id']
             try:
-                uploaded_file = UploadedFile.objects.get(id=file_id, user=request.user)
+                uploaded_file = UploadedFile.objects.get(
+                    id=file_id, 
+                    user=request.user,
+                    org=request.user.org
+                )
                 uploaded_file.status = "processing"
                 uploaded_file.save()
                 # trigger_ingestion_pipeline(uploaded_file.minio_path, uploaded_file.id)
@@ -174,10 +191,14 @@ class StartIngestionView(APIView):
 
 ### 6. Direct MinIO Streaming Download Endpoint (from download_files.py) ###
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsReadOnlyOrAbove])
 def download_user_file(request, file_id):
     try:
-        user_file = UserFile.objects.get(id=file_id, user=request.user)
+        user_file = UserFile.objects.get(
+            id=file_id, 
+            user=request.user,
+            org=request.user.org
+        )
         logger.info(f"User {request.user.id} downloading file {file_id} from MinIO key: {user_file.object_key}")
     except UserFile.DoesNotExist:
         logger.warning(f"User {request.user.id} attempted to access unauthorized file {file_id}")
