@@ -1,4 +1,5 @@
-import api from "@/lib/axios"; // Use your custom Axios
+import api from "@/lib/axios";
+import type { Layout } from "react-grid-layout";
 
 type ChartData = {
   chart_type: string;
@@ -8,7 +9,7 @@ type ChartData = {
 };
 
 export const getDashboard = async () => {
-  const res = await api.get("/analytics/dashboard/"); // note: no /api prefix needed
+  const res = await api.get("/analytics/dashboard/");
   return res.data;
 };
 
@@ -34,14 +35,13 @@ export const markOnboardingStep = async (step: string) => {
   await api.post("/onboarding/progress/", { step });
 };
 
-// Fetch actual data for charts from user tables
 export const getChartData = async (settings: any) => {
   try {
     if (!settings.table) {
       throw new Error("No table specified in chart settings");
     }
-    
-    const res = await axios.get(`/api/datagrid/rows/${settings.table}/`, authHeaders());
+    // Remove authHeaders if not needed
+    const res = await api.get(`/datagrid/rows/${settings.table}/`);
     return res.data;
   } catch (error) {
     console.error("Error fetching chart data:", error);
@@ -49,10 +49,9 @@ export const getChartData = async (settings: any) => {
   }
 };
 
-// Get available tables for chart configuration
 export const getAvailableTables = async () => {
   try {
-    const res = await axios.get("/api/datagrid/schemas/", authHeaders());
+    const res = await api.get("/datagrid/schemas/");
     return res.data;
   } catch (error) {
     console.error("Error fetching available tables:", error);
