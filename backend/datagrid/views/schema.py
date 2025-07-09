@@ -19,13 +19,14 @@ from dotenv import load_dotenv
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
 from datagrid.models import UserTableSchema  # Use your app/model import here!
 from datagrid.serializers import UserTableSchemaSerializer  # Ditto, update path if needed
 
 from accounts.models import UserActivity  # If you track user actions
+from accounts.permissions import IsReadOnlyOrAbove, CanViewAnalytics
+from accounts.mixins import CombinedOrgMixin
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # ====== SCHEMA CONSTANTS AND HELPERS =======
@@ -289,7 +290,7 @@ def generate_schema(request):
             print(f"[schema_wizard] ⚠️ User authentication failed: {auth_err}")
 
         # --- 5. Save User Schema (if authenticated) ---
-        if user:
+        if user and user.org:
             # Log onboarding complete
             UserActivity.objects.create(
                 user=user,
@@ -310,6 +311,7 @@ def generate_schema(request):
                     columns = sorted(set(columns))
                     UserTableSchema.objects.update_or_create(
                         user=user,
+                        org=user.org,
                         table_name=table_name,
                         defaults={"columns": columns}
                     )
@@ -372,13 +374,14 @@ def normalize_columns(columns):
         })
     return out
 
-class UserTableSchemasView(APIView):
+class UserTableSchemasView(CombinedOrgMixin, APIView):
     """Handle CRUD for user table schemas (multi-table, per user)."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsReadOnlyOrAbove]
 
     def get(self, request):
         """Get all table schemas for this user."""
-        schemas = UserTableSchema.objects.filter(user=request.user)
+        # CombinedOrgMixin automatically filters by org
+        schemas = UserTableSchema.objects.filter(user=request.user, org=request.user.org)
         # Normalize every schema's columns
         for schema in schemas:
             schema.columns = normalize_columns(schema.columns)
@@ -392,32 +395,47 @@ class UserTableSchemasView(APIView):
 
         if not table_name or not columns:
             return Response({"error": "Missing table_name or columns."}, status=400)
-        if UserTableSchema.objects.filter(user=request.user, table_name=table_name).exists():
+        if UserTableSchema.objects.filter(
+            user=request.user, 
+            org=request.user.org, 
+            table_name=table_name
+        ).exists():
             return Response({"error": "Schema already exists. Use PATCH to update."}, status=409)
 
         columns = normalize_columns(columns)
         serializer = UserTableSchemaSerializer(data={
             "user": request.user.id,
+            "org": request.user.org.id,
             "table_name": table_name,
             "columns": columns,
         })
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save(user=request.user, org=request.user.org)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
-class UserTableSchemaDetailView(APIView):
+class UserTableSchemaDetailView(CombinedOrgMixin, APIView):
     """Handle GET, PATCH, DELETE for a single table schema."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsReadOnlyOrAbove]
 
     def get(self, request, table_name):
-        schema = get_object_or_404(UserTableSchema, user=request.user, table_name=table_name)
+        schema = get_object_or_404(
+            UserTableSchema, 
+            user=request.user, 
+            org=request.user.org, 
+            table_name=table_name
+        )
         schema.columns = normalize_columns(schema.columns)
         serializer = UserTableSchemaSerializer(schema)
         return Response(serializer.data)
 
     def patch(self, request, table_name):
-        schema = get_object_or_404(UserTableSchema, user=request.user, table_name=table_name)
+        schema = get_object_or_404(
+            UserTableSchema, 
+            user=request.user, 
+            org=request.user.org, 
+            table_name=table_name
+        )
         columns = request.data.get("columns")
         if columns is not None:
             columns = normalize_columns(columns)
@@ -427,7 +445,12 @@ class UserTableSchemaDetailView(APIView):
         return Response(serializer.data)
 
     def delete(self, request, table_name):
-        schema = get_object_or_404(UserTableSchema, user=request.user, table_name=table_name)
+        schema = get_object_or_404(
+            UserTableSchema, 
+            user=request.user, 
+            org=request.user.org, 
+            table_name=table_name
+        )
         schema.delete()
         return Response({"success": True})
 
