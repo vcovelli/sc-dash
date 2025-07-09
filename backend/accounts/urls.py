@@ -17,7 +17,14 @@ from .views.account_views import (
     ActivityFeedView,
 )
 
-from .views.invite_views import OrgAdminInviteUserView, AcceptInviteView
+from .views.invite_views import (
+    OrgAdminInviteUserView, 
+    AcceptInviteView,
+    OrgUsersListView,
+    OrgUserUpdateView,
+    OrgUserRemoveView,
+    PendingInvitationsView
+)
 
 # Dashboard and onboarding views
 from .views.dashboard import DashboardOverviewView
@@ -40,6 +47,13 @@ urlpatterns = [
     # Invite endpoints
     path("invite/send/", OrgAdminInviteUserView.as_view(), name="invite-user"),
     path("invite/accept/", AcceptInviteView.as_view(), name="accept-invite"),
+    path("invitations/pending/", PendingInvitationsView.as_view(), name="pending-invitations"),
+    path("invitations/<int:invitation_id>/cancel/", PendingInvitationsView.as_view(), name="cancel-invitation"),
+    
+    # User Management endpoints
+    path("org/users/", OrgUsersListView.as_view(), name="org-users-list"),
+    path("org/users/<int:user_id>/", OrgUserUpdateView.as_view(), name="org-user-update"),
+    path("org/users/<int:user_id>/remove/", OrgUserRemoveView.as_view(), name="org-user-remove"),
 
     # Account info
     path('me/', UserProfileView.as_view(), name='me'),
