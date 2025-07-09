@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WidgetConfig } from "../types";
 import {
   BarChartWidget,
@@ -8,7 +8,8 @@ import {
   PieChartWidget,
   TableChartWidget,
 } from "./WidgetCharts";
-import { GripVertical, ChevronDown, ChevronUp } from "lucide-react";
+import { GripVertical, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { getChartData } from "@/lib/analyticsAPI";
 
 const SAMPLE_DATA = [
   { name: "A", count: 400, revenue: 2400 },
@@ -17,6 +18,52 @@ const SAMPLE_DATA = [
   { name: "D", count: 278, revenue: 2000 },
   { name: "E", count: 189, revenue: 2181 },
 ];
+
+// Transform raw data from backend to chart format
+const transformDataForChart = (rawData: any[], settings: any) => {
+  if (!rawData || rawData.length === 0) return [];
+  
+  return rawData.map(row => {
+    const transformedRow: any = {};
+    
+    // Transform the data object from each row
+    const data = row.data || row;
+    
+    // Map xField 
+    if (settings.xField && data[settings.xField] !== undefined) {
+      transformedRow[settings.xField] = data[settings.xField];
+    }
+    
+    // Map yFields
+    if (settings.yFields && Array.isArray(settings.yFields)) {
+      settings.yFields.forEach((yField: string) => {
+        if (data[yField] !== undefined) {
+          // Convert to number if it's a numeric field
+          const value = data[yField];
+          transformedRow[yField] = isNaN(Number(value)) ? value : Number(value);
+        }
+      });
+    }
+    
+    // For pie charts, we might need to aggregate data
+    if (settings.type === 'pie' && settings.xField) {
+      transformedRow.name = data[settings.xField];
+      transformedRow.value = settings.yFields?.[0] ? Number(data[settings.yFields[0]]) || 1 : 1;
+    }
+    
+    // For table charts, include all configured fields
+    if (settings.type === 'table') {
+      const allFields = [settings.xField, ...(settings.yFields || [])];
+      allFields.forEach(field => {
+        if (field && data[field] !== undefined) {
+          transformedRow[field] = data[field];
+        }
+      });
+    }
+    
+    return transformedRow;
+  });
+};
 
 export default function WidgetCard({
   widget,
@@ -38,23 +85,81 @@ export default function WidgetCard({
   onCloseFocus?: () => void;
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch real data when widget settings change
+  useEffect(() => {
+    const fetchData = async () => {
+      // Use sample data for sample widgets or when no table is specified
+      if (widget.sample || !widget.settings?.table) {
+        setChartData(SAMPLE_DATA);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const rawData = await getChartData(widget.settings);
+        const transformedData = transformDataForChart(rawData, widget.settings);
+        setChartData(transformedData);
+      } catch (err) {
+        console.error("Failed to fetch chart data:", err);
+        setError("Failed to load chart data");
+        // Fallback to sample data on error
+        setChartData(SAMPLE_DATA);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [widget.settings, widget.sample]);
 
   let ChartComponent = null;
-  switch (widget.type) {
-    case "bar":
-      ChartComponent = <BarChartWidget config={widget.settings} data={SAMPLE_DATA} />;
-      break;
-    case "line":
-      ChartComponent = <LineChartWidget config={widget.settings} data={SAMPLE_DATA} />;
-      break;
-    case "pie":
-      ChartComponent = <PieChartWidget config={widget.settings} data={SAMPLE_DATA} />;
-      break;
-    case "table":
-      ChartComponent = <TableChartWidget config={widget.settings} data={SAMPLE_DATA} />;
-      break;
-    default:
-      ChartComponent = <div>No chart type</div>;
+  
+  if (loading) {
+    ChartComponent = (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-gray-500">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <span className="text-sm">Loading chart data...</span>
+        </div>
+      </div>
+    );
+  } else if (error && !widget.sample) {
+    ChartComponent = (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-red-500">
+          <span className="text-sm">{error}</span>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="text-xs text-blue-500 hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  } else {
+    switch (widget.type) {
+      case "bar":
+        ChartComponent = <BarChartWidget config={widget.settings} data={chartData} />;
+        break;
+      case "line":
+        ChartComponent = <LineChartWidget config={widget.settings} data={chartData} />;
+        break;
+      case "pie":
+        ChartComponent = <PieChartWidget config={widget.settings} data={chartData} />;
+        break;
+      case "table":
+        ChartComponent = <TableChartWidget config={widget.settings} data={chartData} />;
+        break;
+      default:
+        ChartComponent = <div>No chart type</div>;
+    }
   }
 
   return (
@@ -96,7 +201,14 @@ export default function WidgetCard({
 
       {/* Header Row with Title + Controls */}
       <div className="flex justify-between items-center mb-2 pl-9 md:pl-10">
-        <h3 className="text-lg font-semibold truncate">{widget.title}</h3>
+        <h3 className="text-lg font-semibold truncate">
+          {widget.title}
+          {widget.sample && (
+            <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+              Sample
+            </span>
+          )}
+        </h3>
 
         <div className="flex items-center gap-2 relative">
           {/* Chevron for controls */}

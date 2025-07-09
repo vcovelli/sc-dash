@@ -8,8 +8,9 @@ import LineChartSettingsPanel from "./LineChartSettingsPanel";
 import PieChartSettingsPanel from "./PieChartSettingsPanel";
 import TableChartSettingsPanel from "./TableChartSettingsPanel";
 import { BarChart2, LineChart, PieChart, Table } from "lucide-react";
+import { getAvailableTables } from "@/lib/analyticsAPI";
 
-// --- MOCK DATA ---
+// --- MOCK DATA (fallback) ---
 const MOCK_TABLES: TableMeta[] = [
   { name: "orders", columns: [
     { name: "status", type: "string" }, { name: "date", type: "date" },
@@ -32,18 +33,36 @@ const chartTypes = [
   { value: "table", label: "Table", icon: <Table className="w-5 h-5" /> },
 ];
 
-function getDefaultChartSettings(type: WidgetType): AllWidgetSettings {
+// Convert backend schema format to our TableMeta format
+const convertSchemaToTableMeta = (schemas: any[]): TableMeta[] => {
+  return schemas.map(schema => ({
+    name: schema.table_name,
+    columns: schema.columns.map((col: any) => ({
+      name: col.accessorKey || col.header,
+      type: col.type === 'number' ? 'number' : 
+            col.type === 'date' ? 'date' : 'string'
+    }))
+  }));
+};
+
+function getDefaultChartSettings(type: WidgetType, availableTables: TableMeta[]): AllWidgetSettings {
+  const defaultTable = availableTables.length > 0 ? availableTables[0].name : "orders";
+  const defaultXField = availableTables.length > 0 ? 
+    (availableTables[0].columns.find(c => c.type === 'string')?.name || 'status') : 'status';
+  const defaultYField = availableTables.length > 0 ? 
+    (availableTables[0].columns.find(c => c.type === 'number')?.name || 'count') : 'count';
+
   switch (type) {
     case "bar":
-      return { type: "bar", table: "orders", xField: "status", yFields: ["count"], showLegend: true };
+      return { type: "bar", table: defaultTable, xField: defaultXField, yFields: [defaultYField], showLegend: true };
     case "line":
-      return { type: "line", table: "orders", xField: "date", yFields: ["revenue"], showLegend: true };
+      return { type: "line", table: defaultTable, xField: defaultXField, yFields: [defaultYField], showLegend: true };
     case "pie":
-      return { type: "pie", table: "orders", xField: "status", yFields: ["count"], showLegend: true };
+      return { type: "pie", table: defaultTable, xField: defaultXField, yFields: [defaultYField], showLegend: true };
     case "table":
-      return { type: "table", table: "orders", xField: "status", yFields: ["count"] };
+      return { type: "table", table: defaultTable, xField: defaultXField, yFields: [defaultYField] };
     default:
-      return { type: "table", table: "orders", xField: "status", yFields: [] };
+      return { type: "table", table: defaultTable, xField: defaultXField, yFields: [] };
   }
 }
 
@@ -64,20 +83,47 @@ export default function SettingsPanel({
   onLiveUpdate?: (draft: AllWidgetSettings) => void;
   //isMobile?: boolean;
 }) {
+  const [availableTables, setAvailableTables] = useState<TableMeta[]>(MOCK_TABLES);
+  const [loadingTables, setLoadingTables] = useState(false);
   const [draft, setDraft] = useState<AllWidgetSettings>(
-    () => widget?.settings ?? getDefaultChartSettings(widget?.type ?? "bar")
+    () => widget?.settings ?? getDefaultChartSettings(widget?.type ?? "bar", MOCK_TABLES)
   );
   const [draftType, setDraftType] = useState<WidgetType>(widget?.type ?? "bar");
   const [dirty, setDirty] = useState(false);
   const [showTypeChanger, setShowTypeChanger] = useState(false);
 
+  // Load available tables from API
+  useEffect(() => {
+    const loadTables = async () => {
+      setLoadingTables(true);
+      try {
+        const schemas = await getAvailableTables();
+        if (schemas && schemas.length > 0) {
+          const tables = convertSchemaToTableMeta(schemas);
+          setAvailableTables(tables);
+        } else {
+          // If no real tables, use mock data
+          setAvailableTables(MOCK_TABLES);
+        }
+      } catch (error) {
+        console.error("Failed to load tables:", error);
+        // Fallback to mock data on error
+        setAvailableTables(MOCK_TABLES);
+      } finally {
+        setLoadingTables(false);
+      }
+    };
+
+    loadTables();
+  }, []);
+
   // Table helpers
-  const xTable = MOCK_TABLES.find(t => t.name === draft.table) || MOCK_TABLES[0];
-  const xColumns = xTable.columns.filter(col => col.type === "string" || col.type === "category");
-  const yColumns = xTable.columns.filter(col => col.type === "number");
+  const xTable = availableTables.find(t => t.name === draft.table) || availableTables[0];
+  const xColumns = xTable?.columns.filter(col => col.type === "string" || col.type === "category") || [];
+  const yColumns = xTable?.columns.filter(col => col.type === "number") || [];
 
   useEffect(() => {
-    const defaults = getDefaultChartSettings(widget?.type ?? "bar");
+    const defaults = getDefaultChartSettings(widget?.type ?? "bar", availableTables);
     const incoming = widget?.settings ?? {};
     const merged: AllWidgetSettings = { ...defaults, ...incoming };
     if (merged.type === "bar" && "barColors" in incoming) (merged as BarChartSettings).barColors = (incoming as BarChartSettings).barColors;
@@ -88,7 +134,7 @@ export default function SettingsPanel({
     setDraftType(widget?.type ?? "bar");
     setDirty(false);
     setShowTypeChanger(false);
-  }, [widget?.id, widget?.settings, widget?.type]);
+  }, [widget?.id, widget?.settings, widget?.type, availableTables]);
 
   const toggleYField = (field: string) => {
     setDraft(d => {
@@ -104,6 +150,14 @@ export default function SettingsPanel({
   };
 
   const renderPanel = () => {
+    if (loadingTables) {
+      return (
+        <div className="flex items-center justify-center p-8">
+          <div className="text-gray-500">Loading tables...</div>
+        </div>
+      );
+    }
+
     switch (draftType) {
       case "bar":
         return (
@@ -114,10 +168,14 @@ export default function SettingsPanel({
               setDirty(true);
               if (onLiveUpdate) onLiveUpdate({ ...next, type: "bar" });
             }}
-            mockTables={MOCK_TABLES}
+            mockTables={availableTables}
             xColumns={xColumns}
             yColumns={yColumns}
-            updateSetting={(key, value) => setDraft((d) => ({ ...d, [key]: value }) as BarChartSettings)}
+            updateSetting={(key, value) => {
+              setDraft((d) => ({ ...d, [key]: value }) as BarChartSettings);
+              setDirty(true);
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+            }}
             toggleYField={toggleYField}
           />
         );
@@ -130,10 +188,14 @@ export default function SettingsPanel({
               setDirty(true);
               if (onLiveUpdate) onLiveUpdate({ ...next, type: "line" });
             }}
-            mockTables={MOCK_TABLES}
+            mockTables={availableTables}
             xColumns={xColumns}
             yColumns={yColumns}
-            updateSetting={(key, value) => setDraft((d) => ({ ...d, [key]: value }) as LineChartSettings)}
+            updateSetting={(key, value) => {
+              setDraft((d) => ({ ...d, [key]: value }) as LineChartSettings);
+              setDirty(true);
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+            }}
             toggleYField={toggleYField}
           />
         );
@@ -146,10 +208,14 @@ export default function SettingsPanel({
               setDirty(true);
               if (onLiveUpdate) onLiveUpdate({ ...next, type: "pie" });
             }}
-            mockTables={MOCK_TABLES}
+            mockTables={availableTables}
             xColumns={xColumns}
             yColumns={yColumns}
-            updateSetting={(key, value) => setDraft((d) => ({ ...d, [key]: value }) as PieChartSettings)}
+            updateSetting={(key, value) => {
+              setDraft((d) => ({ ...d, [key]: value }) as PieChartSettings);
+              setDirty(true);
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+            }}
           />
         );
       case "table":
@@ -161,10 +227,14 @@ export default function SettingsPanel({
               setDirty(true);
               if (onLiveUpdate) onLiveUpdate({ ...next, type: "table" });
             }}
-            mockTables={MOCK_TABLES}
+            mockTables={availableTables}
             xColumns={xColumns}
             yColumns={yColumns}
-            updateSetting={(key, value) => setDraft((d) => ({ ...d, [key]: value }) as TableChartSettings)}
+            updateSetting={(key, value) => {
+              setDraft((d) => ({ ...d, [key]: value }) as TableChartSettings);
+              setDirty(true);
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+            }}
           />
         );
       default:
@@ -232,7 +302,7 @@ export default function SettingsPanel({
                   `}
                   onClick={() => {
                     setDraftType(t.value as WidgetType);
-                    const newDraft = getDefaultChartSettings(t.value as WidgetType);
+                    const newDraft = getDefaultChartSettings(t.value as WidgetType, availableTables);
                     setDraft(newDraft);
                     setDirty(true);
                     setShowTypeChanger(false);
