@@ -20,6 +20,19 @@ type PieChartConfig = {
 
 type DataRow = Record<string, unknown>;
 
+// Aggregate data for pie charts
+const aggregateDataForPie = (data: DataRow[], xField: string, yField: string) => {
+  const aggregated: Record<string, number> = {};
+  
+  data.forEach(row => {
+    const key = String(row[xField] || 'Unknown');
+    const value = Number(row[yField]) || 1;
+    aggregated[key] = (aggregated[key] || 0) + value;
+  });
+  
+  return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
+};
+
 export function PieChartWidget({
   config,
   data,
@@ -27,9 +40,25 @@ export function PieChartWidget({
   config: PieChartConfig;
   data?: DataRow[];
 }) {
-  const pieData = data || SAMPLE_DATA;
+  const rawData = data || SAMPLE_DATA;
   const valueKey = (config.yFields && config.yFields[0]) || "count";
   const nameKey = config.xField || "name";
+
+  // For pie charts, we need to aggregate data by the name field
+  let pieData = rawData;
+  
+  // If we have raw data with the expected fields, aggregate it
+  if (rawData.length > 0 && config.xField && rawData[0][config.xField] !== undefined) {
+    pieData = aggregateDataForPie(rawData, nameKey, valueKey);
+  }
+
+  if (!pieData || pieData.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-neutral-400">
+        No data to display.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
@@ -37,29 +66,31 @@ export function PieChartWidget({
         <PieChart>
           <Pie
             data={pieData}
-            dataKey={valueKey}
-            nameKey={nameKey}
+            dataKey="value"
+            nameKey="name"
             cx="50%"
             cy="50%"           // Move up a bit to make space for legend
             outerRadius="70%"  // Use % to be responsive!
-            label
+            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
           >
             {pieData.map((entry, idx) => (
               <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip />
-          <Legend
-            layout="horizontal"
-            verticalAlign="bottom"
-            align="center"
-            iconType="circle"
-            wrapperStyle={{
-              paddingTop: 8,
-              fontSize: 14,
-              lineHeight: "22px",
-            }}
-          />
+          <Tooltip formatter={(value) => [value, 'Count']} />
+          {config.showLegend !== false && (
+            <Legend
+              layout="horizontal"
+              verticalAlign="bottom"
+              align="center"
+              iconType="circle"
+              wrapperStyle={{
+                paddingTop: 8,
+                fontSize: 14,
+                lineHeight: "22px",
+              }}
+            />
+          )}
         </PieChart>
       </ResponsiveContainer>
     </div>
