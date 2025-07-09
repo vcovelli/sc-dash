@@ -290,6 +290,17 @@ def generate_schema(request):
             print(f"[schema_wizard] ⚠️ User authentication failed: {auth_err}")
 
         # --- 5. Save User Schema (if authenticated) ---
+        # Ensure user has an organization
+        if user and not user.org:
+            from accounts.models import Organization
+            org_name = f"{user.first_name or user.username}'s Organization"
+            org, _ = Organization.objects.get_or_create(
+                name=org_name,
+                defaults={"slug": f"{user.username}-org"}
+            )
+            user.org = org
+            user.save()
+            
         if user and user.org:
             # Log onboarding complete
             UserActivity.objects.create(

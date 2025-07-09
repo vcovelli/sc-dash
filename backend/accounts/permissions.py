@@ -105,7 +105,10 @@ class IsReadOnlyOrAbove(BasePermission):
     Excludes only unauthenticated users.
     """
     def has_permission(self, request, view):
-        if not request.user.is_authenticated or not request.user.org:
+        if not request.user.is_authenticated:
+            return False
+            
+        if not request.user.org:
             return False
             
         # Allow read operations for all org members
