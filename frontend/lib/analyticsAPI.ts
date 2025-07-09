@@ -33,3 +33,29 @@ export const updateDashboardLayout = async (dashboardId: string, layout: Layout[
 export const markOnboardingStep = async (step: string) => {
   await api.post("/onboarding/progress/", { step });
 };
+
+// Fetch actual data for charts from user tables
+export const getChartData = async (settings: any) => {
+  try {
+    if (!settings.table) {
+      throw new Error("No table specified in chart settings");
+    }
+    
+    const res = await axios.get(`/api/datagrid/rows/${settings.table}/`, authHeaders());
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching chart data:", error);
+    throw error;
+  }
+};
+
+// Get available tables for chart configuration
+export const getAvailableTables = async () => {
+  try {
+    const res = await axios.get("/api/datagrid/schemas/", authHeaders());
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching available tables:", error);
+    return [];
+  }
+};
