@@ -17,8 +17,9 @@ export default function InviteUserModal({ onInvited }) {
       onInvited();
       setOpen(false);
       setEmail("");
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to send invite");
+    } catch (e: unknown) {
+      const error = e as Error;
+      toast.error(error?.message || "Failed to send invite");
     }
     setLoading(false);
   };

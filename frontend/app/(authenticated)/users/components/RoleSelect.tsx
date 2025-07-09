@@ -24,7 +24,7 @@ export default function RoleSelect({ user, onChanged }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       onChanged();
-    } catch (err) {
+    } catch {
       alert("Failed to update role");
       setRole(user.role); // revert if error
     }

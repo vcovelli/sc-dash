@@ -6,7 +6,7 @@ export default function ReferenceOptionsEditor({
   setReferences,
 }: {
   references: { id: string; name: string }[];
-  setReferences: (updater: (arr: any[]) => any[]) => void;
+  setReferences: (updater: (arr: { id: string; name: string }[]) => { id: string; name: string }[]) => void;
 }) {
   const [newReference, setNewReference] = useState("");
 

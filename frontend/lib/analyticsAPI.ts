@@ -35,7 +35,7 @@ export const markOnboardingStep = async (step: string) => {
   await api.post("/onboarding/progress/", { step });
 };
 
-export const getChartData = async (settings: any) => {
+export const getChartData = async (settings: { table?: string; [key: string]: unknown }) => {
   try {
     if (!settings.table) {
       throw new Error("No table specified in chart settings");
