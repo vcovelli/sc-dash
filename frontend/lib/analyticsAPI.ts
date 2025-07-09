@@ -1,5 +1,4 @@
-import axios from "axios";
-import type { Layout } from "react-grid-layout";
+import api from "@/lib/axios"; // Use your custom Axios
 
 type ChartData = {
   chart_type: string;
@@ -8,37 +7,29 @@ type ChartData = {
   [key: string]: unknown;
 };
 
-// Helper to get Authorization headers
-function authHeaders() {
-  const access_token = localStorage.getItem("access_token");
-  return access_token
-    ? { headers: { Authorization: `Bearer ${access_token}` } }
-    : {};
-}
-
 export const getDashboard = async () => {
-  const res = await axios.get("/api/analytics/dashboard/", authHeaders());
+  const res = await api.get("/analytics/dashboard/"); // note: no /api prefix needed
   return res.data;
 };
 
 export const createChart = async (chartData: ChartData) => {
-  const res = await axios.post("/api/analytics/chart/", chartData, authHeaders());
+  const res = await api.post("/analytics/chart/", chartData);
   return res.data;
 };
 
 export const updateChart = async (id: string, chartData: Partial<ChartData>) => {
-  const res = await axios.patch(`/api/analytics/chart/${id}/`, chartData, authHeaders());
+  const res = await api.patch(`/analytics/chart/${id}/`, chartData);
   return res.data;
 };
 
 export const deleteChart = async (id: string) => {
-  await axios.delete(`/api/analytics/chart/${id}/`, authHeaders());
+  await api.delete(`/analytics/chart/${id}/`);
 };
 
 export const updateDashboardLayout = async (dashboardId: string, layout: Layout[]) => {
-  await axios.patch(`/api/analytics/dashboard/${dashboardId}/`, { layout }, authHeaders());
+  await api.patch(`/analytics/dashboard/${dashboardId}/`, { layout });
 };
 
 export const markOnboardingStep = async (step: string) => {
-  await axios.post("/api/onboarding/progress/", { step }, authHeaders());
+  await api.post("/onboarding/progress/", { step });
 };
