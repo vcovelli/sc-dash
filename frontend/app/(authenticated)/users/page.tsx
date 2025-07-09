@@ -6,7 +6,6 @@ import { User, Invite } from "@/types";
 // Import your own components:
 import UserTable from "./components/UserTable";
 import PendingInvitesTable from "./components/PendingInvitesTable";
-import InviteUserDialog from "./components/InviteUserDialog";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);

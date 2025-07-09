@@ -1,10 +1,9 @@
 // UserTable.tsx
 import { useState } from "react";
-import { updateUserRole, deleteUser } from "@/lib/invitesAPI";
+import { updateUserRole } from "@/lib/invitesAPI";
 import toast from "react-hot-toast";
 
 export default function UserTable({ users, onAction }) {
-  const [editUser, setEditUser] = useState(null);
 
   return (
     <table className="table-auto w-full shadow rounded-xl">

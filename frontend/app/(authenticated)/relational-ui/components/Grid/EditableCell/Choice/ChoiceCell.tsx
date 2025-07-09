@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 import ChoiceTag from "@/app/(authenticated)/relational-ui/components/Grid/EditableCell/Choice/ChoiceTag";
 import ChoiceList from "@/app/(authenticated)/relational-ui/components/Grid/EditableCell/Choice/ChoiceList";
@@ -23,14 +23,7 @@ interface ChoiceCellProps {
   onAddChoice?: (newName: string, color?: string) => Promise<ChoiceOption | null> | ChoiceOption | null;
 }
 
-const COLORS = [
-  "#7e5bef", "#fbbf24", "#f87171", "#10b981", "#3b82f6",
-  "#6366f1", "#eab308", "#d97706", "#ec4899", "#0ea5e9",
-];
 
-function getRandomColor() {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
-}
 
 const ChoiceCell = React.memo(function ChoiceCell({
   value: initialValue,
