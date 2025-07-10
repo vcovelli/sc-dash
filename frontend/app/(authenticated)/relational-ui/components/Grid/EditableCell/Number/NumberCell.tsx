@@ -5,9 +5,9 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 
 interface NumberCellProps {
   value: number | null;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown>;
-  onSave: (id: string, key: string, value: number | null) => void;
+  onSave: (id: number, key: string, value: number | null) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   fontSize: number;

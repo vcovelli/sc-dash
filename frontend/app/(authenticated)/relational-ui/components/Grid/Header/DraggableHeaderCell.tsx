@@ -11,7 +11,7 @@ interface Props {
 
 export default function DraggableHeaderCell({ header, children }: Props) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
-    id: String(header.column.id),
+    id: header.column.id,
   });
 
   const style = {

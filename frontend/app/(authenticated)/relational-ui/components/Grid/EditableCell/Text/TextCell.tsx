@@ -7,9 +7,9 @@ type CellValue = string | number | null;
 
 interface TextCellProps {
   value: CellValue;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown>;
-  onSave: (id: string, key: string, value: CellValue) => void;
+  onSave: (id: number, key: string, value: CellValue) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;

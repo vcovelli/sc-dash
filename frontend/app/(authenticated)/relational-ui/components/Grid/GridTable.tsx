@@ -64,8 +64,8 @@ const GridTable: React.FC<GridTableProps> = ({
     setDataState(
       data.map((row) => ({
         ...row,
-        id: String(row.id),
-        __rowId: String(row.id),
+        id: row.id,
+        __rowId: row.id,
       }))
     );
   }, [data]);
@@ -122,7 +122,7 @@ const GridTable: React.FC<GridTableProps> = ({
 
   // Cell save handler
   const handleSave = useCallback(
-    (id: string, key: string, value: unknown) => {
+    (id: number, key: string, value: unknown) => {
       setDataState((prev) => {
         const updated = prev.map((row) =>
           ((row.__rowId ?? row.id) === id && key !== "id") ? { ...row, [key]: value } : row
