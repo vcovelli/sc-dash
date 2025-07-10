@@ -13,6 +13,9 @@ export interface UserSettings {
 export interface UserRole {
   role: string;
   canViewSystemColumns: boolean;
+  canUploadFiles: boolean;
+  canManageUsers: boolean;
+  canInviteUsers: boolean;
 }
 
 const defaultSettings: UserSettings = {
@@ -66,10 +69,19 @@ export const UserSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         if (response.ok) {
           const userData = await response.json();
-          const canViewSystemColumns = ['admin', 'owner', 'ceo', 'national_manager', 'regional_manager', 'analyst'].includes(userData.role);
+          
+          // Define role-based permissions
+          const managerAndAboveRoles = ['admin', 'owner', 'ceo', 'national_manager', 'regional_manager', 'local_manager'];
+          const systemColumnsRoles = ['admin', 'owner', 'ceo', 'national_manager', 'regional_manager', 'analyst'];
+          const inviteRoles = ['admin', 'owner', 'ceo', 'national_manager', 'regional_manager'];
+          const manageUsersRoles = ['admin', 'owner'];
+          
           setUserRole({
             role: userData.role,
-            canViewSystemColumns
+            canViewSystemColumns: systemColumnsRoles.includes(userData.role),
+            canUploadFiles: managerAndAboveRoles.includes(userData.role),
+            canManageUsers: manageUsersRoles.includes(userData.role),
+            canInviteUsers: inviteRoles.includes(userData.role),
           });
         }
       } catch (error) {

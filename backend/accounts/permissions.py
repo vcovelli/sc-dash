@@ -81,6 +81,24 @@ class IsManagerOrAbove(BasePermission):
         )
 
 
+class CanUploadFiles(BasePermission):
+    """
+    Users who can upload files to the system.
+    Managers and above can upload files. Employees and clients cannot.
+    """
+    UPLOAD_ROLES = [
+        'admin', 'owner', 'ceo', 'national_manager', 
+        'regional_manager', 'local_manager'
+    ]
+    
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and 
+            request.user.org and 
+            request.user.role in self.UPLOAD_ROLES
+        )
+
+
 class CanViewAnalytics(BasePermission):
     """
     Users who can view analytics and reports.

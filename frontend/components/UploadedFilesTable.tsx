@@ -7,7 +7,7 @@ import { useState } from "react";
 
 export const UploadedFilesTable = () => {
   const { files, loading, refetch } = useUploadedFiles();
-  const { settings } = useUserSettings();
+  const { settings, userRole } = useUserSettings();
   const [ingesting, setIngesting] = useState<number | null>(null);
 
   const startIngestion = async (fileId: number) => {
@@ -66,16 +66,38 @@ export const UploadedFilesTable = () => {
 
   return (
     <div className="overflow-x-auto bg-white dark:bg-[#161B22] border border-gray-200 dark:border-gray-800 rounded-md shadow-sm">
-      <table className="min-w-full text-sm text-gray-800 dark:text-gray-100"> {/* <-- ADDED text colors here */}
+      <table className="min-w-full text-sm text-gray-800 dark:text-gray-100">
         <thead>
           <tr className="bg-gray-100 dark:bg-[#21262d] text-left">
-            {settings.showSystemColumns && (
-              <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 text-xs font-mono">ID</th>
+            {/* System Columns - visually distinct */}
+            {settings.showSystemColumns && userRole?.canViewSystemColumns && (
+              <>
+                <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-50 dark:bg-gray-800">
+                  <span className="flex items-center gap-1">
+                    🔒 ID
+                  </span>
+                </th>
+                <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-50 dark:bg-gray-800">
+                  <span className="flex items-center gap-1">
+                    🔒 Created By
+                  </span>
+                </th>
+                <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-50 dark:bg-gray-800">
+                  <span className="flex items-center gap-1">
+                    🔒 Modified By
+                  </span>
+                </th>
+                <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-50 dark:bg-gray-800">
+                  <span className="flex items-center gap-1">
+                    🔒 Version
+                  </span>
+                </th>
+              </>
             )}
+            {/* Regular User Columns */}
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Filename</th>
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Size</th>
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Rows</th>
-            <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Uploaded By</th>
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Uploaded At</th>
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Status</th>
           </tr>
@@ -83,15 +105,29 @@ export const UploadedFilesTable = () => {
         <tbody>
           {files.map((file) => (
             <tr key={file.id} className="hover:bg-gray-50 dark:hover:bg-[#22272e]">
-              {settings.showSystemColumns && (
-                <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 text-xs font-mono">{file.id}</td>
+              {/* System Columns - grayed out and non-editable styling */}
+              {settings.showSystemColumns && userRole?.canViewSystemColumns && (
+                <>
+                  <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-25 dark:bg-gray-900/50">
+                    #{file.id}
+                  </td>
+                  <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-25 dark:bg-gray-900/50">
+                    {file.created_by || file.uploaded_by || "System"}
+                  </td>
+                  <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-25 dark:bg-gray-900/50">
+                    {file.modified_by || "-"}
+                  </td>
+                  <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 text-xs font-mono bg-gray-25 dark:bg-gray-900/50">
+                    v{file.version || 1}
+                  </td>
+                </>
               )}
-              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">{file.file_name}</td>
+              {/* Regular User Columns */}
+              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 font-medium">{file.file_name}</td>
               <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 {file.file_size ? getReadableSize(file.file_size) : "Unknown"}
               </td>
               <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">{file.row_count ?? "-"}</td>
-              <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">{file.uploaded_by}</td>
               <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 {new Date(file.uploaded_at).toLocaleString()}
               </td>
@@ -104,13 +140,17 @@ export const UploadedFilesTable = () => {
                     Download CSV
                   </button>
                 ) : file.status === "pending" ? (
-                  <button
-                    onClick={() => startIngestion(file.id)}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300"
-                    disabled={ingesting === file.id}
-                  >
-                    {ingesting === file.id ? "Ingesting..." : "Start Ingestion"}
-                  </button>
+                  userRole?.canUploadFiles ? (
+                    <button
+                      onClick={() => startIngestion(file.id)}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300"
+                      disabled={ingesting === file.id}
+                    >
+                      {ingesting === file.id ? "Ingesting..." : "Start Ingestion"}
+                    </button>
+                  ) : (
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">Pending</span>
+                  )
                 ) : (
                   <span className="text-gray-500 dark:text-gray-400 capitalize">{file.status}</span>
                 )}
@@ -119,6 +159,16 @@ export const UploadedFilesTable = () => {
           ))}
         </tbody>
       </table>
+      
+      {/* System columns explanation */}
+      {settings.showSystemColumns && userRole?.canViewSystemColumns && (
+        <div className="p-3 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            🔒 <strong>System Columns:</strong> These are automatically managed by the system and cannot be edited directly. 
+            They track audit information and version history for compliance and debugging purposes.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
