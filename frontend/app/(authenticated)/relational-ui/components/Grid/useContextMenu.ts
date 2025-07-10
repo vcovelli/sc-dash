@@ -1,5 +1,4 @@
 import { useRef, useState, useCallback } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { Row, CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 export type ContextMenuAction =
@@ -54,7 +53,7 @@ function getSafePosition(x: number, y: number) {
 }
 
 function generateBlankRow(columns: CustomColumnDef<Row>[]): Row {
-  const newRow: Row = { __rowId: uuidv4() };
+  const newRow: Row = { __rowId: Date.now() + Math.floor(Math.random() * 10000) };
   for (const col of columns) {
     const key = col.accessorKey;
     const type = col.type?.toLowerCase();
@@ -152,7 +151,7 @@ export default function useContextMenu({
           const original = data[rowIndex];
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { __rowId: _, ...rest } = original;
-          const clone = { ...rest, __rowId: uuidv4() };
+          const clone = { ...rest, __rowId: Date.now() + Math.floor(Math.random() * 10000) };
           setData([...data.slice(0, rowIndex + 1), clone, ...data.slice(rowIndex + 1)]);
           break;
         }

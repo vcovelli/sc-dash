@@ -36,7 +36,7 @@ export const UploadedFilesTable = () => {
     else return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   };
 
-  const handleDownload = async (fileId, fileName) => {
+  const handleDownload = async (fileId: number, fileName: string) => {
     try {
       const res = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/files/download/${fileId}/`,
