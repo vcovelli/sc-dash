@@ -33,7 +33,10 @@ class DashboardChart(models.Model):
         ('line', 'Line'),
         ('pie', 'Pie'),
         ('table', 'Table'),
-        # add more if needed
+        ("area", "Area"),
+        ("scatter", "Scatter"),
+        ("radar", "Radar"),
+        ("composed", "Composed"),
     ])
     title = models.CharField(max_length=100, blank=True)
     position = models.IntegerField(default=0)  # for ordering
