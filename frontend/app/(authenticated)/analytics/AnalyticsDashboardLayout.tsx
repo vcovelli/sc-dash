@@ -40,6 +40,13 @@ const SAMPLE_WIDGETS: WidgetConfig<AllWidgetSettings>[] = [
     sample: true,
   },
   {
+    id: "sample-area",
+    type: "area",
+    title: "Revenue & Profit Area",
+    settings: { type: "area", table: "orders", xField: "date", yFields: ["revenue", "profit"], showLegend: true, stacked: false, fillOpacity: 0.6 },
+    sample: true,
+  },
+  {
     id: "sample-pie",
     type: "pie",
     title: "Customers by Region",
@@ -47,10 +54,17 @@ const SAMPLE_WIDGETS: WidgetConfig<AllWidgetSettings>[] = [
     sample: true,
   },
   {
-    id: "sample-table",
-    type: "table",
-    title: "Top Products",
-    settings: { type: "table", table: "products", xField: "name", yFields: ["revenue"] },
+    id: "sample-scatter",
+    type: "scatter",
+    title: "Price vs Quantity",
+    settings: { type: "scatter", table: "orders", xField: "quantity", yFields: ["price"], showLegend: true, dotSize: 4 },
+    sample: true,
+  },
+  {
+    id: "sample-radar",
+    type: "radar",
+    title: "Performance Metrics",
+    settings: { type: "radar", table: "metrics", xField: "category", yFields: ["score"], showLegend: true, fillOpacity: 0.6 },
     sample: true,
   },
 ];
@@ -58,8 +72,10 @@ const SAMPLE_WIDGETS: WidgetConfig<AllWidgetSettings>[] = [
 const SAMPLE_LAYOUT: Layout[] = [
   { i: "sample-bar", x: 0, y: 0, w: 2, h: 3, minW: 1, minH: 2 },
   { i: "sample-line", x: 2, y: 0, w: 2, h: 3, minW: 1, minH: 2 },
-  { i: "sample-pie", x: 0, y: 3, w: 1, h: 2, minW: 1, minH: 2 },
-  { i: "sample-table", x: 1, y: 3, w: 3, h: 2, minW: 1, minH: 2 },
+  { i: "sample-area", x: 0, y: 3, w: 2, h: 3, minW: 1, minH: 2 },
+  { i: "sample-pie", x: 2, y: 3, w: 1, h: 2, minW: 1, minH: 2 },
+  { i: "sample-scatter", x: 3, y: 3, w: 1, h: 2, minW: 1, minH: 2 },
+  { i: "sample-radar", x: 0, y: 6, w: 2, h: 3, minW: 1, minH: 2 },
 ];
 
 function useIsMobile() {
@@ -222,7 +238,7 @@ export default function AnalyticsDashboardLayout() {
     setWidgets(widgets =>
       widgets.map(w =>
         w.id === focusedWidgetId
-          ? { ...w, settings: { ...w.settings, ...liveSettings } }
+          ? { ...w, settings: { ...w.settings, ...liveSettings } as AllWidgetSettings }
           : w
       )
     );

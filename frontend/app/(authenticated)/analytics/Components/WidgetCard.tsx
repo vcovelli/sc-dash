@@ -7,10 +7,15 @@ import {
   LineChartWidget,
   PieChartWidget,
   TableChartWidget,
+  AreaChartWidget,
+  ScatterChartWidget,
+  RadarChartWidget,
+  ComposedChartWidget,
 } from "./WidgetCharts";
 import { GripVertical, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { getChartData } from "@/lib/analyticsAPI";
 import type { DataRow } from "@/app/(authenticated)/analytics/types";
+import { DataFreshnessIndicator } from "./DataFreshnessIndicator";
 
 const SAMPLE_DATA = [
   { name: "A", count: 400, revenue: 2400 },
@@ -108,6 +113,7 @@ export default function WidgetCard({
   const [chartData, setChartData] = useState<DataRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Fetch real data when widget settings change
   useEffect(() => {
@@ -125,6 +131,8 @@ export default function WidgetCard({
         const rawData = await getChartData(widget.settings);
         const transformedData = transformDataForChart(rawData, widget.settings);
         setChartData(transformedData);
+        setLastUpdated(new Date());
+        setError(null);
       } catch (err) {
         console.error("Failed to fetch chart data:", err);
         setError("Failed to load chart data");
@@ -177,6 +185,22 @@ export default function WidgetCard({
       case "table":
         ChartComponent = <TableChartWidget config={widget.settings} data={chartData} />;
         break;
+      case "area":
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ChartComponent = <AreaChartWidget config={widget.settings as any} data={chartData} />;
+        break;
+      case "scatter":
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ChartComponent = <ScatterChartWidget config={widget.settings as any} data={chartData} />;
+        break;
+      case "radar":
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ChartComponent = <RadarChartWidget config={widget.settings as any} data={chartData} />;
+        break;
+      case "composed":
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ChartComponent = <ComposedChartWidget config={widget.settings as any} data={chartData} />;
+        break;
       default:
         ChartComponent = <div>No chart type</div>;
     }
@@ -221,14 +245,49 @@ export default function WidgetCard({
 
       {/* Header Row with Title + Controls */}
       <div className="flex justify-between items-center mb-2 pl-9 md:pl-10">
-        <h3 className="text-lg font-semibold truncate">
-          {widget.title}
-          {widget.sample && (
-            <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
-              Sample
-            </span>
+        <div className="flex flex-col min-w-0 flex-1">
+          <h3 className="text-lg font-semibold truncate">
+            {widget.title}
+            {widget.sample && (
+              <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded">
+                Sample
+              </span>
+            )}
+          </h3>
+          {!widget.sample && (
+            <DataFreshnessIndicator
+              lastUpdated={lastUpdated || undefined}
+              isLoading={loading}
+              onRefresh={() => {
+                const fetchData = async () => {
+                  if (widget.sample || !widget.settings?.table) {
+                    setChartData(SAMPLE_DATA);
+                    return;
+                  }
+
+                  setLoading(true);
+                  setError(null);
+                  
+                  try {
+                    const rawData = await getChartData(widget.settings);
+                    const transformedData = transformDataForChart(rawData, widget.settings);
+                    setChartData(transformedData);
+                    setLastUpdated(new Date());
+                    setError(null);
+                  } catch (err) {
+                    console.error("Failed to fetch chart data:", err);
+                    setError("Failed to load chart data");
+                    setChartData(SAMPLE_DATA);
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                fetchData();
+              }}
+              className="mt-1"
+            />
           )}
-        </h3>
+        </div>
 
         <div className="flex items-center gap-2 relative">
           {/* Chevron for controls */}
