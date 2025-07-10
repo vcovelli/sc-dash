@@ -64,8 +64,8 @@ const GridTable: React.FC<GridTableProps> = ({
     setDataState(
       data.map((row) => ({
         ...row,
-        id: row.id,
-        __rowId: row.id,
+        id: Number(row.id),
+        __rowId: Number(row.id),
       }))
     );
   }, [data]);
@@ -199,7 +199,7 @@ const GridTable: React.FC<GridTableProps> = ({
     state: { columnOrder },
     onColumnOrderChange: setColumnOrder,
     columnResizeMode: "onChange",
-    getRowId: (row) => row.__rowId,
+    getRowId: (row) => String(row.__rowId),
   });
 
   // Keyboard navigation
