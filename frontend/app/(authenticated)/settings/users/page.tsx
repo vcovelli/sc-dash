@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { PlusIcon, TrashIcon, PencilIcon, UserPlusIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, PencilIcon, UserPlusIcon } from '@heroicons/react/24/outline'
 
 interface User {
   id: number
@@ -62,8 +62,8 @@ export default function UserManagementPage() {
       })
       
       if (response.ok) {
-        const data = await response.json()
-        setUsers(data.users)
+        const responseData = await response.json()
+        setUsers(responseData.users)
       } else {
         console.error('Failed to fetch users')
       }
@@ -106,7 +106,6 @@ export default function UserManagementPage() {
       })
       
       if (response.ok) {
-        const data = await response.json()
         alert(`Invitation sent to ${newInvite.email}!`)
         setNewInvite({ email: '', role: 'employee' })
         setShowInviteModal(false)
@@ -148,7 +147,7 @@ export default function UserManagementPage() {
   }
 
   const removeUser = async (userId: number, email: string) => {
-    if (!confirm(`Are you sure you want to remove ${email} from your organization?`)) {
+    if (!window.confirm(`Are you sure you want to remove ${email} from your organization?`)) {
       return
     }
 
@@ -232,7 +231,7 @@ export default function UserManagementPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
-            <p className="text-gray-600 mt-1">Manage your organization's users and permissions</p>
+            <p className="text-gray-600 mt-1">Manage your organization&apos;s users and permissions</p>
           </div>
           <button
             onClick={() => setShowInviteModal(true)}
