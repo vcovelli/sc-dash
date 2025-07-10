@@ -7,7 +7,7 @@ import GridTable from "@/app/(authenticated)/relational-ui/components/Grid/GridT
 import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 interface Sheet {
-  id: string;
+  id: number;
   name: string;
   created_by: string | null;
 }
@@ -19,13 +19,13 @@ interface SheetData {
 
 export default function SheetList() {
   const [sheets, setSheets] = useState<Sheet[]>([]);
-  const [sheetData, setSheetData] = useState<Record<string, SheetData>>({});
+  const [sheetData, setSheetData] = useState<Record<number, SheetData>>({});
   const [loading, setLoading] = useState(true);
 
   // Settings panel state
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
-  const [columnSettingsSheetId, setColumnSettingsSheetId] = useState<string | null>(null);
+  const [columnSettingsSheetId, setColumnSettingsSheetId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchSheets = async () => {
@@ -34,7 +34,7 @@ export default function SheetList() {
         const res = await axios.get("/api/sheets/");
         setSheets(res.data);
 
-        const allSheetData: Record<string, SheetData> = {};
+        const allSheetData: Record<number, SheetData> = {};
 
         await Promise.all(
           res.data.map(async (sheet: Sheet) => {
@@ -103,7 +103,7 @@ export default function SheetList() {
   }, [columnSettingsSheetId, sheets]);
 
   // Rename column
-  const handleRenameColumn = useCallback(async (sheetId: string, accessorKey: string, newHeader: string) => {
+  const handleRenameColumn = useCallback(async (sheetId: number, accessorKey: string, newHeader: string) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
     try {
@@ -115,7 +115,7 @@ export default function SheetList() {
   }, [sheets, fetchAndSetSheetSchema]);
 
   // Reorder columns (you’ll call this after drag-and-drop, pass the new array order)
-  const handleReorderColumns = useCallback(async (sheetId: string, newColumns: CustomColumnDef<unknown>[]) => {
+  const handleReorderColumns = useCallback(async (sheetId: number, newColumns: CustomColumnDef<unknown>[]) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
     try {
@@ -127,7 +127,7 @@ export default function SheetList() {
   }, [sheets, fetchAndSetSheetSchema]);
 
   // Add new column
-  const handleAddColumn = useCallback(async (sheetId: string, newColumn: CustomColumnDef<unknown>) => {
+  const handleAddColumn = useCallback(async (sheetId: number, newColumn: CustomColumnDef<unknown>) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
     try {
@@ -139,7 +139,7 @@ export default function SheetList() {
   }, [sheets, fetchAndSetSheetSchema]);
 
   // Delete column
-  const handleDeleteColumn = useCallback(async (sheetId: string, accessorKey: string) => {
+  const handleDeleteColumn = useCallback(async (sheetId: number, accessorKey: string) => {
     const sheet = sheets.find(s => s.id === sheetId);
     if (!sheet) return;
     try {
