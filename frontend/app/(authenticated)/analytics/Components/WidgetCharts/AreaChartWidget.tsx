@@ -1,7 +1,8 @@
+import React from "react";
 import {
   ResponsiveContainer,
-  BarChart as RBarChart,
-  Bar,
+  AreaChart as RAreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -14,42 +15,44 @@ const COLORS = [
 ];
 
 const SAMPLE_DATA = [
-  { name: "A", count: 400, revenue: 2400 },
-  { name: "B", count: 300, revenue: 2210 },
-  { name: "C", count: 200, revenue: 2290 },
-  { name: "D", count: 278, revenue: 2000 },
-  { name: "E", count: 189, revenue: 2181 },
+  { name: "Jan", revenue: 2400, profit: 1200 },
+  { name: "Feb", revenue: 2210, profit: 1100 },
+  { name: "Mar", revenue: 2290, profit: 1380 },
+  { name: "Apr", revenue: 2000, profit: 980 },
+  { name: "May", revenue: 2181, profit: 1210 },
+  { name: "Jun", revenue: 2500, profit: 1350 },
 ];
 
 // ---- Types ----
-type BarChartConfig = {
+type AreaChartConfig = {
   xField: string;
   yFields: string[];
-  barColors?: string[];
+  areaColors?: string[];
   showLegend?: boolean;
   stacked?: boolean;
   yScale?: "linear" | "log" | "auto";
   yMin?: number;
   yMax?: number;
-  xMin?: number | string; // for numeric/date x-axis, else ignored
+  xMin?: number | string;
   xMax?: number | string;
+  fillOpacity?: number;
 };
 
 type DataRow = Record<string, unknown>;
 
-export function BarChartWidget({
+export function AreaChartWidget({
   config,
   data,
 }: {
-  config: BarChartConfig;
+  config: AreaChartConfig;
   data?: DataRow[];
 }) {
-  const barData = data || SAMPLE_DATA;
+  const areaData = data || SAMPLE_DATA;
 
   // Guard: No data, or not enough fields specified
   if (
-    !barData ||
-    barData.length === 0 ||
+    !areaData ||
+    areaData.length === 0 ||
     !config.xField ||
     !config.yFields?.length
   ) {
@@ -66,10 +69,12 @@ export function BarChartWidget({
     typeof config.yMax === "number" ? config.yMax : "auto",
   ];
 
+  const fillOpacity = config.fillOpacity ?? 0.6;
+
   return (
     <div className="w-full h-full min-w-0 min-h-0 flex items-center">
       <ResponsiveContainer width="100%" height="100%">
-        <RBarChart data={barData}>
+        <RAreaChart data={areaData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey={config.xField || "name"}
@@ -79,31 +84,26 @@ export function BarChartWidget({
             domain={yDomain}
             allowDataOverflow
           />
-          <Tooltip 
-            contentStyle={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            }}
-            cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-          />
+          <Tooltip />
           {config.showLegend !== false && <Legend />}
-          {(config.yFields || ["count"]).map((y, idx) => (
-            <Bar
+          {(config.yFields || ["revenue"]).map((y, idx) => (
+            <Area
               key={y}
+              type="monotone"
               dataKey={y}
-              fill={
-                (config.barColors && config.barColors[idx]) ||
+              stackId={config.stacked ? "1" : undefined}
+              stroke={
+                (config.areaColors && config.areaColors[idx]) ||
                 COLORS[idx % COLORS.length]
               }
-              stackId={config.stacked ? "a" : undefined}
-              radius={[2, 2, 0, 0]}
-              animationDuration={800}
-              animationBegin={idx * 100}
+              fill={
+                (config.areaColors && config.areaColors[idx]) ||
+                COLORS[idx % COLORS.length]
+              }
+              fillOpacity={fillOpacity}
             />
           ))}
-        </RBarChart>
+        </RAreaChart>
       </ResponsiveContainer>
     </div>
   );

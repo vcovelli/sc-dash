@@ -144,7 +144,7 @@ export default function SettingsPanel({
         : [...current, field];
       const updated = { ...d, yFields: next };
       setDirty(true);
-      if (onLiveUpdate) onLiveUpdate({ ...updated, type: draftType });
+      if (onLiveUpdate) onLiveUpdate({ ...updated, type: draftType } as AllWidgetSettings);
       return updated;
     });
   };
@@ -174,7 +174,7 @@ export default function SettingsPanel({
             updateSetting={(key, value) => {
               setDraft((d) => ({ ...d, [key]: value }) as BarChartSettings);
               setDirty(true);
-              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType } as AllWidgetSettings);
             }}
             toggleYField={toggleYField}
           />
@@ -194,7 +194,7 @@ export default function SettingsPanel({
             updateSetting={(key, value) => {
               setDraft((d) => ({ ...d, [key]: value }) as LineChartSettings);
               setDirty(true);
-              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType } as AllWidgetSettings);
             }}
             toggleYField={toggleYField}
           />
@@ -214,7 +214,7 @@ export default function SettingsPanel({
             updateSetting={(key, value) => {
               setDraft((d) => ({ ...d, [key]: value }) as PieChartSettings);
               setDirty(true);
-              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType } as AllWidgetSettings);
             }}
           />
         );
@@ -233,7 +233,7 @@ export default function SettingsPanel({
             updateSetting={(key, value) => {
               setDraft((d) => ({ ...d, [key]: value }) as TableChartSettings);
               setDirty(true);
-              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType });
+              if (onLiveUpdate) onLiveUpdate({ ...draft, [key]: value, type: draftType } as AllWidgetSettings);
             }}
           />
         );
@@ -306,7 +306,7 @@ export default function SettingsPanel({
                     setDraft(newDraft);
                     setDirty(true);
                     setShowTypeChanger(false);
-                    if (onLiveUpdate) onLiveUpdate({ ...newDraft, type: t.value as WidgetType });
+                    if (onLiveUpdate) onLiveUpdate({ ...newDraft, type: t.value as WidgetType } as AllWidgetSettings);
                   }}
                 >
                   {t.icon}
@@ -340,7 +340,7 @@ export default function SettingsPanel({
             px-4 py-2 rounded font-semibold transition
             ${dirty ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-300 text-gray-400 cursor-not-allowed"}
           `}
-          onClick={() => dirty && onSave({ ...draft, type: draftType })}
+          onClick={() => dirty && onSave({ ...draft, type: draftType } as AllWidgetSettings)}
           disabled={!dirty}
         >Save</button>
       </div>
