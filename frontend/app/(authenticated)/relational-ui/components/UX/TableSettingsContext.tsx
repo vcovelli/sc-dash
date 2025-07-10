@@ -16,6 +16,8 @@ type TableSettings = {
   presets: typeof FONT_SIZE_PRESETS;
   zebraStriping: boolean;
   setZebraStriping: (val: boolean) => void;
+  showSystemColumns: boolean;
+  setShowSystemColumns: (val: boolean) => void;
 };
 
 const TableSettingsContext = createContext<TableSettings | undefined>(undefined);
@@ -36,6 +38,7 @@ export function TableSettingsProvider({
   const fontSizeIdx = controlledIdx !== undefined ? controlledIdx : uncontrolledIdx;
   const setFontSizeIdx = controlledSetter || setUncontrolledIdx;
   const [zebraStriping, setZebraStriping] = useState(true);
+  const [showSystemColumns, setShowSystemColumns] = useState(false);
 
   const ctxValue: TableSettings = {
     fontSizeIdx,
@@ -45,6 +48,8 @@ export function TableSettingsProvider({
     presets: FONT_SIZE_PRESETS,
     zebraStriping,
     setZebraStriping,
+    showSystemColumns,
+    setShowSystemColumns,
   };
 
   return (
