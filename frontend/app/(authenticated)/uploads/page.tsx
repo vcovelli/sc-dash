@@ -102,7 +102,11 @@ export default function UploadsPage() {
           toast.error("❌ Select a table to validate your CSV.");
           return;
         }
-        const expectedHeaders: string[] = selectedSchema.expected_headers || selectedSchema.columns || [];
+        const allExpectedHeaders: string[] = selectedSchema.expected_headers || selectedSchema.columns || [];
+        // Filter out system columns that should be backend-generated
+        const expectedHeaders = allExpectedHeaders.filter(
+          (col) => !["version", "uuid", "ingested_at", "client_name"].includes(col.toLowerCase())
+        );
         const uploadedHeaders = Object.keys(rows[0]);
         setMissingHeaders(expectedHeaders.filter((h) => !uploadedHeaders.includes(h)));
         setExtraHeaders(uploadedHeaders.filter((h) => !expectedHeaders.includes(h)));
@@ -231,7 +235,9 @@ export default function UploadsPage() {
             {selectedSchema && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <span className="font-medium text-gray-700 dark:text-gray-300 text-xs">Template Columns:</span>
-                {(selectedSchema.expected_headers || selectedSchema.columns || []).map((h: string) => (
+                {(selectedSchema.expected_headers || selectedSchema.columns || [])
+                  .filter((col) => !["version", "uuid", "ingested_at", "client_name"].includes(col.toLowerCase()))
+                  .map((h: string) => (
                   <span key={h} className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-xs font-mono text-blue-900 dark:text-blue-100 border dark:border-blue-700">
                     {h}
                   </span>
