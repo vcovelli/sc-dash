@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
 from accounts.models import Organization
+from helpers.models import AuditableModel
 
-class UploadedFile(models.Model):
+class UploadedFile(AuditableModel):  # Now inherits system columns
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("processing", "Processing"),
@@ -41,7 +42,7 @@ class UploadedFile(models.Model):
     def __str__(self):
         return f"{self.file_name} - {self.status} ({self.org.name})"
 
-class UserFile(models.Model):
+class UserFile(AuditableModel):  # Now inherits system columns
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     org = models.ForeignKey(
         Organization, 

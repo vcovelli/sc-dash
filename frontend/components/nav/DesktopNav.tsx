@@ -6,6 +6,7 @@ import { FaSignOutAlt } from "react-icons/fa";
 import { ThemeToggle } from "@/components/settings/theme/ThemeToggle";
 import { useNavContext } from "@/components/nav/NavbarContext";
 import HamburgerButton from "@/components/nav/HamburgerButton"; // Make sure you import it!
+import { useUserSettings } from "../UserSettingsContext";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -21,6 +22,16 @@ export default function DesktopNav() {
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { showDesktopNav } = useNavContext();
+  const { userRole } = useUserSettings();
+  
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/analytics", label: "Analytics" },
+    { href: "/relational-ui", label: "Data Tables" },
+    // Conditionally include uploads based on user permissions
+    ...(userRole?.canUploadFiles ? [{ href: "/uploads", label: "Uploads" }] : []),
+    { href: "/assistant", label: "AI Assistant" },
+  ];
 
   useEffect(() => {
     setIsAuthenticated(!!localStorage.getItem("access_token"));
@@ -60,7 +71,7 @@ export default function DesktopNav() {
             <div className="flex items-center space-x-2 text-sm font-medium">
             {/* Desktop links */}
             <div className="hidden md:flex items-center space-x-2">
-                {NAV_LINKS.map(({ href, label }) => (
+                {navItems.map(({ href, label }) => (
                 <Link
                     href={href}
                     key={href}

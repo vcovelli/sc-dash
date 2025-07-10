@@ -21,14 +21,14 @@ from rest_framework.decorators import api_view, permission_classes
 from files.models import UploadedFile, UserFile   # Move these models to files.models!
 from files.serializers import UploadedFileSerializer, StartIngestionSerializer  # Move these serializers!
 from accounts.models import UserActivity
-from accounts.permissions import IsReadOnlyOrAbove, CanManageOrganization
+from accounts.permissions import IsReadOnlyOrAbove, CanManageOrganization, CanUploadFiles
 from accounts.mixins import CombinedOrgMixin
 
 logger = logging.getLogger(__name__)
 
 ### 1. Upload CSV File ###
 class UploadCSVView(CombinedOrgMixin, APIView):
-    permission_classes = [IsReadOnlyOrAbove]
+    permission_classes = [CanUploadFiles]  # Restrict uploads to managers and above
     parser_classes = [MultiPartParser, FormParser]
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
@@ -63,6 +63,10 @@ class UploadCSVView(CombinedOrgMixin, APIView):
                 status="pending",
                 file_size=file_size
             )
+            # Auto-set created_by for system column tracking
+            uploaded_file.created_by = request.user
+            uploaded_file.save()
+            
             UserActivity.objects.create(
                 user=request.user,
                 verb="uploaded file",
@@ -153,7 +157,7 @@ class FileDownloadView(CombinedOrgMixin, APIView):
 
 ### 5. Start Ingestion Endpoint (from start_ingestion.py) ###
 class StartIngestionView(CombinedOrgMixin, APIView):
-    permission_classes = [IsReadOnlyOrAbove]
+    permission_classes = [CanUploadFiles]  # Restrict ingestion to managers and above
     
     def post(self, request, format=None):
         serializer = StartIngestionSerializer(data=request.data)
@@ -166,6 +170,7 @@ class StartIngestionView(CombinedOrgMixin, APIView):
                     org=request.user.org
                 )
                 uploaded_file.status = "processing"
+                uploaded_file.modified_by = request.user  # Track who started ingestion
                 uploaded_file.save()
                 # trigger_ingestion_pipeline(uploaded_file.minio_path, uploaded_file.id)
                 return Response({"message": "Ingestion started."}, status=status.HTTP_200_OK)
@@ -175,7 +180,7 @@ class StartIngestionView(CombinedOrgMixin, APIView):
 
 ### 6. Direct MinIO Streaming Download Endpoint (from download_files.py) ###
 @api_view(["GET"])
-@permission_classes([IsReadOnlyOrAbove])
+@permission_classes([IsReadOnlyOrAbove])  # Keep downloads accessible to all org members
 def download_user_file(request, file_id):
     try:
         user_file = UserFile.objects.get(
