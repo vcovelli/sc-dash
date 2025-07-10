@@ -11,7 +11,8 @@ class AnalyticsDashboard(models.Model):
         Organization, 
         on_delete=models.CASCADE, 
         related_name='dashboards',
-        help_text="Organization this dashboard belongs to"
+        help_text="Organization this dashboard belongs to",
+        null=True, blank=True,
     )
     name = models.CharField(max_length=100, default="My Dashboard")
     created_at = models.DateTimeField(auto_now_add=True)

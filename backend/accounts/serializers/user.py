@@ -24,6 +24,17 @@ class SignupSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+
+        # Create organization for new user
+        from accounts.models import Organization
+        org_name = f"{user.first_name or user.username}'s Organization"
+        org, _ = Organization.objects.get_or_create(
+            name=org_name,
+            defaults={"slug": f"{user.username}-org"}
+        )
+        user.org = org
+        user.save()
+
         # Allauth email address creation
         EmailAddress.objects.create(
             user=user,

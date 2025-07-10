@@ -5,12 +5,18 @@ from accounts.models import Organization
 User = get_user_model()
 
 class AIFeedback(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_feedback')
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='ai_feedback',
+        null=True, blank=True,
+    )
     org = models.ForeignKey(
         Organization, 
         on_delete=models.CASCADE, 
         related_name='ai_feedback',
-        help_text="Organization this feedback belongs to"
+        help_text="Organization this feedback belongs to",
+        null=True, blank=True,
     )
     prompt = models.TextField()
     response = models.TextField()

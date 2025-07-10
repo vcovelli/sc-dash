@@ -15,7 +15,8 @@ class UploadedFile(models.Model):
         Organization, 
         on_delete=models.CASCADE, 
         related_name='uploaded_files',
-        help_text="Organization this file belongs to"
+        help_text="Organization this file belongs to",
+        null=True, blank=True,
     )
     file_name = models.CharField(max_length=255)
     minio_path = models.CharField(max_length=255)
@@ -46,7 +47,8 @@ class UserFile(models.Model):
         Organization, 
         on_delete=models.CASCADE, 
         related_name='user_files',
-        help_text="Organization this file belongs to"
+        help_text="Organization this file belongs to",
+        null=True, blank=True,
     )
     object_key = models.CharField(max_length=255)
     original_filename = models.CharField(max_length=255)
