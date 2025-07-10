@@ -48,6 +48,17 @@ class GoogleLoginAPIView(APIView):
                 defaults={"username": email, "first_name": name}
             )
 
+            # Ensure user has an organization
+            if not user.org:
+                 from accounts.models import Organization
+                 org_name = f"{user.first_name or user.username}'s Organization"
+                 org, _ = Organization.objects.get_or_create(
+                     name=org_name,
+                     defaults={"slug": f"{user.username}-org"}
+                 )
+                 user.org = org
+                 user.save()
+
             # Ensure email is verified in allauth
             EmailAddress.objects.get_or_create(
                 user=user,
@@ -157,6 +168,17 @@ class GitHubCallbackView(View):
                 "first_name": user_info.get("name") or email.split("@")[0],
             }
         )
+
+        # Ensure user has an organization
+        if not user.org:
+             from accounts.models import Organization
+             org_name = f"{user.first_name or user.username}'s Organization"
+             org, _ = Organization.objects.get_or_create(
+                 name=org_name,
+                 defaults={"slug": f"{user.username}-org"}
+             )
+             user.org = org
+             user.save()
 
         # Issue JWTs
         refresh = RefreshToken.for_user(user)

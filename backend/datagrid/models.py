@@ -10,7 +10,8 @@ class UserTableSchema(models.Model):
         Organization, 
         on_delete=models.CASCADE, 
         related_name='table_schemas',
-        help_text="Organization this table schema belongs to"
+        help_text="Organization this table schema belongs to",
+        null=True, blank=True,
     )
     table_name = models.CharField(max_length=128)
     db_table_name = models.CharField(max_length=128, blank=True, null=True)
@@ -37,7 +38,8 @@ class UserTableRow(models.Model):
         Organization, 
         on_delete=models.CASCADE, 
         related_name='table_rows',
-        help_text="Organization this table row belongs to"
+        help_text="Organization this table row belongs to",
+        null=True, blank=True,
     )
     table_name = models.CharField(max_length=128)
     data = models.JSONField(default=dict)
@@ -62,7 +64,8 @@ class UserGridConfig(models.Model):
         Organization, 
         on_delete=models.CASCADE, 
         related_name='grid_configs',
-        help_text="Organization this grid config belongs to"
+        help_text="Organization this grid config belongs to",
+        null=True, blank=True,
     )
     table_name = models.CharField(max_length=128)
     column_order = models.JSONField(default=list, blank=True)
