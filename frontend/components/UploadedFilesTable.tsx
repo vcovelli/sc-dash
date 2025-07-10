@@ -1,11 +1,13 @@
 "use client";
 
 import { useUploadedFiles } from "../hooks/useUploadedFiles";
+import { useUserSettings } from "./UserSettingsContext";
 import axios from "axios";
 import { useState } from "react";
 
 export const UploadedFilesTable = () => {
   const { files, loading, refetch } = useUploadedFiles();
+  const { settings } = useUserSettings();
   const [ingesting, setIngesting] = useState<number | null>(null);
 
   const startIngestion = async (fileId: number) => {
@@ -67,6 +69,9 @@ export const UploadedFilesTable = () => {
       <table className="min-w-full text-sm text-gray-800 dark:text-gray-100"> {/* <-- ADDED text colors here */}
         <thead>
           <tr className="bg-gray-100 dark:bg-[#21262d] text-left">
+            {settings.showSystemColumns && (
+              <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 text-xs font-mono">ID</th>
+            )}
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Filename</th>
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Size</th>
             <th className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200">Rows</th>
@@ -78,6 +83,9 @@ export const UploadedFilesTable = () => {
         <tbody>
           {files.map((file) => (
             <tr key={file.id} className="hover:bg-gray-50 dark:hover:bg-[#22272e]">
+              {settings.showSystemColumns && (
+                <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 text-xs font-mono">{file.id}</td>
+              )}
               <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">{file.file_name}</td>
               <td className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 {file.file_size ? getReadableSize(file.file_size) : "Unknown"}
