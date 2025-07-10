@@ -9,9 +9,9 @@ type ReferenceOption = { id: string; name: string };
 
 interface ReferenceCellProps {
   value: string | number | null;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown> & { referenceData?: ReferenceOption[]; onAddReference?: (newName: string) => Promise<ReferenceOption | null> | ReferenceOption | null; };
-  onSave: (id: string, key: string, value: string | number | null) => void;
+  onSave: (id: number, key: string, value: string | number | null) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;

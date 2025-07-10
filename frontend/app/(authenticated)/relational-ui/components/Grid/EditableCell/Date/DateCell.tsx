@@ -8,9 +8,9 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 
 export type DateCellProps = {
   value: string | number | Date | undefined;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown>;
-  onSave: (rowId: string, key: string, value: unknown) => void;
+  onSave: (rowId: number, key: string, value: unknown) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;

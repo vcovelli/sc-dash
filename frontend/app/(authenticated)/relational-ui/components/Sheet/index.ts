@@ -1,5 +1,5 @@
 export interface Row {
-  __rowId: string;
+  __rowId: number;
   [key: string]: unknown;
 }
 

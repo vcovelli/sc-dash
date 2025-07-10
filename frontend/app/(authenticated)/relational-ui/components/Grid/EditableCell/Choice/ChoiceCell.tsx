@@ -12,9 +12,9 @@ interface ChoiceOption {
 
 interface ChoiceCellProps {
   value: string | string[] | null;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown>;
-  onSave: (id: string, key: string, value: string | string[]) => void;
+  onSave: (id: number, key: string, value: string | string[]) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;

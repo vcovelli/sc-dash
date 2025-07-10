@@ -70,9 +70,9 @@ export default function EditableCell({
 }: {
   value: unknown;
   row: Record<string, unknown>;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown>;
-  onSave: (rowId: string, key: string, value: unknown) => void;
+  onSave: (rowId: number, key: string, value: unknown) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
@@ -92,7 +92,7 @@ export default function EditableCell({
   }
 
   const handleSave = useCallback(
-    (id: string, key: string, newValue: unknown) => {
+    (id: number, key: string, newValue: unknown) => {
       if (newValue === rowId) return;
       if (newValue !== value) onSave(id, key, newValue);
       onEditComplete?.();

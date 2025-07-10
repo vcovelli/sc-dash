@@ -5,10 +5,10 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 
 interface FormulaCellProps {
   value: string | number | null | undefined;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown>;
   editing?: boolean;
-  onSave?: (id: string, key: string, value: string) => void;
+  onSave?: (id: number, key: string, value: string) => void;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
   fontSize?: number;

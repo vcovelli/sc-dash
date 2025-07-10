@@ -4,7 +4,7 @@ import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/compon
 
 export function buildColumnDefs(
   editingCell: { rowIndex: number; colIndex: number } | null,
-  onSave: (id: string, key: string, value: unknown) => void,
+  onSave: (id: number, key: string, value: unknown) => void,
   clearEdit: () => void,
   setEditingCell: (cell: { rowIndex: number; colIndex: number }) => void,
   schema: CustomColumnDef<Row>[],
@@ -35,7 +35,6 @@ export function buildColumnDefs(
 
           return (
             <EditableCell
-              key={`${row.id}-${col.accessorKey}`}
               value={getValue()}
               row={row.original}
               rowId={row.original.__rowId}
