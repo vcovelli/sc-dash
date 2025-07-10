@@ -49,7 +49,7 @@ export default function ColumnSettingsPanel({
   const [references, setReferences] = useState<ReferenceOption[]>([]);
 
   // Table font/row settings
-  const { fontSizeIdx, setFontSizeIdx, presets, zebraStriping, setZebraStriping } = useTableSettings();
+  const { fontSizeIdx, setFontSizeIdx, presets, zebraStriping, setZebraStriping, showSystemColumns, setShowSystemColumns } = useTableSettings();
   const preset = presets[fontSizeIdx];
   const fontVars = getFontVars(preset.value);
 
@@ -147,6 +147,8 @@ export default function ColumnSettingsPanel({
         <GridOptionsSection
           zebraStriping={zebraStriping}
           setZebraStriping={setZebraStriping}
+          showSystemColumns={showSystemColumns}
+          setShowSystemColumns={setShowSystemColumns}
         />
 
         <FontSizePresetsSection
