@@ -5,9 +5,9 @@ import { CustomColumnDef } from "@/app/(authenticated)/relational-ui/components/
 
 interface BooleanCellProps {
   value: boolean;
-  rowId: string;
+  rowId: number;
   column: CustomColumnDef<unknown>;
-  onSave: (id: string, key: string, value: boolean) => void;
+  onSave: (id: number, key: string, value: boolean) => void;
 }
 
 const BooleanCell: React.FC<BooleanCellProps> = React.memo(

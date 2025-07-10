@@ -9,9 +9,9 @@ interface ReferenceOption {
 
 interface MultiReferenceCellProps {
   value: string[]; // array of ids
-  rowId: string;
+  rowId: number;
   column: { referenceData?: ReferenceOption[]; accessorKey: string };
-  onSave: (rowId: string, key: string, value: string[]) => void;
+  onSave: (rowId: number, key: string, value: string[]) => void;
   editing?: boolean;
   onEditComplete?: () => void;
   onStartEdit?: () => void;
