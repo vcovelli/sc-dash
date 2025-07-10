@@ -154,16 +154,27 @@ SIMPLE_JWT = {
 # ======================
 # Database
 # ======================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('APP_DB_NAME'),
-        'USER': os.getenv('APP_DB_USER'),
-        'PASSWORD': os.getenv('APP_DB_PASSWORD'),
-        'HOST': os.getenv('PG_HOST', 'postgres'),
-        'PORT': os.getenv('PG_PORT', '5432'),
+# Use SQLite for development, PostgreSQL for production
+if os.getenv('APP_DB_NAME'):
+    # PostgreSQL configuration when environment variables are set
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('APP_DB_NAME'),
+            'USER': os.getenv('APP_DB_USER'),
+            'PASSWORD': os.getenv('APP_DB_PASSWORD'),
+            'HOST': os.getenv('PG_HOST', 'postgres'),
+            'PORT': os.getenv('PG_PORT', '5432'),
+        }
     }
-}
+else:
+    # SQLite configuration for development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # ======================
 # Password Validation

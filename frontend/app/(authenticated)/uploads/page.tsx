@@ -7,7 +7,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
 import api from "@/lib/axios";
-import { Download, UploadCloud } from "lucide-react";
+import { Download, UploadCloud, Lock } from "lucide-react";
+import { useUserSettings } from "@/components/UserSettingsContext";
 
 type TableSchema = {
   table_name: string;
@@ -48,6 +49,9 @@ function downloadTemplate(headers: string[], table: string) {
 }
 
 export default function UploadsPage() {
+  // User permissions
+  const { userRole } = useUserSettings();
+  
   // Table selection and schema
   const { schemas, loading } = useUserSchemas();
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -185,6 +189,48 @@ export default function UploadsPage() {
                 complete the setup wizard
               </a>
               .
+            </div>
+          </div>
+        </div>
+      </PrivateRoute>
+    </FontSizeVarsProvider>
+  );
+
+  // PERMISSION CHECK - show upload restrictions for non-managers
+  if (!userRole?.canUploadFiles) return (
+    <FontSizeVarsProvider>
+      <PrivateRoute>
+        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+        <div className="flex flex-col items-center justify-start min-h-[100vh] px-4 pt-12 pb-20 bg-gradient-to-tr from-blue-50 via-white to-indigo-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 transition-all">
+          <div className="w-full max-w-4xl bg-white/80 dark:bg-gray-950/90 shadow-2xl rounded-2xl p-8 md:p-12 border border-gray-100 dark:border-gray-900 backdrop-blur">
+            <div className="text-center mb-8">
+              <Lock className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2">Upload Restricted</h2>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">File uploads are restricted to managers and above.</p>
+              <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Your current role: <span className="font-semibold">{userRole?.role}</span></p>
+            </div>
+            
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">Contact Your Manager</h3>
+              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                If you need to upload files, please contact your organization manager or administrator to:
+              </p>
+              <ul className="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm mt-2 space-y-1">
+                <li>Upload files on your behalf</li>
+                <li>Update your role permissions</li>
+                <li>Provide alternative data access methods</li>
+              </ul>
+            </div>
+
+            {/* Still show uploaded files table for viewing */}
+            <div className="mt-8">
+              <h3 className="text-2xl font-bold mb-3 text-gray-800 dark:text-gray-100">
+                📁 View Uploaded Files
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                You can view files that have been uploaded by others in your organization.
+              </p>
+              <UploadedFilesTable />
             </div>
           </div>
         </div>
