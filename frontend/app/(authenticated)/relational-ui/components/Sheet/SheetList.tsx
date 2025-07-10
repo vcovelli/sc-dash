@@ -150,7 +150,14 @@ export default function SheetList() {
     }
   }, [sheets, fetchAndSetSheetSchema]);
 
-  // --- UI ---
+  const [fontSizeIdx, setFontSizeIdx] = useState(1);
+  const presets = [
+    { value: "12", label: "Small", fontSize: 12, rowHeight: 28 },
+    { value: "14", label: "Default", fontSize: 14, rowHeight: 32 },
+    { value: "16", label: "Medium", fontSize: 16, rowHeight: 36 },
+    { value: "18", label: "Large", fontSize: 18, rowHeight: 40 },
+    { value: "20", label: "Extra Large", fontSize: 20, rowHeight: 44 },
+  ];
 
   return (
     <div className="relative p-8">
@@ -205,6 +212,9 @@ export default function SheetList() {
         column={columnSettingsTarget}
         onClose={() => setIsSettingsPanelOpen(false)}
         onUpdate={handleUpdateColumn}
+        fontSizeIdx={fontSizeIdx}
+        setFontSizeIdx={setFontSizeIdx}
+        presets={presets}
       />
     </div>
   );

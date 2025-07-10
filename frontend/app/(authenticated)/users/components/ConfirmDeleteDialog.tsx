@@ -1,5 +1,21 @@
 // ConfirmDeleteDialog.tsx
-export default function ConfirmDeleteDialog({ user, onClose, onDeleted }) {
+
+interface OrgUser {
+  id: string;
+  email: string;
+}
+
+interface ConfirmDeleteDialogProps {
+  user: OrgUser;
+  onClose: () => void;
+  onDeleted: () => void;
+}
+
+export default function ConfirmDeleteDialog({
+  user,
+  onClose,
+  onDeleted,
+}: ConfirmDeleteDialogProps) {
   const handleDelete = async () => {
     const token = localStorage.getItem("access_token");
     await fetch(`/api/accounts/org/users/${user.id}/delete/`, {

@@ -10,10 +10,15 @@ const ROLES = [
   // ...add more as needed
 ];
 
-export default function RoleSelect({ user, onChanged }) {
+interface RoleSelectProps {
+  user: { id: string; email: string; role: string }; // adjust fields as needed
+  onChanged: (newRole: string) => void;
+}
+
+export default function RoleSelect({ user, onChanged }: RoleSelectProps) {
   const [role, setRole] = useState(user.role);
 
-  const handleChange = async (e) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRole = e.target.value;
     setRole(newRole);
     try {
@@ -23,7 +28,7 @@ export default function RoleSelect({ user, onChanged }) {
         { role: newRole },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      onChanged();
+      onChanged(newRole);
     } catch {
       alert("Failed to update role");
       setRole(user.role); // revert if error

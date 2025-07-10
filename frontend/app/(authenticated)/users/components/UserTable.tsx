@@ -3,7 +3,28 @@ import { useState } from "react";
 import { updateUserRole } from "@/lib/invitesAPI";
 import toast from "react-hot-toast";
 
-export default function UserTable({ users, onAction }) {
+type User = {
+  id: number;
+  email: string;
+  role: string;
+  username: string;
+  date_joined: string;
+  is_active?: boolean;
+  is_pending?: boolean;
+  is_suspended?: boolean;
+};
+
+type Props = {
+  users: User[];
+  onAction?: (user: User, action: string) => void;
+};
+
+export default function UserTable({ users, onAction }: Props) {
+  function handleRemove(user: User, onAction?: (user: User, action: string) => void) {
+    if (window.confirm(`Remove user ${user.email}?`)) {
+      onAction?.(user, "remove");
+    }
+  }
 
   return (
     <table className="table-auto w-full shadow rounded-xl">
@@ -30,7 +51,7 @@ export default function UserTable({ users, onAction }) {
             </td>
             <td>{new Date(u.date_joined).toLocaleDateString()}</td>
             <td>
-              <button className="btn-danger" onClick={() => handleRemove(u.id, onAction)}>
+              <button className="btn-danger" onClick={() => handleRemove(u, onAction)}>
                 Remove
               </button>
             </td>
@@ -41,7 +62,12 @@ export default function UserTable({ users, onAction }) {
   );
 }
 
-function RoleDropdown({ user, onChanged }) {
+type RoleDropdownProps = {
+  user: User;
+  onChanged?: (user: User, action: string) => void;
+};
+
+function RoleDropdown({ user, onChanged }: RoleDropdownProps) {
   const [role, setRole] = useState(user.role);
   return (
     <select
@@ -52,7 +78,7 @@ function RoleDropdown({ user, onChanged }) {
         await updateUserRole(user.id, newRole);
         setRole(newRole);
         toast.success("Role updated!");
-        onChanged();
+        onChanged?.(user, "roleChanged");
       }}
     >
       {/* Role options */}
@@ -64,7 +90,10 @@ function RoleDropdown({ user, onChanged }) {
   );
 }
 
-function StatusBadge({ user }) {
+type StatusBadgeProps = {
+  user: User;
+};
+function StatusBadge({ user }: StatusBadgeProps) {
   if (user.is_active) return <span className="badge badge-success">Active</span>;
   if (user.is_pending) return <span className="badge badge-warning">Pending</span>;
   if (user.is_suspended) return <span className="badge badge-error">Suspended</span>;

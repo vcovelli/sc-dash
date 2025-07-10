@@ -3,7 +3,11 @@ import { useState } from "react";
 import { inviteUser } from "@/lib/invitesAPI";
 import toast from "react-hot-toast";
 
-export default function InviteUserModal({ onInvited }) {
+interface InviteUserModalProps {
+  onInvited: () => void;
+}
+
+export default function InviteUserModal({ onInvited }: InviteUserModalProps) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("client");

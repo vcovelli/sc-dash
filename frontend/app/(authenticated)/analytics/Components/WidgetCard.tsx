@@ -10,6 +10,7 @@ import {
 } from "./WidgetCharts";
 import { GripVertical, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { getChartData } from "@/lib/analyticsAPI";
+import type { DataRow } from "@/app/(authenticated)/analytics/types";
 
 const SAMPLE_DATA = [
   { name: "A", count: 400, revenue: 2400 },
@@ -20,47 +21,66 @@ const SAMPLE_DATA = [
 ];
 
 // Transform raw data from backend to chart format
-const transformDataForChart = (rawData: Record<string, unknown>[], settings: { xField?: string; yFields?: string[]; type?: string }) => {
+const transformDataForChart = (
+  rawData: Record<string, unknown>[],
+  settings: { xField?: string; yFields?: string[]; type?: string }
+): DataRow[] => {
   if (!rawData || rawData.length === 0) return [];
-  
+
   return rawData.map(row => {
-    const transformedRow: Record<string, unknown> = {};
-    
-    // Transform the data object from each row
     const data = (row as { data?: Record<string, unknown> }).data || row;
-    
-    // Map xField 
-    if (settings.xField && data[settings.xField] !== undefined) {
-      transformedRow[settings.xField] = data[settings.xField];
-    }
-    
-    // Map yFields
+
+    // Always set `name` to the xField value, or empty string fallback
+    const name =
+      settings.xField && data[settings.xField] !== undefined
+        ? String(data[settings.xField])
+        : "";
+
+    const transformedRow: DataRow = { name };
+
+    // Add yFields
     if (settings.yFields && Array.isArray(settings.yFields)) {
       settings.yFields.forEach((yField: string) => {
         if (data[yField] !== undefined) {
-          // Convert to number if it's a numeric field
           const value = data[yField];
-          transformedRow[yField] = isNaN(Number(value)) ? value : Number(value);
+          transformedRow[yField] =
+            typeof value === "number"
+              ? value
+              : value !== undefined
+                ? Number(value)
+                : undefined;
         }
       });
     }
-    
-    // For pie charts, we might need to aggregate data
-    if (settings.type === 'pie' && settings.xField) {
-      transformedRow.name = data[settings.xField];
-      transformedRow.value = settings.yFields?.[0] ? Number(data[settings.yFields[0]]) || 1 : 1;
+
+    // For pie, add .value as well (Recharts Pie expects value)
+    if (settings.type === "pie" && settings.yFields?.[0]) {
+      const v = data[settings.yFields[0]];
+      transformedRow.value =
+        typeof v === "number"
+          ? v
+          : v !== undefined
+            ? Number(v)
+            : 1;
     }
-    
-    // For table charts, include all configured fields
-    if (settings.type === 'table') {
+
+    // For table, include all configured fields (already handled above, but safe to repeat)
+    if (settings.type === "table") {
       const allFields = [settings.xField, ...(settings.yFields || [])];
       allFields.forEach(field => {
         if (field && data[field] !== undefined) {
-          transformedRow[field] = data[field];
+          const val = data[field];
+          if (val === null) {
+            transformedRow[field] = undefined;
+          } else if (typeof val === "string" || typeof val === "number") {
+            transformedRow[field] = val;
+          } else {
+            transformedRow[field] = undefined;
+          }
         }
       });
     }
-    
+
     return transformedRow;
   });
 };
@@ -85,7 +105,7 @@ export default function WidgetCard({
   onCloseFocus?: () => void;
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
-  const [chartData, setChartData] = useState<Record<string, unknown>[]>([]);
+  const [chartData, setChartData] = useState<DataRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
