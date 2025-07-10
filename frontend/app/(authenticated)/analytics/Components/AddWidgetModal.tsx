@@ -1,6 +1,6 @@
 import { useState, useLayoutEffect } from "react";
 import { WidgetConfig, AllWidgetSettings, WidgetType } from "../types";
-import { BarChart2, LineChart, PieChart, Table as TableIcon, X } from "lucide-react";
+import { BarChart2, LineChart, PieChart, Table as TableIcon, X, TrendingUp, Zap, Target, BarChart3 } from "lucide-react";
 
 // UUID fallback for environments without crypto.randomUUID
 function uuidv4() {
@@ -38,24 +38,36 @@ type AddWidgetModalProps = {
 
 // --- Settings templates for each type ---
 const DEFAULT_SETTINGS: Record<WidgetType, AllWidgetSettings> = {
-  bar:   { type: "bar",   table: "orders",    xField: "status",  yFields: ["count"], showLegend: true },
-  line:  { type: "line",  table: "orders",    xField: "date",    yFields: ["revenue"], showLegend: true },
-  pie:   { type: "pie",   table: "customers", xField: "region",  yFields: ["count"], showLegend: true },
-  table: { type: "table", table: "products",  xField: "name",    yFields: ["revenue"] }
+  bar:      { type: "bar",      table: "orders",    xField: "status",  yFields: ["count"], showLegend: true },
+  line:     { type: "line",     table: "orders",    xField: "date",    yFields: ["revenue"], showLegend: true },
+  pie:      { type: "pie",      table: "customers", xField: "region",  yFields: ["count"], showLegend: true },
+  table:    { type: "table",    table: "products",  xField: "name",    yFields: ["revenue"] },
+  area:     { type: "area",     table: "orders",    xField: "date",    yFields: ["revenue", "profit"], showLegend: true, stacked: false, fillOpacity: 0.6 },
+  scatter:  { type: "scatter",  table: "orders",    xField: "quantity", yFields: ["price"], showLegend: true, dotSize: 4 },
+  radar:    { type: "radar",    table: "metrics",  xField: "category", yFields: ["score"], showLegend: true, fillOpacity: 0.6 },
+  composed: { type: "composed", table: "orders",    xField: "date",    yFields: ["revenue", "count"], chartTypes: ["line", "bar"], showLegend: true }
 };
 
 const TITLES: Record<WidgetType, string> = {
   bar: "Bar Widget",
   line: "Line Widget",
   pie: "Pie Widget",
-  table: "Table Widget"
+  table: "Table Widget",
+  area: "Area Widget",
+  scatter: "Scatter Widget",
+  radar: "Radar Widget",
+  composed: "Composed Widget"
 };
 
 const PREVIEW_TEXT: Record<WidgetType, string> = {
   bar: "Bar Chart Preview",
   line: "Line Chart Preview",
   pie: "Pie Chart Preview",
-  table: "Table Preview"
+  table: "Table Preview",
+  area: "Area Chart Preview",
+  scatter: "Scatter Plot Preview",
+  radar: "Radar Chart Preview",
+  composed: "Composed Chart Preview"
 };
 
 export default function AddWidgetModal({ onAdd, onClose }: AddWidgetModalProps) {
@@ -99,7 +111,7 @@ export default function AddWidgetModal({ onAdd, onClose }: AddWidgetModalProps) 
         </div>
 
         {/* Chart type selector */}
-        <div className="flex gap-2 mb-4">
+        <div className="grid grid-cols-4 gap-2 mb-4">
           <WidgetTypeButton
             icon={<BarChart2 className="w-6 h-6" />}
             label="Bar"
@@ -123,6 +135,30 @@ export default function AddWidgetModal({ onAdd, onClose }: AddWidgetModalProps) 
             label="Table"
             active={type === "table"}
             onClick={() => setType("table")}
+          />
+          <WidgetTypeButton
+            icon={<TrendingUp className="w-6 h-6" />}
+            label="Area"
+            active={type === "area"}
+            onClick={() => setType("area")}
+          />
+          <WidgetTypeButton
+            icon={<Zap className="w-6 h-6" />}
+            label="Scatter"
+            active={type === "scatter"}
+            onClick={() => setType("scatter")}
+          />
+          <WidgetTypeButton
+            icon={<Target className="w-6 h-6" />}
+            label="Radar"
+            active={type === "radar"}
+            onClick={() => setType("radar")}
+          />
+          <WidgetTypeButton
+            icon={<BarChart3 className="w-6 h-6" />}
+            label="Mixed"
+            active={type === "composed"}
+            onClick={() => setType("composed")}
           />
         </div>
 
