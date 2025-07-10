@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { FaSignOutAlt, FaTimes } from "react-icons/fa";
 import { ThemeToggle } from "@/components/settings/theme/ThemeToggle";
 import { useNavContext } from "@/components/nav/NavbarContext";
+import { useUserSettings } from "../UserSettingsContext";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -22,6 +23,7 @@ export default function MobileDrawerNav() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { showNav: menuOpen, setShowNav: setMenuOpen } = useNavContext();
   const [isLandscape, setIsLandscape] = useState(false);
+  const { userRole } = useUserSettings();
 
   useEffect(() => {
     setIsAuthenticated(!!localStorage.getItem("access_token"));
@@ -63,6 +65,15 @@ export default function MobileDrawerNav() {
 
   if (!isAuthenticated) return null;
 
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/analytics", label: "Analytics" },
+    { href: "/relational-ui", label: "Data Tables" },
+    // Conditionally include uploads based on user permissions
+    ...(userRole?.canUploadFiles ? [{ href: "/uploads", label: "Uploads" }] : []),
+    { href: "/assistant", label: "AI Assistant" },
+  ];
+
   return (
     <>
       {/* Drawer */}
@@ -94,7 +105,7 @@ export default function MobileDrawerNav() {
         <div
           className={`flex-1 flex flex-col overflow-y-auto px-6 ${navPaddingTop} ${navPaddingBottom}`}
         >
-          {NAV_LINKS.map(({ href, label }) => (
+          {navItems.map(({ href, label }) => (
             <Link
               href={href}
               key={href}
