@@ -1,7 +1,7 @@
 import csv
 import os
 import requests
-from minio import Minio
+# MinIO import handled through backend helper
 from datetime import timedelta
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -119,13 +119,9 @@ def generate_template_xlsx(client_id, output_dir=TEMPLATE_OUTPUT_DIR, num_rows=1
     wb.save(output_path)
     print(f"Excel template with formulas saved at: {output_path}")
 
-    # Upload to MinIO
-    minio_client = Minio(
-        os.getenv("MINIO_ENDPOINT"),
-        access_key=os.getenv("MINIO_ROOT_USER"),
-        secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
-        secure=False,
-    )
+    # Upload to MinIO using environment configuration
+    from backend.helpers.minio_client import get_minio_client
+    minio_client = get_minio_client()
 
     bucket_name = "templates"
     minio_filename = f"{client_id}_data_template.xlsx"

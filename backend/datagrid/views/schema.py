@@ -10,7 +10,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Protection
 from openpyxl.utils import get_column_letter
 from helpers.table_utils import create_table_for_client
-from minio import Minio
+from helpers.minio_client import get_minio_client, ensure_bucket_exists
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -201,19 +201,13 @@ def generate_full_workbook(client_name, selected_features, include_sample_data=T
 
     wb.save(file_path)
 
-    # --- MinIO connection using public host ---
-    minio_client = Minio(
-        "minio.supplywise.ai",  # PUBLIC HOST for both upload and presign
-        access_key=os.getenv("MINIO_ROOT_USER", "admin"),
-        secret_key=os.getenv("MINIO_ROOT_PASSWORD", "admin123"),
-        secure=True,  # HTTPS for public-facing ops
-    )
+    # --- MinIO connection using centralized configuration ---
+    minio_client = get_minio_client()
     bucket_name = "templates"
     object_name = file_path.name
 
     # --- Ensure bucket exists ---
-    if not minio_client.bucket_exists(bucket_name):
-        minio_client.make_bucket(bucket_name)
+    ensure_bucket_exists(minio_client, bucket_name)
 
     # --- Upload file ---
     minio_client.fput_object(bucket_name, object_name, str(file_path))
