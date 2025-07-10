@@ -6,7 +6,8 @@ import datetime
 import uuid
 import requests
 import os
-import boto3
+
+from helpers.minio_client import get_boto3_client, get_minio_client, get_bucket_name, ensure_bucket_exists
 
 from rest_framework import status
 from django.conf import settings
@@ -45,21 +46,9 @@ class UploadCSVView(CombinedOrgMixin, APIView):
             timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             uid = uuid.uuid4().hex[:8]
             minio_path = f"{request.user.org.id}/{request.user.id}/{timestamp}/{uid}_{file_name}"
-            s3 = boto3.client(
-                "s3",
-                endpoint_url=settings.MINIO_ENDPOINT,
-                aws_access_key_id=settings.MINIO_ROOT_USER,
-                aws_secret_access_key=settings.MINIO_ROOT_PASSWORD,
-            )
-            bucket_name = settings.MINIO_BUCKET_NAME
-            try:
-                s3.head_bucket(Bucket=bucket_name)
-            except s3.exceptions.ClientError as e:
-                error_code = int(e.response['Error']['Code'])
-                if error_code == 404:
-                    s3.create_bucket(Bucket=bucket_name)
-                elif error_code != 301 and error_code != 403:
-                    raise
+            s3 = get_boto3_client()
+            bucket_name = get_bucket_name()
+            ensure_bucket_exists(s3, bucket_name)
             s3.upload_fileobj(
                 csv_file,
                 bucket_name,
@@ -146,16 +135,11 @@ class FileDownloadView(CombinedOrgMixin, APIView):
                 user=request.user, 
                 org=request.user.org
             )
-            s3 = boto3.client(
-                "s3",
-                endpoint_url=settings.MINIO_ENDPOINT,
-                aws_access_key_id=settings.MINIO_ROOT_USER,
-                aws_secret_access_key=settings.MINIO_ROOT_PASSWORD,
-            )
+            s3 = get_boto3_client()
             url = s3.generate_presigned_url(
                 ClientMethod="get_object",
                 Params={
-                    "Bucket": settings.MINIO_BUCKET_NAME,
+                    "Bucket": get_bucket_name(),
                     "Key": file_record.minio_path
                 },
                 ExpiresIn=3600,
@@ -205,14 +189,8 @@ def download_user_file(request, file_id):
         return HttpResponseForbidden("You do not have access to this file.")
 
     try:
-        logger.info(f"Using Minio endpoint: {os.getenv('MINIO_ENDPOINT')} (secure={os.getenv('MINIO_SECURE')})")
-        from minio import Minio
-        minio_client = Minio(
-            os.getenv("MINIO_ENDPOINT", "minio.supplywise.ai"),
-            access_key=os.getenv("MINIO_ROOT_USER"),
-            secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
-            secure=os.getenv("MINIO_SECURE", "True").lower() == "true"
-        )
+        minio_client = get_minio_client()
+        logger.info(f"Using MinIO client with configured endpoint")
         bucket_name = "templates"
         logger.info(f"Attempting to fetch object '{user_file.object_key}' from bucket '{bucket_name}'")
         response = minio_client.get_object(bucket_name, user_file.object_key)

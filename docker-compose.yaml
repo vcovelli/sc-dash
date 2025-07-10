@@ -47,6 +47,13 @@ services:
       PG_USER: ${APP_DB_USER}
       PG_PASSWORD: ${APP_DB_PASSWORD}
       PG_DATABASE: ${APP_DB_NAME}
+      # MinIO Configuration
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-uploads}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+      MINIO_HTTP_ENDPOINT: ${MINIO_HTTP_ENDPOINT:-http://minio:9000}
     volumes:
       - ./backend:/app
       - ./scripts:/app/scripts
@@ -71,6 +78,13 @@ services:
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@postgres/${AIRFLOW_DB_NAME}
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
       BACKEND_API_URL: http://backend:8000
+      # MinIO Configuration
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-uploads}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+      MINIO_HTTP_ENDPOINT: ${MINIO_HTTP_ENDPOINT:-http://minio:9000}
     entrypoint: /opt/airflow/airflow_entrypoint.sh
     volumes:
       - ./airflow/logs:/opt/airflow/logs
@@ -102,6 +116,13 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@postgres/${AIRFLOW_DB_NAME}
       BACKEND_API_URL: http://backend:8000
+      # MinIO Configuration
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-uploads}
+      MINIO_SECURE: ${MINIO_SECURE:-false}
+      MINIO_HTTP_ENDPOINT: ${MINIO_HTTP_ENDPOINT:-http://minio:9000}
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -121,7 +142,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_BROWSER_REDIRECT_URL: https://minio.supplywise.ai/console/
+      # Removed the remote redirect for local development
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001" 
