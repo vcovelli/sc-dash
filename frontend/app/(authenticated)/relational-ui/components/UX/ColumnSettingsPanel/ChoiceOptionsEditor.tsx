@@ -12,7 +12,7 @@ export default function ChoiceOptionsEditor({
   setChoices,
 }: {
   choices: { id: string; name: string; color?: string }[];
-  setChoices: (updater: (arr: any[]) => any[]) => void;
+  setChoices: (updater: (arr: { id: string; name: string; color?: string }[]) => { id: string; name: string; color?: string }[]) => void;
 }) {
   const [newChoice, setNewChoice] = useState("");
   const [editingChoiceIdx, setEditingChoiceIdx] = useState<number | null>(null);

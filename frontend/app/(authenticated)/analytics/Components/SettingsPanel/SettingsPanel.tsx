@@ -34,11 +34,11 @@ const chartTypes = [
 ];
 
 // Convert backend schema format to our TableMeta format
-const convertSchemaToTableMeta = (schemas: any[]): TableMeta[] => {
+const convertSchemaToTableMeta = (schemas: { table_name: string; columns: { accessorKey?: string; header?: string; type: string }[] }[]): TableMeta[] => {
   return schemas.map(schema => ({
     name: schema.table_name,
-    columns: schema.columns.map((col: any) => ({
-      name: col.accessorKey || col.header,
+    columns: schema.columns.map((col: { accessorKey?: string; header?: string; type: string }) => ({
+      name: col.accessorKey || col.header || 'unknown',
       type: col.type === 'number' ? 'number' : 
             col.type === 'date' ? 'date' : 'string'
     }))

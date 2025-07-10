@@ -47,7 +47,6 @@ export default function ColumnSettingsPanel({
   const [currencyCode, setCurrencyCode] = useState("USD");
   const [choices, setChoices] = useState<ChoiceOption[]>([]);
   const [references, setReferences] = useState<ReferenceOption[]>([]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Table font/row settings
   const { fontSizeIdx, setFontSizeIdx, presets, zebraStriping, setZebraStriping } = useTableSettings();
@@ -68,10 +67,10 @@ export default function ColumnSettingsPanel({
     // Choices
     if (column.type === "choice" && Array.isArray(column.choices)) {
       setChoices(
-        (column.choices as any[]).map((c: any) =>
+        (column.choices as { id?: string; name?: string; color?: string }[]).map((c: { id?: string; name?: string; color?: string }) =>
           typeof c === "string"
             ? { id: c, name: c }
-            : { id: c.id || c.name, name: c.name || c.id, color: c.color }
+            : { id: c.id || c.name || "", name: c.name || c.id || "", color: c.color }
         )
       );
     } else {
@@ -80,10 +79,10 @@ export default function ColumnSettingsPanel({
     // References
     if (column.type === "reference" && Array.isArray(column.referenceData)) {
       setReferences(
-        (column.referenceData as any[]).map((r: any) =>
+        (column.referenceData as { id?: string; name?: string }[]).map((r: { id?: string; name?: string }) =>
           typeof r === "string"
             ? { id: r, name: r }
-            : { id: r.id || r.name, name: r.name || r.id }
+            : { id: r.id || r.name || "", name: r.name || r.id || "" }
         )
       );
     } else {

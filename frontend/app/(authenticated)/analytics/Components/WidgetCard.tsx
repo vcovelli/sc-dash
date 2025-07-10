@@ -20,14 +20,14 @@ const SAMPLE_DATA = [
 ];
 
 // Transform raw data from backend to chart format
-const transformDataForChart = (rawData: any[], settings: any) => {
+const transformDataForChart = (rawData: Record<string, unknown>[], settings: { xField?: string; yFields?: string[]; type?: string }) => {
   if (!rawData || rawData.length === 0) return [];
   
   return rawData.map(row => {
-    const transformedRow: any = {};
+    const transformedRow: Record<string, unknown> = {};
     
     // Transform the data object from each row
-    const data = row.data || row;
+    const data = (row as { data?: Record<string, unknown> }).data || row;
     
     // Map xField 
     if (settings.xField && data[settings.xField] !== undefined) {
@@ -85,7 +85,7 @@ export default function WidgetCard({
   onCloseFocus?: () => void;
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
