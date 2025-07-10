@@ -281,11 +281,12 @@ export default function SheetsPage() {
                 column={columnSettingsTarget}
                 onClose={() => setIsSettingsPanelOpen(false)}
                 onUpdate={(updatedCol) => {
-                  setColumns((cols) =>
-                    cols.map((col) => (col.id === updatedCol.id ? updatedCol : col))
-                  );
+                  setColumns((cols) => cols.map((col) => (col.id === updatedCol.id ? updatedCol : col)));
                   setIsSettingsPanelOpen(false);
                 }}
+                fontSizeIdx={fontSizeIdx}
+                setFontSizeIdx={setFontSizeIdx}
+                presets={FONT_SIZE_PRESETS}
               />
             </div>
           ) : (

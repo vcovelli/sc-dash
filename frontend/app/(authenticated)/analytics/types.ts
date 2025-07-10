@@ -72,3 +72,8 @@ export interface TableMeta {
   name: string;
   columns: { name: string; type: string }[];
 }
+
+export type DataRow = {
+  name: string;
+  [key: string]: string | number | undefined;
+};

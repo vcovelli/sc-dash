@@ -48,8 +48,12 @@ export function PieChartWidget({
   let pieData = rawData;
   
   // If we have raw data with the expected fields, aggregate it
-  if (rawData.length > 0 && config.xField && rawData[0][config.xField] !== undefined) {
-    pieData = aggregateDataForPie(rawData, nameKey, valueKey);
+  if (
+    rawData.length > 0 &&
+    config.xField &&
+    Object.prototype.hasOwnProperty.call(rawData[0], config.xField)
+  ) {
+    pieData = aggregateDataForPie(rawData as DataRow[], nameKey, valueKey);
   }
 
   if (!pieData || pieData.length === 0) {
