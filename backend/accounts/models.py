@@ -73,6 +73,9 @@ class CustomUser(AbstractUser):
     allow_feedback_to_train_model = models.BooleanField(default=True)
     business_name = models.CharField(max_length=255, blank=True, null=True)
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default="Free")
+    
+    # User settings for persistent UI preferences
+    settings = models.JSONField(default=dict, blank=True, help_text="User UI preferences like theme, font size, etc.")
 
     # Dashboard stats
     total_files = models.PositiveIntegerField(default=0)
