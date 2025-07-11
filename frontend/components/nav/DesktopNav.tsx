@@ -8,14 +8,14 @@ import { useNavContext } from "@/components/nav/NavbarContext";
 import HamburgerButton from "@/components/nav/HamburgerButton"; // Make sure you import it!
 import { useUserSettings } from "../UserSettingsContext";
 
-const NAV_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/uploads", label: "Uploads" },
-  { href: "/relational-ui", label: "Data" },
-  { href: "/analytics", label: "Analytics" },
-  { href: "/assistant", label: "Assistant" },
-  { href: "/profile", label: "Profile" },
-];
+//const NAV_LINKS = [
+//  { href: "/dashboard", label: "Dashboard" },
+//  { href: "/uploads", label: "Uploads" },
+//  { href: "/relational-ui", label: "Data" },
+//  { href: "/analytics", label: "Analytics" },
+//  { href: "/assistant", label: "Assistant" },
+//  { href: "/profile", label: "Profile" },
+//];
 
 export default function DesktopNav() {
   const router = useRouter();
@@ -26,13 +26,14 @@ export default function DesktopNav() {
   
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/analytics", label: "Analytics" },
-    { href: "/relational-ui", label: "Data Tables" },
     // Conditionally include uploads based on user permissions
     ...(userRole?.canUploadFiles ? [{ href: "/uploads", label: "Uploads" }] : []),
+    { href: "/relational-ui", label: "Data Tables" },
+    { href: "/analytics", label: "Analytics" },
     { href: "/assistant", label: "AI Assistant" },
     // Conditionally include user management for users with appropriate roles
     ...(userRole?.canManageUsers || userRole?.canInviteUsers ? [{ href: "/users", label: "User Management" }] : []),
+    { href: "/profile", label: "Profile" },
   ];
 
   useEffect(() => {
