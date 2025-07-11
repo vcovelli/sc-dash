@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useUserSettings } from "@/components/UserSettingsContext";
+import { usePathname } from "next/navigation";
 
 // Updated to support both fontSize and rowHeight (if you want global row height as a variable too)
 export function getFontVars(fontSize: string | number, rowHeight?: number) {
@@ -33,17 +34,20 @@ export function getFontVars(fontSize: string | number, rowHeight?: number) {
 
 export default function FontSizeVarsProvider({ children }: { children: React.ReactNode }) {
   const { settings } = useUserSettings();
+  const pathname = usePathname();
   const fontVars = getFontVars(settings.fontSize || "base");
 
-  // Apply to <body>
-  useEffect(() => {
-    for (const [k, v] of Object.entries(fontVars)) {
-      document.body.style.setProperty(k, v);
-    }
-  }, [fontVars]);
+  // Check if we're on the relational-ui page - exclude it from global font settings
+  const isRelationalUIPage = pathname ? pathname.includes('/relational-ui') : false;
 
-  // Optionally: You can also wrap children with a div to enforce inheritance:
-  // return <div style={fontVars}>{children}</div>;
-  // Or just return children:
+  // Apply to <body> only if NOT on relational-ui page
+  useEffect(() => {
+    if (!isRelationalUIPage) {
+      for (const [k, v] of Object.entries(fontVars)) {
+        document.body.style.setProperty(k, v);
+      }
+    }
+  }, [fontVars, isRelationalUIPage]);
+
   return <>{children}</>;
 }

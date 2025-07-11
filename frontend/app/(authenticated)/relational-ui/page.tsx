@@ -8,10 +8,8 @@ import { CustomColumnDef, Row, Option } from "@/app/(authenticated)/relational-u
 import { TableSettingsProvider } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
 import { useNavContext } from "@/components/nav/NavbarContext";
 import TableSelectorPanel from "@/app/(authenticated)/relational-ui/components/UX/TableSelectorPanel";
-import { useUserSettings } from "@/components/UserSettingsContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useRouter } from "next/navigation";
-import { FONT_SIZE_PRESETS } from "@/components/settings/font/FontSizeDropdown";
 import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
 import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
 
@@ -171,13 +169,8 @@ export default function SheetsPage() {
   const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
   const { showDesktopNav, setShowDesktopNav } = useNavContext();
   const { profile } = useProfile();
-  const { settings } = useUserSettings();
-  const userFontSize = settings.fontSize || "base";
-  const userFontSizeIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((v) => v.value === userFontSize));
-  const [fontSizeIdx, setFontSizeIdx] = useState(userFontSizeIdx);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  useEffect(() => setFontSizeIdx(userFontSizeIdx), [userFontSizeIdx]);
 
   // --- Adders
   const addChoice = useAddChoice(columns, setColumns);
@@ -230,10 +223,8 @@ export default function SheetsPage() {
     fetchData();
   }, [activeTableName]);
 
-  const toolbarFontSize =
-    mounted && FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
-      ? FONT_SIZE_PRESETS[fontSizeIdx]?.fontSize
-      : 14;
+  // Get font size from table settings context
+  const toolbarFontSize = mounted ? 14 : 14;
 
   // --- Add new options to both choice and reference columns
   const columnsWithAdders = columns.map(col => {
@@ -255,23 +246,23 @@ export default function SheetsPage() {
   });
 
   return (
-    <TableSettingsProvider fontSizeIdx={fontSizeIdx} setFontSizeIdx={setFontSizeIdx}>
+    <TableSettingsProvider>
       <MobileRotatePrompt />
       <RelationalWorkspaceLayout
         leftPanel={
-          <TableSelectorPanel
-            isOpen={isTablePanelOpen}
-            tables={availableTables}
-            activeTable={activeTableName}
-            onSelectTable={setActiveTableName}
-            onClose={() => setIsTablePanelOpen((v) => !v)}
-            tableFontSize={FONT_SIZE_PRESETS[fontSizeIdx]?.value ?? "base"}
-            isProUser={profile?.plan === "pro" || profile?.plan === "enterprise"}
-            onAddTable={() => {
-              // Replace with your logic or just a stub for now:
-              console.log("Add table clicked!");
-            }}
-          />
+                      <TableSelectorPanel
+              isOpen={isTablePanelOpen}
+              tables={availableTables}
+              activeTable={activeTableName}
+              onSelectTable={setActiveTableName}
+              onClose={() => setIsTablePanelOpen((v) => !v)}
+              tableFontSize="base"
+              isProUser={profile?.plan === "pro" || profile?.plan === "enterprise"}
+              onAddTable={() => {
+                // Replace with your logic or just a stub for now:
+                console.log("Add table clicked!");
+              }}
+            />
         }
         rightPanel={
           isSettingsPanelOpen ? (
@@ -284,9 +275,6 @@ export default function SheetsPage() {
                   setColumns((cols) => cols.map((col) => (col.id === updatedCol.id ? updatedCol : col)));
                   setIsSettingsPanelOpen(false);
                 }}
-                fontSizeIdx={fontSizeIdx}
-                setFontSizeIdx={setFontSizeIdx}
-                presets={FONT_SIZE_PRESETS}
               />
             </div>
           ) : (

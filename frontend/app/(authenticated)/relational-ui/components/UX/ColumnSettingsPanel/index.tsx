@@ -14,7 +14,6 @@ import CurrencySelector from "./CurrencySelector";
 import FormulaInput from "./FormulaInput";
 import GridOptionsSection from "./GridOptionsSection";
 import FontSizePresetsSection from "./FontSizePresetsSection";
-import { FONT_SIZE_PRESETS } from "../FontSizeSlider";
 
 export interface ChoiceOption {
   id: string;
@@ -31,9 +30,6 @@ interface Props {
   column: CustomColumnDef<unknown> | null;
   onClose: () => void;
   onUpdate: (updated: CustomColumnDef<unknown>) => void;
-  fontSizeIdx: number;
-  setFontSizeIdx: (idx: number) => void;
-  presets: typeof FONT_SIZE_PRESETS;
 }
 
 export default function ColumnSettingsPanel({
