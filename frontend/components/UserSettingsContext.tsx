@@ -31,6 +31,7 @@ interface UserSettingsContextType {
   setSettings: React.Dispatch<React.SetStateAction<UserSettings>>;
   updateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
   userRole: UserRole | null;
+  isLoading: boolean;
 }
 
 const UserSettingsContext = createContext<UserSettingsContextType>({
@@ -38,27 +39,23 @@ const UserSettingsContext = createContext<UserSettingsContextType>({
   setSettings: () => {},
   updateSetting: () => {},
   userRole: null,
+  isLoading: true,
 });
 
 export const UserSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<UserSettings>(() => {
-    // Load saved settings from localStorage if any
-    try {
-      const stored = localStorage.getItem("userSettings");
-      return stored ? JSON.parse(stored) : defaultSettings;
-    } catch {
-      return defaultSettings;
-    }
-  });
-
+  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user role on mount
+  // Load settings from backend and set up user profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        if (!token) return;
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
         
         const response = await fetch('/api/accounts/me/', {
           headers: {
@@ -69,6 +66,24 @@ export const UserSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         
         if (response.ok) {
           const userData = await response.json();
+          
+          // Load settings from backend, fall back to localStorage if no backend settings
+          let userSettings = defaultSettings;
+          if (userData.settings && Object.keys(userData.settings).length > 0) {
+            userSettings = { ...defaultSettings, ...userData.settings };
+          } else {
+            // Fall back to localStorage
+            try {
+              const stored = localStorage.getItem("userSettings");
+              if (stored) {
+                userSettings = { ...defaultSettings, ...JSON.parse(stored) };
+              }
+            } catch (error) {
+              console.warn('Failed to parse localStorage settings:', error);
+            }
+          }
+          
+          setSettings(userSettings);
           
           // Define role-based permissions
           const managerAndAboveRoles = ['admin', 'owner', 'ceo', 'national_manager', 'regional_manager', 'local_manager'];
@@ -86,24 +101,76 @@ export const UserSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
+        // Fall back to localStorage if backend fails
+        try {
+          const stored = localStorage.getItem("userSettings");
+          if (stored) {
+            setSettings({ ...defaultSettings, ...JSON.parse(stored) });
+          }
+        } catch (localError) {
+          console.warn('Failed to parse localStorage settings:', localError);
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchUserProfile();
   }, []);
 
-  // Persist settings to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("userSettings", JSON.stringify(settings));
-  }, [settings]);
+  // Persist settings to backend and localStorage
+  const persistSettings = async (newSettings: UserSettings) => {
+    // Always update localStorage as backup
+    localStorage.setItem("userSettings", JSON.stringify(newSettings));
+    
+    // Try to persist to backend
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      
+      const response = await fetch('/api/accounts/me/', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          settings: newSettings
+        }),
+      });
+      
+      if (!response.ok) {
+        console.warn('Failed to persist settings to backend');
+      }
+    } catch (error) {
+      console.error('Error persisting settings to backend:', error);
+    }
+  };
 
   // Helper to update single setting field
   const updateSetting = <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    persistSettings(newSettings);
+  };
+
+  // Enhanced setSettings that also persists
+  const setSettingsWithPersistence = (newSettingsOrUpdater: UserSettings | ((prev: UserSettings) => UserSettings)) => {
+    const newSettings = typeof newSettingsOrUpdater === 'function' 
+      ? newSettingsOrUpdater(settings) 
+      : newSettingsOrUpdater;
+    setSettings(newSettings);
+    persistSettings(newSettings);
   };
 
   return (
-    <UserSettingsContext.Provider value={{ settings, setSettings, updateSetting, userRole }}>
+    <UserSettingsContext.Provider value={{ 
+      settings, 
+      setSettings: setSettingsWithPersistence, 
+      updateSetting, 
+      userRole,
+      isLoading 
+    }}>
       {children}
     </UserSettingsContext.Provider>
   );
