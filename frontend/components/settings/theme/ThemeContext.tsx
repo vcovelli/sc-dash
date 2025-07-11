@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useUserSettings } from "@/components/UserSettingsContext";
 
 type ThemeMode = "light" | "dark" | "system";
 type ThemeContextType = {
@@ -10,24 +11,24 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const { settings, updateSetting, isLoading } = useUserSettings();
   const [mode, setModeState] = useState<ThemeMode>("system");
 
-  // On mount, read from localStorage or system
+  // Initialize theme from global settings when they're loaded
   useEffect(() => {
-    let m: ThemeMode = "system";
-    if (typeof window !== "undefined") {
-      m = (localStorage.getItem("theme-mode") as ThemeMode) || "system";
-      setModeState(m);
+    if (!isLoading && settings.theme) {
+      setModeState(settings.theme);
     }
-  }, []);
+  }, [settings.theme, isLoading]);
 
-  // Write to localStorage and <html> when mode changes
+  // Apply theme to DOM when mode changes
   useEffect(() => {
     if (typeof window === "undefined") return;
-    localStorage.setItem("theme-mode", mode);
+    
     const root = window.document.documentElement;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const effective = mode === "system" ? (prefersDark ? "dark" : "light") : mode;
+    
     if (effective === "dark") {
       root.classList.add("dark");
     } else {
@@ -35,9 +36,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [mode]);
 
-  const setMode = (m: ThemeMode) => setModeState(m);
-  const toggle = () =>
-    setModeState((prev) => (prev === "dark" ? "light" : "dark"));
+  const setMode = (m: ThemeMode) => {
+    setModeState(m);
+    // Update global settings which will persist to backend
+    updateSetting("theme", m);
+  };
+
+  const toggle = () => {
+    const newMode = mode === "dark" ? "light" : "dark";
+    setMode(newMode);
+  };
 
   return (
     <ThemeContext.Provider value={{ mode, setMode, toggle }}>
@@ -45,6 +53,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     </ThemeContext.Provider>
   );
 }
+
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error("Must wrap app in ThemeProvider");

@@ -36,6 +36,16 @@ class UserProfileView(APIView):
         row_quota = PLAN_ROW_QUOTAS.get(plan, PLAN_ROW_QUOTAS["Free"])
         days_left = 3 if plan == "Pro" else 0
 
+        # User settings with defaults
+        default_settings = {
+            "currencyCode": "USD",
+            "fontSize": "base",
+            "theme": "system",
+            "timezone": "America/New_York",
+            "showSystemColumns": False,
+        }
+        user_settings = {**default_settings, **getattr(user, "settings", {})}
+
         # Compose response
         return Response({
             "username": user.username,
@@ -48,6 +58,7 @@ class UserProfileView(APIView):
             "usage": rows_used, 
             "usage_quota": row_quota, 
             "days_left": days_left,
+            "settings": user_settings,
         })
 
     def patch(self, request):
@@ -56,6 +67,7 @@ class UserProfileView(APIView):
 
         business_name = request.data.get("business_name")
         plan = request.data.get("plan")
+        settings = request.data.get("settings")
 
         if business_name and isinstance(business_name, str):
             user.business_name = business_name.strip()
@@ -66,6 +78,13 @@ class UserProfileView(APIView):
             updated = True
         elif plan:
             return Response({"error": "Invalid plan selected"}, status=400)
+
+        if settings and isinstance(settings, dict):
+            # Merge new settings with existing ones
+            current_settings = getattr(user, "settings", {})
+            current_settings.update(settings)
+            user.settings = current_settings
+            updated = True
 
         if updated:
             user.save()
