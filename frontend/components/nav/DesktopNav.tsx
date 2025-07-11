@@ -28,11 +28,11 @@ export default function DesktopNav() {
     { href: "/dashboard", label: "Dashboard" },
     // Conditionally include uploads based on user permissions
     ...(userRole?.canUploadFiles ? [{ href: "/uploads", label: "Uploads" }] : []),
-    { href: "/relational-ui", label: "Data Tables" },
+    { href: "/relational-ui", label: "Spreadsheets" },
     { href: "/analytics", label: "Analytics" },
     { href: "/assistant", label: "AI Assistant" },
     // Conditionally include user management for users with appropriate roles
-    ...(userRole?.canManageUsers || userRole?.canInviteUsers ? [{ href: "/users", label: "User Management" }] : []),
+    ...(userRole?.canManageUsers || userRole?.canInviteUsers ? [{ href: "/users", label: "Users" }] : []),
     { href: "/profile", label: "Profile" },
   ];
 

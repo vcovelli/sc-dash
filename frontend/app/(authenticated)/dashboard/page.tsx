@@ -149,10 +149,12 @@ export default function DashboardPage() {
                 Upload File
               </button>
             </Link>
-            <button className="px-5 py-2 bg-indigo-100 text-indigo-700 rounded-xl font-semibold hover:bg-indigo-200 transition shadow dark:bg-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-800 flex items-center gap-1">
-              <LucideUsers className="w-5 h-5" />
-              Add User
-            </button>
+            <Link href="/assistant">
+              <button className="px-5 py-2 bg-indigo-100 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-200 transition shadow dark:bg-indigo-800 dark:text-gray-200 dark:hover:bg-indigo-800 flex items-center gap-1">
+                <LucideUsers className="w-5 h-5" />
+                AI Assistant
+              </button>
+            </Link>
             <Link href="/onboarding/request-assist">
               <button className="px-5 py-2 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition shadow dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 flex items-center gap-1">
                 <LucideLifeBuoy className="w-5 h-5" />
