@@ -24,7 +24,8 @@ const FULL_BLEED_ROUTES = [
   "/analytics",
   "/terms",
   "/privacy",
-  "/"
+  "/",
+  "/users",
 ];
 
 const NO_FOOTER_ROUTES = [
