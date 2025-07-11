@@ -8,14 +8,14 @@ import { ThemeToggle } from "@/components/settings/theme/ThemeToggle";
 import { useNavContext } from "@/components/nav/NavbarContext";
 import { useUserSettings } from "../UserSettingsContext";
 
-const NAV_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/uploads", label: "Uploads" },
-  { href: "/relational-ui", label: "Data" },
-  { href: "/analytics", label: "Analytics" },
-  { href: "/assistant", label: "Assistant" },
-  { href: "/profile", label: "Profile" },
-];
+//const NAV_LINKS = [
+//  { href: "/dashboard", label: "Dashboard" },
+//  { href: "/uploads", label: "Uploads" },
+//  { href: "/relational-ui", label: "Data" },
+//  { href: "/analytics", label: "Analytics" },
+//  { href: "/assistant", label: "Assistant" },
+//  { href: "/profile", label: "Profile" },
+//];
 
 export default function MobileDrawerNav() {
   const router = useRouter();
@@ -67,11 +67,12 @@ export default function MobileDrawerNav() {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/analytics", label: "Analytics" },
-    { href: "/relational-ui", label: "Data Tables" },
     // Conditionally include uploads based on user permissions
     ...(userRole?.canUploadFiles ? [{ href: "/uploads", label: "Uploads" }] : []),
+    { href: "/relational-ui", label: "Data Tables" },
+    { href: "/analytics", label: "Analytics" },
     { href: "/assistant", label: "AI Assistant" },
+    { href: "/profile", label: "Profile" },
   ];
 
   return (
