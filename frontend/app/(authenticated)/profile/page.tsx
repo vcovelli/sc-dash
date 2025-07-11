@@ -32,12 +32,32 @@ const themes = [
   { value: "system", label: <>🖥️ System</> },
 ];
 
+// Helper function to display user-friendly role names
+function getRoleDisplayName(role: string): string {
+  const roleMap: { [key: string]: string } = {
+    admin: "Platform Admin",
+    owner: "Organization Owner",
+    ceo: "CEO/Global Access",
+    national_manager: "National Manager",
+    regional_manager: "Regional Manager",
+    local_manager: "Site Manager",
+    employee: "Employee",
+    client: "Client/Partner",
+    tech_support: "Tech Support",
+    read_only: "Read Only",
+    custom: "Custom Role",
+  };
+  return roleMap[role] || role;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
   const [user, setUser] = useState<null | {
     username: string;
     email: string;
+    role: string;
+    business_name: string;
     plan: string;
     joined: string;
     uploads: number;
@@ -125,6 +145,14 @@ export default function ProfilePage() {
                 style={{ fontSize: "var(--body)" }}>
                 {user.email}
               </p>
+              {user.role && (
+                <div className="mt-1 sm:mt-2">
+                  <span className="inline-block px-3 py-1 text-xs rounded-full bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900 dark:to-blue-900 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700 font-semibold"
+                    style={{ fontSize: "var(--small)" }}>
+                    {getRoleDisplayName(user.role)}
+                  </span>
+                </div>
+              )}
               <div className="mt-1 sm:mt-2 flex flex-wrap gap-2">
                 <a href="/auth/change-password" className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline"
                   style={{ fontSize: "var(--small)" }}>

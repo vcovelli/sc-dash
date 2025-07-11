@@ -72,6 +72,8 @@ export default function MobileDrawerNav() {
     // Conditionally include uploads based on user permissions
     ...(userRole?.canUploadFiles ? [{ href: "/uploads", label: "Uploads" }] : []),
     { href: "/assistant", label: "AI Assistant" },
+    // Conditionally include user management for users with appropriate roles
+    ...(userRole?.canManageUsers || userRole?.canInviteUsers ? [{ href: "/users", label: "User Management" }] : []),
   ];
 
   return (
