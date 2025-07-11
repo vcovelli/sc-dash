@@ -31,6 +31,8 @@ export default function DesktopNav() {
     { href: "/relational-ui", label: "Data Tables" },
     { href: "/analytics", label: "Analytics" },
     { href: "/assistant", label: "AI Assistant" },
+    // Conditionally include user management for users with appropriate roles
+    ...(userRole?.canManageUsers || userRole?.canInviteUsers ? [{ href: "/users", label: "User Management" }] : []),
     { href: "/profile", label: "Profile" },
   ];
 

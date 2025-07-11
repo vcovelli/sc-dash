@@ -5,7 +5,9 @@ export interface User {
   role: string;
   date_joined: string;
   is_active: boolean;
-  // etc.
+  is_pending?: boolean;
+  is_suspended?: boolean;
+  business_name?: string;
 }
 
 export interface Invite {
