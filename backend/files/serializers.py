@@ -9,7 +9,7 @@ class UploadedFileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'uploaded_by', 'file_name',
             'minio_path', 'uploaded_at', 'status',
-            'message', 'file_size', 'client_id', 'row_count'
+            'message', 'file_size', 'row_count'
         ]
 
 class StartIngestionSerializer(serializers.Serializer):

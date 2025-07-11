@@ -10,7 +10,6 @@ class UploadedFile(AuditableModel):  # Now inherits system columns
         ("success", "Success"),
         ("error", "Error"),
     ]
-
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     org = models.ForeignKey(
         Organization, 
