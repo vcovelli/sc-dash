@@ -1,12 +1,9 @@
-import React, { createContext, useContext, useState } from "react";
+"use client";
 
-const FONT_SIZE_PRESETS = [
-  { value: "xs", label: "XS", fontSize: 12, rowHeight: 18 },
-  { value: "sm", label: "Small", fontSize: 13, rowHeight: 20 },
-  { value: "base", label: "Default", fontSize: 14, rowHeight: 24 },
-  { value: "lg", label: "Large", fontSize: 16, rowHeight: 28 },
-  { value: "xl", label: "XL", fontSize: 18, rowHeight: 34 },
-];
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useUserSettings } from "@/components/UserSettingsContext";
+import { FONT_SIZE_PRESETS } from "@/components/settings/font/FontSizeDropdown";
+import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 type TableSettings = {
   fontSizeIdx: number;
@@ -22,23 +19,71 @@ type TableSettings = {
 
 const TableSettingsContext = createContext<TableSettings | undefined>(undefined);
 
-// Add prop for initial font size idx
+// Session-based font size management for relational-ui
+function useRelationalUIFontSize() {
+  const { settings: globalSettings } = useUserSettings();
+  
+  // Get global font size index as default
+  const globalFontSizeIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((preset) => preset.value === (globalSettings.fontSize || "base")));
+  
+  // Initialize with session storage or global setting
+  const [fontSizeIdx, setFontSizeIdx] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const sessionFontSize = sessionStorage.getItem('relational-ui-font-size-idx');
+      return sessionFontSize ? parseInt(sessionFontSize, 10) : globalFontSizeIdx;
+    }
+    return globalFontSizeIdx;
+  });
+
+  // Save to session storage when changed
+  const updateFontSizeIdx = (idx: number) => {
+    setFontSizeIdx(idx);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('relational-ui-font-size-idx', idx.toString());
+    }
+  };
+
+  // Apply local font styles to the relational-ui container
+  useEffect(() => {
+    const preset = FONT_SIZE_PRESETS[fontSizeIdx];
+    if (preset) {
+      const fontVars = getFontVars(preset.value, preset.rowHeight);
+      
+      // Apply to body for this session only (relational-ui page)
+      for (const [key, value] of Object.entries(fontVars)) {
+        document.body.style.setProperty(key, String(value));
+      }
+    }
+  }, [fontSizeIdx]);
+
+  // Reset to global setting when global settings change (if user updates profile)
+  useEffect(() => {
+    const newGlobalIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((preset) => preset.value === (globalSettings.fontSize || "base")));
+    // Only reset if user hasn't made local changes in this session
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('relational-ui-font-size-idx')) {
+      setFontSizeIdx(newGlobalIdx);
+    }
+  }, [globalSettings.fontSize]);
+
+  return { fontSizeIdx, setFontSizeIdx: updateFontSizeIdx };
+}
+
 export function TableSettingsProvider({
   children,
-  initialFontSizeIdx = 2,
   fontSizeIdx: controlledIdx,
   setFontSizeIdx: controlledSetter,
 }: {
   children: React.ReactNode;
-  initialFontSizeIdx?: number;
   fontSizeIdx?: number;
   setFontSizeIdx?: (idx: number) => void;
 }) {
-  const [uncontrolledIdx, setUncontrolledIdx] = useState(initialFontSizeIdx);
-  const fontSizeIdx = controlledIdx !== undefined ? controlledIdx : uncontrolledIdx;
-  const setFontSizeIdx = controlledSetter || setUncontrolledIdx;
+  const sessionFontSize = useRelationalUIFontSize();
   const [zebraStriping, setZebraStriping] = useState(true);
   const [showSystemColumns, setShowSystemColumns] = useState(false);
+
+  // Use session-based font size or controlled props
+  const fontSizeIdx = controlledIdx !== undefined ? controlledIdx : sessionFontSize.fontSizeIdx;
+  const setFontSizeIdx = controlledSetter || sessionFontSize.setFontSizeIdx;
 
   const ctxValue: TableSettings = {
     fontSizeIdx,
