@@ -10,6 +10,9 @@ import SettingsModal from "./components/SettingsModal";
 import GlassCard from "./components/GlassCard";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
+// Optionally, bring in icons from heroicons or your library:
+import { CogIcon, ShieldCheckIcon, BellIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const [showSettings, setShowSettings] = useState(false);
@@ -53,6 +56,7 @@ export default function ProfilePage() {
         style={{ fontSize: "var(--body)" }}
       >
         <div className="w-full max-w-3xl space-y-5 sm:space-y-8 mx-auto">
+
           {/* Header + Settings */}
           <ProfileHeader onShowSettings={() => setShowSettings(true)} />
 
@@ -61,10 +65,8 @@ export default function ProfilePage() {
             <GlassCard className="p-8 flex flex-col items-center w-full max-w-2xl mx-auto">
               {/* Profile avatar and info */}
               <div className="flex flex-col items-center w-full">
-                {/* Avatar, username, email, role, actions */}
                 <ProfileInfoCard user={user} hideCard />
               </div>
-              {/* Divider */}
               <div className="w-full border-t border-gray-200 dark:border-gray-800 my-6" />
               {/* Plan section */}
               <div className="flex flex-col items-center w-full">
@@ -72,13 +74,14 @@ export default function ProfilePage() {
                 <span className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300">{user.plan_display || "Free"}</span>
                 <button
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-                  // Call your plan upgrade handler here!
+                  // Add your plan upgrade handler here!
                 >
                   Upgrade to Pro
                 </button>
               </div>
             </GlassCard>
           </div>
+
           {/* MOBILE: Stacked Cards */}
           <div className="flex flex-col sm:hidden gap-4">
             <ProfileInfoCard user={user} />
@@ -88,19 +91,46 @@ export default function ProfilePage() {
           {/* Usage */}
           <UsageCard user={user} />
 
-          {/* Settings (Always Open) */}
-          <GlassCard className="p-3 sm:p-8">
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-2xl">⚙️</span>
-              <h3
-                className="font-bold text-gray-800 dark:text-white text-lg"
-                style={{ fontSize: "var(--h2)" }}
-              >
-                Settings
-              </h3>
+          {/* --- SETTINGS CARDS AT BOTTOM --- */}
+          <div className="space-y-5">
+            {/* Account & App Settings */}
+            <GlassCard className="p-3 sm:p-8">
+              <div className="mb-4 flex items-center gap-2">
+                <CogIcon className="w-7 h-7 text-blue-600" />
+                <h3 className="font-bold text-gray-800 dark:text-white text-lg" style={{ fontSize: "var(--h2)" }}>
+                  Settings
+                </h3>
+              </div>
+              {/* User-level global settings (font size, dark mode, etc.) */}
+              <SettingsPanel settings={settings} updateSetting={updateSetting} />
+            </GlassCard>
+
+            {/* Account security and notifications - coming soon sections */}
+            <div className="grid md:grid-cols-2 gap-5">
+              {/* Security */}
+              <GlassCard className="p-4 flex items-center opacity-60">
+                <ShieldCheckIcon className="w-6 h-6 text-gray-400 mr-3" />
+                <div>
+                  <h4 className="font-semibold text-gray-500 mb-1">Security</h4>
+                  <p className="text-gray-400 text-sm">Password, two-factor authentication, and security settings</p>
+                  <span className="ml-2 px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full">
+                    Coming Soon
+                  </span>
+                </div>
+              </GlassCard>
+              {/* Notifications */}
+              <GlassCard className="p-4 flex items-center opacity-60">
+                <BellIcon className="w-6 h-6 text-gray-400 mr-3" />
+                <div>
+                  <h4 className="font-semibold text-gray-500 mb-1">Notifications</h4>
+                  <p className="text-gray-400 text-sm">Configure email and in-app notifications</p>
+                  <span className="ml-2 px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full">
+                    Coming Soon
+                  </span>
+                </div>
+              </GlassCard>
             </div>
-            <SettingsPanel settings={settings} updateSetting={updateSetting} />
-          </GlassCard>
+          </div>
 
           {/* Cancellation Note */}
           <p
@@ -108,12 +138,12 @@ export default function ProfilePage() {
             style={{ fontSize: "var(--small)" }}
           >
             Want to cancel your plan? Contact support or manage your plan{" "}
-            <a
+            <Link
               href="/profile/plans"
               className="underline text-blue-500 dark:text-blue-400"
             >
               here
-            </a>
+            </Link>
             .
           </p>
 
