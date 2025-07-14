@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
+import { useUserSettings } from "@/components/UserSettingsContext";
+import { FONT_SIZE_PRESETS_MAP } from "@/components/settings/font/FontSizeDropdown";
 
 const ONBOARDING_STEPS = [
   {
@@ -64,10 +66,18 @@ export default function SetupProgressPanel({
 }: {
   completedKeys?: string[];
 }) {
+  const { settings } = useUserSettings();
+  const px =
+    FONT_SIZE_PRESETS_MAP[settings.fontSize] ||
+    FONT_SIZE_PRESETS_MAP.base;
+
   const nextStep = ONBOARDING_STEPS.find((step) => !completedKeys.includes(step.key));
 
   return (
-    <div className="w-full rounded-2xl p-4 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-blue-950 dark:via-gray-950 dark:to-indigo-900 shadow-lg border border-gray-200 dark:border-gray-800 transition-all">
+    <div
+      className="w-full rounded-2xl p-4 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-blue-950 dark:via-gray-950 dark:to-indigo-900 shadow-lg border border-gray-200 dark:border-gray-800 transition-all"
+      style={{ fontSize: `var(--body, ${px}px)` }} // fallback for SSR or if var is missing
+    >
       <ol className="space-y-4 mb-2">
         {ONBOARDING_STEPS.map((step) => {
           const isDone = completedKeys.includes(step.key);
@@ -113,7 +123,6 @@ export default function SetupProgressPanel({
                 </div>
                 {!isDone && (
                   <div className="mt-1">
-                    {/* Highlight CTA for current step */}
                     {isCurrent ? (
                       <span className={actionLinkClass}>
                         {step.action}
