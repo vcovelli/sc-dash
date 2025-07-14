@@ -43,19 +43,6 @@ function useRelationalUIFontSize() {
     }
   };
 
-  // Apply local font styles to the relational-ui container
-  useEffect(() => {
-    const preset = FONT_SIZE_PRESETS[fontSizeIdx];
-    if (preset) {
-      const fontVars = getFontVars(preset.value, preset.rowHeight);
-      
-      // Apply to body for this session only (relational-ui page)
-      for (const [key, value] of Object.entries(fontVars)) {
-        document.body.style.setProperty(key, String(value));
-      }
-    }
-  }, [fontSizeIdx]);
-
   // Reset to global setting when global settings change (if user updates profile)
   useEffect(() => {
     const newGlobalIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((preset) => preset.value === (globalSettings.fontSize || "base")));

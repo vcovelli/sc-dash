@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { XIcon, MenuIcon, PlusIcon } from "lucide-react";
-import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
+import { useFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 const SIDEBAR_WIDTH = 256;
 const SIDEBAR_COLLAPSED = 48;
@@ -24,11 +24,10 @@ export default function TableSelectorPanel({
   activeTable,
   onClose,
   onSelectTable,
-  tableFontSize,
   isProUser,
   onAddTable,
-}: TableSelectorPanelProps) {
-  const fontVars = getFontVars(tableFontSize || "base");
+}: Omit<TableSelectorPanelProps, "tableFontSize">) {
+  const fontVars = useFontVars();
   const [showPaywallMsg, setShowPaywallMsg] = useState(false);
 
   // Hide paywall message on table select, close, or table add for pro users

@@ -3,10 +3,10 @@ import React from "react";
 // Preset definitions
 const FONT_SIZE_PRESETS = [
   { value: "xs", label: "XS", fontSize: 12, rowHeight: 18 },
-  { value: "sm", label: "Small", fontSize: 13, rowHeight: 20 },
-  { value: "base", label: "Default", fontSize: 14, rowHeight: 24 },
-  { value: "lg", label: "Large", fontSize: 16, rowHeight: 28 },
-  { value: "xl", label: "XL", fontSize: 18, rowHeight: 34 },
+  { value: "sm", label: "Small", fontSize: 14, rowHeight: 20 },
+  { value: "base", label: "Default", fontSize: 16, rowHeight: 24 },
+  { value: "lg", label: "Large", fontSize: 18, rowHeight: 28 },
+  { value: "xl", label: "XL", fontSize: 20, rowHeight: 34 },
 ];
 
 interface FontSizeSliderProps {
