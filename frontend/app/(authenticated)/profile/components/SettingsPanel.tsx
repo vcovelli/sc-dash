@@ -17,9 +17,9 @@ const currencies = [
   { value: "JPY", label: "Yen (JPY)" },
 ];
 const themes = [
-  { value: "light", label: <>🌞 Light</> },
-  { value: "dark", label: <>🌙 Dark</> },
-  { value: "system", label: <>🖥️ System</> },
+  { value: "light", label: <>Light</> },
+  { value: "dark", label: <>Dark</> },
+  { value: "system", label: <>System</> },
 ];
 
 interface SettingsPanelProps {

@@ -155,7 +155,7 @@ export default function DashboardPage() {
                 style={{ fontSize: "var(--body)" }}
                 >
                 <LucideUploadCloud className="w-5 h-5" />
-                Upload File
+                Uploads
                 </button>
             </Link>
             <Link href="/relational-ui">
@@ -181,7 +181,7 @@ export default function DashboardPage() {
                 style={{ fontSize: "var(--body)" }}
                 >
                 <LucideUsers className="w-5 h-5" />
-                AI Assistant
+                Assistant
                 </button>
             </Link>
             <Link href="/analytics">
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                     style={{ fontSize: "var(--body)" }}
                     >
                     <LucideUploadCloud className="w-5 h-5" />
-                    Upload File
+                    Uploads
                     </button>
                 </Link>
                 <Link href="/relational-ui">
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                     style={{ fontSize: "var(--body)" }}
                     >
                     <LucideUsers className="w-5 h-5" />
-                    AI Assistant
+                    Assistant
                     </button>
                 </Link>
                 <Link href="/analytics">
