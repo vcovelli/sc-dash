@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, createContext, useContext } from "react";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import { usePathname } from "next/navigation";
+
+const FontVarsContext = createContext<React.CSSProperties>({});
+export const useFontVars = () => useContext(FontVarsContext);
 
 // Updated to support both fontSize and rowHeight (if you want global row height as a variable too)
 export function getFontVars(fontSize: string | number, rowHeight?: number) {
@@ -32,22 +35,38 @@ export function getFontVars(fontSize: string | number, rowHeight?: number) {
   } as React.CSSProperties;
 }
 
-export default function FontSizeVarsProvider({ children }: { children: React.ReactNode }) {
+interface FontSizeVarsProviderProps {
+  children: React.ReactNode;
+  value?: React.CSSProperties;
+}
+
+export default function FontSizeVarsProvider({
+  value,
+  children,
+}: FontSizeVarsProviderProps) {
   const { settings } = useUserSettings();
   const pathname = usePathname();
-  const fontVars = getFontVars(settings.fontSize || "base");
 
-  // Check if we're on the relational-ui page - exclude it from global font settings
-  const isRelationalUIPage = pathname ? pathname.includes('/relational-ui') : false;
+  // Use override value if provided, otherwise fall back to global user settings
+  const fontVars = value ?? getFontVars(settings.fontSize || "base");
 
-  // Apply to <body> only if NOT on relational-ui page
+  // Only set <body> CSS vars outside /relational-ui
   useEffect(() => {
-    if (!isRelationalUIPage) {
+    if (!pathname || !pathname.includes("/relational-ui")) {
       for (const [k, v] of Object.entries(fontVars)) {
         document.body.style.setProperty(k, v);
       }
+      return () => {
+        for (const k of Object.keys(fontVars)) {
+          document.body.style.removeProperty(k);
+        }
+      };
     }
-  }, [fontVars, isRelationalUIPage]);
-
-  return <>{children}</>;
+  }, [fontVars, pathname]);
+  // Always provide the fontVars to children via context
+  return (
+    <FontVarsContext.Provider value={fontVars}>
+      {children}
+    </FontVarsContext.Provider>
+  );
 }
