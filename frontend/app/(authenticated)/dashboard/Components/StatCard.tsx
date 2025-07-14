@@ -28,12 +28,26 @@ export default function StatCard({ label, value, icon, color }: StatCardProps) {
 
   return (
     <GlassCard className="flex items-center gap-4 p-5 h-full">
+      {/* Icon with colored background */}
       <div className={`${chosenColor.bg} p-3 rounded-xl`}>
         {icon}
       </div>
       <div>
-        <p className="text-gray-500 dark:text-gray-300 mb-1 text-sm">{label}</p>
-        <h2 className={`font-extrabold ${chosenColor.text} text-2xl`}>
+        {/* Label - small text, uses --small */}
+        <p
+          className="text-gray-500 dark:text-gray-300 mb-1"
+          style={{ fontSize: "var(--small, 0.95rem)", lineHeight: 1.3 }}
+        >
+          {label}
+        </p>
+        {/* Value - big, bold, uses --h1 */}
+        <h2
+          className={`font-extrabold ${chosenColor.text}`}
+          style={{
+            fontSize: "var(--h1, 1.5rem)",
+            lineHeight: 1.1
+          }}
+        >
           {value ?? "..."}
         </h2>
       </div>

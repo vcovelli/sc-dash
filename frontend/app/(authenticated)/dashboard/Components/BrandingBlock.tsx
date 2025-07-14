@@ -21,7 +21,7 @@ export default function BrandingBlock() {
           </button>
         </Link>
         <Link href="/profile/plans/pro">
-          <button className="px-4 py-2 rounded-xl border border-blue-700 text-blue-700 bg-white/80 dark:bg-gray-900/60 font-bold shadow hover:bg-blue-50 hover:scale-105 transition">
+          <button className="px-4 py-2 rounded-xl border border-blue-700 text-blue-700 bg-white/80 dark:bg-white font-bold shadow hover:bg-blue-50 hover:scale-105 transition">
             Upgrade for More
           </button>
         </Link>
