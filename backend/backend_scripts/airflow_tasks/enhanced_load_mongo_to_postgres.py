@@ -60,6 +60,14 @@ class EnhancedMongoToPostgres:
         except Exception as e:
             print(f"[!] Error creating organization database '{db_name}': {e}")
             return None
+        
+    def get_organization_pg_engine(self, org_id):
+        """
+        Return a SQLAlchemy engine for the org-specific PostgreSQL database.
+        """
+        db_name = f"{PG_DB_PREFIX}{org_id}"
+        conn_str = f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{db_name}"
+        return create_engine(conn_str)
 
     def load_org_schema_columns(self, org_id: str, table_name: str) -> List[Tuple[str, str]]:
         """Load organization-specific schema configuration"""
