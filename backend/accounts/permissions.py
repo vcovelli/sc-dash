@@ -117,6 +117,73 @@ class CanViewAnalytics(BasePermission):
         )
 
 
+# New schema-specific permissions
+class CanCreateSchemas(BasePermission):
+    """
+    Users who can create new schemas.
+    Managers and above can create schemas. Employees can create personal schemas only.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and 
+            request.user.org
+        )
+
+
+class CanShareSchemas(BasePermission):
+    """
+    Users who can share schemas organization-wide.
+    Only managers and above can share schemas across the organization.
+    """
+    SCHEMA_SHARE_ROLES = [
+        'admin', 'owner', 'ceo', 'national_manager', 
+        'regional_manager', 'local_manager'
+    ]
+    
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and 
+            request.user.org and 
+            request.user.role in self.SCHEMA_SHARE_ROLES
+        )
+
+
+class CanManageSharedSchemas(BasePermission):
+    """
+    Users who can edit organization-wide shared schemas.
+    Managers and above can edit shared schemas.
+    """
+    SCHEMA_EDIT_ROLES = [
+        'admin', 'owner', 'ceo', 'national_manager', 
+        'regional_manager', 'local_manager'
+    ]
+    
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and 
+            request.user.org and 
+            request.user.role in self.SCHEMA_EDIT_ROLES
+        )
+
+
+class CanAccessSharedSchemas(BasePermission):
+    """
+    Users who can access organization-wide shared schemas for viewing/using.
+    All organization members except read_only can access shared schemas.
+    """
+    SCHEMA_ACCESS_ROLES = [
+        'admin', 'owner', 'ceo', 'national_manager', 
+        'regional_manager', 'local_manager', 'employee', 'client'
+    ]
+    
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and 
+            request.user.org and 
+            request.user.role in self.SCHEMA_ACCESS_ROLES
+        )
+
+
 class IsReadOnlyOrAbove(BasePermission):
     """
     Basic permission for any authenticated org member.
@@ -156,6 +223,62 @@ class IsSameOrgUser(BasePermission):
             return obj.user.org == request.user.org
             
         # If no org relationship found, deny access
+        return False
+
+
+class CanAccessSchema(BasePermission):
+    """
+    Object-level permission for schema access.
+    Users can access their own schemas or organization-wide shared schemas.
+    """
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated or not request.user.org:
+            return False
+        
+        # Must be same organization
+        if obj.org != request.user.org:
+            return False
+        
+        # Can access own schemas
+        if obj.user == request.user:
+            return True
+        
+        # Can access shared schemas if user has access permission
+        if obj.is_shared:
+            SCHEMA_ACCESS_ROLES = [
+                'admin', 'owner', 'ceo', 'national_manager', 
+                'regional_manager', 'local_manager', 'employee', 'client'
+            ]
+            return request.user.role in SCHEMA_ACCESS_ROLES
+        
+        return False
+
+
+class CanEditSchema(BasePermission):
+    """
+    Object-level permission for schema editing.
+    Users can edit their own schemas or shared schemas if they have management rights.
+    """
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated or not request.user.org:
+            return False
+        
+        # Must be same organization
+        if obj.org != request.user.org:
+            return False
+        
+        # Can edit own schemas
+        if obj.user == request.user:
+            return True
+        
+        # Can edit shared schemas if user has management permission
+        if obj.is_shared:
+            SCHEMA_EDIT_ROLES = [
+                'admin', 'owner', 'ceo', 'national_manager', 
+                'regional_manager', 'local_manager'
+            ]
+            return request.user.role in SCHEMA_EDIT_ROLES
+        
         return False
 
 
