@@ -6,6 +6,7 @@ import datetime
 import uuid
 import requests
 import os
+from pathlib import Path
 
 from helpers.minio_client import get_boto3_client, get_minio_client, get_bucket_name, ensure_bucket_exists
 
@@ -83,10 +84,48 @@ class UploadCSVView(CombinedOrgMixin, APIView):
             airflow_user = os.getenv("AIRFLOW_USERNAME", "airflow")
             airflow_pass = os.getenv("AIRFLOW_PASSWORD", "airflow")
             
-            # Enhanced DAG configuration with organization awareness
+            # Enhanced DAG configuration with organization awareness and smart table detection
+            def detect_table_name(filename: str, request_table: str = None) -> str:
+                """Detect table name from request or filename"""
+                # Use explicit table name if provided and not "unknown"
+                if request_table and request_table.strip() and request_table != "unknown":
+                    return request_table.lower().strip()
+                
+                # Extract from filename
+                base_name = Path(filename).stem.lower()
+                
+                # Map common filename patterns to table names
+                table_mappings = {
+                    'order': 'orders',
+                    'product': 'products', 
+                    'customer': 'customers',
+                    'inventory': 'inventory',
+                    'sale': 'sales',
+                    'employee': 'employees',
+                    'supplier': 'suppliers',
+                    'transaction': 'transactions',
+                    'invoice': 'invoices',
+                    'shipment': 'shipments'
+                }
+                
+                # Check for patterns in filename
+                for pattern, table_name in table_mappings.items():
+                    if pattern in base_name:
+                        return table_name
+                
+                # Use cleaned filename as table name
+                cleaned_name = base_name.replace(' ', '_').replace('-', '_')
+                # Remove common file suffixes
+                for suffix in ['_data', '_export', '_import', '_file']:
+                    cleaned_name = cleaned_name.replace(suffix, '')
+                
+                return cleaned_name if cleaned_name else "unknown"
+            
+            detected_table = detect_table_name(file_name, request.data.get("table"))
+            
             dag_config = {
                 "org_id": str(request.user.org.id),
-                "table": request.data.get("table", "unknown"),  # Allow specifying target table
+                "table": detected_table,  # Use smart table detection
                 "file_id": str(uploaded_file.id),
                 "user_id": str(request.user.id),
                 "triggered_by": "file_upload"
