@@ -42,13 +42,13 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 # Import our enhanced modules
-from backend.backend_scripts.airflow_tasks.enhanced_ingest_from_minio import EnhancedDataIngestion
-from backend.backend_scripts.airflow_tasks.enhanced_load_mongo_to_postgres import EnhancedMongoToPostgres
-from backend.backend_scripts.data_pipeline_manager import DataPipelineManager
+from backend_scripts.airflow_tasks.enhanced_ingest_from_minio import EnhancedDataIngestion
+from backend_scripts.airflow_tasks.enhanced_load_mongo_to_postgres import EnhancedMongoToPostgres
+from backend_scripts.data_pipeline_manager import DataPipelineManager
 
 # Import Django models
 from accounts.models import Organization, CustomUser
-from datagrid.enhanced_models import DataIngestionJob, DataQualityReport, DataVersionHistory
+from datagrid.models import DataIngestionJob, DataQualityReport, DataVersionHistory
 
 # Load environment variables
 load_dotenv(dotenv_path=BASE_DIR / ".env", override=True)

@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from datagrid.views.schema import generate_full_workbook
-from datagrid.views.schema import create_table_for_client
+from datagrid.views.schema import create_table_for_org
 from accounts.models import OnboardingProgress, CustomUser
 User = CustomUser
 from helpers.onboarding_utils import (
@@ -21,7 +21,7 @@ from helpers.onboarding_utils import (
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
-def create_table_for_client_view(request):
+def create_table_for_org_view(request):
     client_id = request.data.get("client_id")
     selected_features = request.data.get("features")
 
@@ -33,7 +33,7 @@ def create_table_for_client_view(request):
         request.user.save()
 
     try:
-        create_table_for_client(client_id)
+        create_table_for_org(client_id)
         download_url = generate_full_workbook(client_id, selected_features)
 
         return JsonResponse({
@@ -80,7 +80,7 @@ def map_schema_and_create(request):
             request.user.business_name = client_id
             request.user.save()
 
-        create_table_for_client(client_id)
+        create_table_for_org(client_id)
         download_url = generate_full_workbook(client_id, selected_features)
 
         return JsonResponse({

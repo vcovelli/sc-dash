@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Protection
 from openpyxl.utils import get_column_letter
-from helpers.table_utils import create_table_for_client
+from helpers.table_utils import create_table_for_org
 from helpers.minio_client import get_minio_client, ensure_bucket_exists
 
 from django.http import JsonResponse
@@ -324,7 +324,7 @@ def generate_schema(request):
 
         # --- 6. Generate the Excel Workbook, Upload to Minio ---
         # If you have your own client table creation, call it here:
-        create_table_for_client(client_name)
+        create_table_for_org(client_name)
         workbook = generate_full_workbook(client_name, selected_features, include_sample_data)
         download_url = workbook["download_url"]
 
