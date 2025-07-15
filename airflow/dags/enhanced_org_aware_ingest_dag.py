@@ -151,7 +151,7 @@ def create_org_aware_dag(dag_id_suffix: str = "", schedule: str = None) -> DAG:
         'max_retry_delay': timedelta(minutes=30),
     }
 
-    dag_id = f'enhanced_org_aware_ingest{dag_id_suffix}'
+    dag_id = f'enhanced_org_aware_ingest_dag{dag_id_suffix}'
     
     dag = DAG(
         dag_id=dag_id,

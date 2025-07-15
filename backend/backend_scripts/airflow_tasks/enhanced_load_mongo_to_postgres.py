@@ -260,7 +260,6 @@ class EnhancedMongoToPostgres:
                         CREATE INDEX idx_{quality_table}_org_timestamp ON {quality_table} (org_id, measurement_timestamp);
                     """))
                     
-                    conn.commit()
                     print(f"[✓] Enhanced table structure created for {raw_table}")
                     
                 else:
@@ -356,7 +355,6 @@ class EnhancedMongoToPostgres:
                     "period_start": period_start,
                     "period_end": period_end
                 })
-                conn.commit()
                 print(f"[✓] Quality metrics recorded for {org_id}.{table_name}")
                 
         except Exception as e:
@@ -432,7 +430,7 @@ class EnhancedMongoToPostgres:
             processed_records = []
             change_logs = []
             
-            with engine.connect() as conn:
+            with engine.begin() as conn:
                 # Get existing records and their versions
                 raw_table = f"raw_{table_name}"
                 log_table = f"{raw_table}_change_log"
@@ -512,6 +510,10 @@ class EnhancedMongoToPostgres:
                 # Insert processed records
                 if processed_records:
                     insert_df = pd.DataFrame(processed_records)
+                    jsonb_columns = ['changed_fields', 'audit_trail', 'data_quality', 'source_file_metadata', 'processing_metadata']
+                    for col in jsonb_columns:
+                        if col in insert_df.columns:
+                            insert_df[col] = insert_df[col].apply(lambda x: json.dumps(x) if (x is not None and not isinstance(x, str)) else x)
                     insert_df.to_sql(name=raw_table, con=engine, if_exists='append', index=False, method='multi')
                     print(f"[✓] Inserted {len(insert_df)} records into {target_pg_db}.{raw_table}")
                     
