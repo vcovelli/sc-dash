@@ -1,22 +1,22 @@
-// ProfilePage.tsx — unified color way, matches privacy/page.tsx and dashboard glass cards
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import GlassCard from "./components/GlassCard";
 import ProfileHeader from "./components/ProfileHeader";
 import ProfileInfoCard from "./components/ProfileInfoCard";
 import PlanInfoCard, { PlanInfoCardMobile } from "./components/PlanInfoCard";
 import UsageCard from "./components/UsageCard";
 import SettingsPanel from "./components/SettingsPanel";
+import GlassCard from "./components/GlassCard";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
-import {
-  CogIcon,
-  ShieldCheckIcon,
-  BellIcon,
+// Optionally, bring in icons from heroicons or your library:
+import { 
+  CogIcon, 
+  ShieldCheckIcon, 
+  BellIcon, 
   ChartBarIcon,
   StarIcon,
-  CheckCircleIcon,
+  CheckCircleIcon 
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
@@ -42,9 +42,8 @@ export default function ProfilePage() {
     fetchUserProfile();
   }, []);
 
-  if (!user) {
+  if (!user)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
@@ -52,7 +51,6 @@ export default function ProfilePage() {
         </div>
       </div>
     );
-  }
 
   return (
     <FontSizeVarsProvider>
@@ -61,72 +59,13 @@ export default function ProfilePage() {
           min-h-screen w-full
           bg-gradient-to-br from-blue-50 to-indigo-100
           dark:from-gray-900 dark:to-gray-950
-          transition-colors duration-500
-          flex justify-center items-start py-3 sm:py-6 lg:py-10 px-2 sm:px-4
-        "
-        style={{ fontSize: "var(--body)" }}
-      >
-        <div 
-          className="w-full max-w-3xl mx-auto"
-          style={{ 
-            gap: `calc(var(--body) * 0.75)`,
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-
-          {/* Header + Settings */}
-          <ProfileHeader onShowSettings={() => setShowSettings(true)} />
-
-          {/* DESKTOP: Unified Profile & Plan card */}
-          <div className="hidden sm:flex">
-            <GlassCard 
-              className="flex flex-col items-center w-full max-w-2xl mx-auto"
-              style={{ padding: `calc(var(--body) * 1.5)` }}
-            >
-              {/* Profile avatar and info */}
-              <div className="flex flex-col items-center w-full">
-                <ProfileInfoCard user={user} hideCard />
-              </div>
-              <div 
-                className="w-full border-t border-gray-200 dark:border-gray-800"
-                style={{ 
-                  marginTop: `calc(var(--body) * 1.0)`,
-                  marginBottom: `calc(var(--body) * 1.0)`
-                }}
-              />
-              {/* Plan section */}
-              <div className="flex flex-col items-center w-full">
-                <span 
-                  className="text-gray-500 dark:text-gray-400 mb-1"
-                  style={{ fontSize: "var(--small)" }}
-                >
-                  Plan
-                </span>
-                <span 
-                  className="font-semibold text-blue-700 dark:text-blue-300"
-                  style={{ 
-                    fontSize: "var(--h2)",
-                    marginBottom: `calc(var(--body) * 0.75)`
-                  }}
-                >
-                  {user.plan_display || "Free"}
-                </span>
-                <button
-                  className="bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-                  style={{ 
-                    fontSize: "var(--body)",
-                    padding: `calc(var(--body) * 0.5) calc(var(--body) * 1.0)`
-                  }}
-          bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50
-          dark:from-gray-950 dark:via-gray-900 dark:to-gray-800
           transition-all duration-700
         "
-        className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950 transition-all duration-700 relative"
         style={{ fontSize: "var(--body)" }}
       >
-        {/* Background Pattern (optional, can remove for simplicity) */}
-        <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800 opacity-40 pointer-events-none"></div>
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800 opacity-50 pointer-events-none"></div>
+        
         <div className="relative z-10">
           {/* Header Section */}
           <div className="px-4 sm:px-6 lg:px-8 pt-8 pb-6">
@@ -136,24 +75,20 @@ export default function ProfilePage() {
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                     Profile Settings
                   </h1>
-                  <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    Manage your account settings and preferences
-                  </p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="px-2 sm:px-6 lg:px-8 pb-12">
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
+                
                 {/* Left Column - Profile & Plan */}
-
                 <div className="lg:col-span-2 space-y-8">
                   {/* Profile Card */}
-                  <GlassCard className="rounded-2xl shadow-xl overflow-hidden p-0">
+                  <div className="bg-white dark:bg-gray-950/80 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-900 overflow-hidden">
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
                       <div className="flex items-center space-x-6">
                         <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-2xl font-bold border-2 border-white/30">
@@ -171,26 +106,31 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     </div>
-                    <div className="p-6 bg-white/70 dark:bg-gray-900/50">
-                      <div className="flex space-x-4">
+                    <div className="
+                    bg-white/80 dark:bg-gray-900/90 
+                      rounded-2xl shadow-xl border border-white/20 dark:border-gray-900/30 
+                      backdrop-blur-xl
+                      p-2
+                    ">
+                      <div className="flex flex-col sm:flex-row gap-2 mt-4">
                         <Link
-                          href="/auth/change-password"
-                          className="flex-1 text-center py-2 px-4 bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-gray-900/30 rounded-lg text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-white/90 dark:hover:bg-gray-900 transition-colors duration-200"
+                          href="/profile/plans"
+                          className="flex-1 text-center py-2 px-4 bg-white dark:bg-gray-800/70 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                         >
-                          Change Password
+                          User Settings
                         </Link>
                         <Link
-                          href="/auth/change-email"
-                          className="flex-1 text-center py-2 px-4 bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-gray-900/30 rounded-lg text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-white/90 dark:hover:bg-gray-900 transition-colors duration-200"
+                          href="/profile/plans"
+                          className="flex-1 text-center py-2 px-4 bg-white dark:bg-gray-800/70 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                         >
-                          Change Email
+                          Manage Plan
                         </Link>
                       </div>
                     </div>
-                  </GlassCard>
+                  </div>
 
                   {/* Usage Analytics Card */}
-                  <GlassCard className="rounded-2xl shadow-xl p-8">
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
@@ -205,6 +145,7 @@ export default function ProfilePage() {
                         {user.plan || 'Free'} Plan
                       </span>
                     </div>
+                    
                     <div className="space-y-4">
                       <div className="flex items-end justify-between">
                         <div>
@@ -221,6 +162,7 @@ export default function ProfilePage() {
                           </p>
                         </div>
                       </div>
+                      
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-green-400 to-blue-500 rounded-full transition-all duration-500 ease-out"
@@ -229,23 +171,24 @@ export default function ProfilePage() {
                           }}
                         />
                       </div>
+                      
                       {user.days_left && (
-                        <div className="flex items-center justify-between pt-4 border-t border-white/20 dark:border-gray-900/30">
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                           <span className="text-sm text-gray-600 dark:text-gray-400">
                             {user.days_left} days left on trial
                           </span>
-                          <button className="text-sm font-medium text-blue-600 dark:text-blue-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200">
+                          <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-200">
                             Upgrade Now →
                           </button>
                         </div>
                       )}
                     </div>
-                  </GlassCard>
+                  </div>
 
                   {/* Settings Panel */}
-                  <GlassCard className="rounded-2xl shadow-xl p-8">
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
                     <div className="flex items-center space-x-3 mb-6">
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-600/50 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
                         <CogIcon className="w-5 h-5 text-black dark:text-white" />
                       </div>
                       <div>
@@ -254,11 +197,12 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <SettingsPanel settings={settings} updateSetting={updateSetting} />
-                  </GlassCard>
+                  </div>
                 </div>
+
                 {/* Right Column - Plan & Quick Actions */}
                 <div className="space-y-8">
-                  {/* Plan Card (keep gradient for primary brand highlight) */}
+                  {/* Plan Card */}
                   <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl text-white p-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
@@ -271,76 +215,65 @@ export default function ProfilePage() {
                         <div className="text-3xl font-bold mb-2">{user.plan_display || "Free"}</div>
                         <p className="text-blue-100 text-sm">Perfect for getting started</p>
                       </div>
-                      <Link
-                        href="/profile/plans"
-                        className="block w-full bg-white text-blue-600 font-semibold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors duration-200 text-center"
-                      >
+                      <button className="w-full bg-white text-blue-600 font-semibold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors duration-200">
                         Upgrade to Pro
-                      </Link>
+                      </button>
                     </div>
                   </div>
+
                   {/* Quick Actions */}
-                  <GlassCard className="rounded-2xl shadow-xl p-6">
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center p-3 rounded-lg border border-white/20 dark:border-gray-900/30 hover:bg-white/60 dark:hover:bg-gray-900/40 transition-colors duration-200 cursor-pointer opacity-60">
+                      <div className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 cursor-pointer opacity-60">
                         <ShieldCheckIcon className="w-5 h-5 text-gray-400 mr-3" />
                         <div className="flex-1">
                           <div className="font-medium text-gray-500">Security Settings</div>
                           <div className="text-xs text-gray-400">Two-factor authentication</div>
                         </div>
-                        <span className="text-xs px-2 py-1 bg-white/50 dark:bg-gray-900/50 text-gray-500 rounded-full">Soon</span>
+                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full">Soon</span>
                       </div>
-                      <div className="flex items-center p-3 rounded-lg border border-white/20 dark:border-gray-900/30 hover:bg-white/60 dark:hover:bg-gray-900/40 transition-colors duration-200 cursor-pointer opacity-60">
+                      
+                      <div className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 cursor-pointer opacity-60">
                         <BellIcon className="w-5 h-5 text-gray-400 mr-3" />
                         <div className="flex-1">
                           <div className="font-medium text-gray-500">Notifications</div>
                           <div className="text-xs text-gray-400">Email and app alerts</div>
                         </div>
-                        <span className="text-xs px-2 py-1 bg-white/50 dark:bg-gray-900/50 text-gray-500 rounded-full">Soon</span>
+                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full">Soon</span>
                       </div>
                     </div>
-                  </GlassCard>
-                  {/* Support Card (optional: glass, or keep light gradient for contrast) */}
-                  <GlassCard className="rounded-2xl border shadow-xl p-6">
+                  </div>
+
+                  {/* Support Card */}
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-600 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Need Help?</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       Our support team is here to help you get the most out of SupplyWise.
                     </p>
                     <div className="space-y-2">
                       <Link
-                        href="/profile/plans"
-                        className="block w-full text-center py-2 px-4 bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-gray-900/30 rounded-lg text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-white/90 dark:hover:bg-gray-900 transition-colors duration-200"
-                      >
-                        Manage Plan
-                      </Link>
-                      <button className="block w-full text-center py-2 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors duration-200">
+                          href="/auth/change-password"
+                          className="flex-1 text-center py-2 px-4 bg-white dark:bg-gray-800/70 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                        >
+                          Change Password
+                        </Link>
+                        <Link
+                          href="/auth/change-email"
+                          className="flex-1 text-center py-2 px-4 bg-white dark:bg-gray-800/70 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                        >
+                          Change Email
+                        </Link>
+                      <button className="block w-full text-center py-2 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors duration-200">
                         Contact Support
                       </button>
                     </div>
-                  </GlassCard>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Cancellation Note */}
-          <div className="px-4 sm:px-6 lg:px-8">
-            <p className="text-gray-400 dark:text-gray-500 text-center text-sm">
-              Want to cancel your plan? Contact support or manage your plan{" "}
-              <Link
-                href="/profile/plans"
-                className="underline text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
-              >
-                here
-              </Link>
-              .
-            </p>
-          </div>
         </div>
-
-        {/* Settings Modal */}
-        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     </FontSizeVarsProvider>
   );

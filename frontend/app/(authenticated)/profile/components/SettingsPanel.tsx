@@ -3,7 +3,7 @@ import {
   ClockIcon,
   CurrencyDollarIcon,
   ComputerDesktopIcon,
-  AdjustmentsHorizontalIcon
+  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 import FontSizeDropdown from "@/components/settings/font/FontSizeDropdown";
 import type { UserSettings } from "@/components/UserSettingsContext";
@@ -37,92 +37,69 @@ interface SettingsPanelProps {
 export default function SettingsPanel({
   settings,
   updateSetting,
-}: {
-  settings: any;
-  updateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
-}) {
+}: SettingsPanelProps) {
   return (
-    <div 
+    <div
       className="grid grid-cols-1 lg:grid-cols-2"
       style={{ gap: `calc(var(--body) * 1.0) calc(var(--body) * 1.5)` }}
     >
-
-    <div className="space-y-6">
-      {/* Timezone */}
-      <SettingItem
-        label="Timezone"
-        description="Select your local timezone for accurate time display"
-        icon={<ClockIcon className="w-5 h-5 text-blue-500" />}
-      >
-        <SettingSelect
-          value={settings.timezone || "America/New_York"}
-          options={timezones}
-          onChange={val => updateSetting("timezone", val)}
-        />
-      </SettingItem>
-
-      {/* Currency */}
-      <SettingItem
-        label="Default Currency"
-        description="Choose your preferred currency for pricing display"
-        icon={<CurrencyDollarIcon className="w-5 h-5 text-green-500" />}
-      >
-        <SettingSelect
-          value={settings.currencyCode || "USD"}
-          options={currencies}
-          onChange={val => updateSetting("currencyCode", val)}
-        />
-      </SettingItem>
-
-      {/* Theme */}
-      <SettingSelect
-        label="Theme"
-        icon={<FaAdjust className="text-indigo-500" />}
-        value={settings.theme || "system"}
-        options={themes}
-        onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
-      />
-      {/* Font Size */}
-      <div>
-        <label 
-          className="flex items-center font-semibold text-gray-700 dark:text-gray-200"
-          style={{ 
-            fontSize: "var(--body)",
-            marginBottom: `calc(var(--body) * 0.25)`,
-            gap: `calc(var(--body) * 0.5)`
-          }}
+      <div className="space-y-6">
+        {/* Timezone */}
+        <SettingItem
+          label="Timezone"
+          description="Select your local timezone for accurate time display"
+          icon={<ClockIcon className="w-5 h-5 text-blue-500" />}
         >
-          <span className="text-yellow-500"><FaFont /></span> Font Size
-        </label>
+          <SettingSelect
+            value={settings.timezone || "America/New_York"}
+            options={timezones}
+            onChange={val => updateSetting("timezone", val)}
+          />
+        </SettingItem>
 
-      <SettingItem
-        label="Appearance"
-        description="Choose your preferred theme"
-        icon={<ComputerDesktopIcon className="w-5 h-5 text-purple-500" />}
-      >
-        <SettingSelect
-          value={settings.theme || "system"}
-          options={themes}
-          onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
-        />
-      </SettingItem>
+        {/* Currency */}
+        <SettingItem
+          label="Default Currency"
+          description="Choose your preferred currency for pricing display"
+          icon={<CurrencyDollarIcon className="w-5 h-5 text-green-500" />}
+        >
+          <SettingSelect
+            value={settings.currencyCode || "USD"}
+            options={currencies}
+            onChange={val => updateSetting("currencyCode", val)}
+          />
+        </SettingItem>
+      </div>
+      <div className="space-y-6">
+        {/* Appearance (Theme) */}
+        <SettingItem
+          label="Appearance"
+          description="Choose your preferred theme"
+          icon={<ComputerDesktopIcon className="w-5 h-5 text-purple-500" />}
+        >
+          <SettingSelect
+            value={settings.theme || "system"}
+            options={themes}
+            onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
+          />
+        </SettingItem>
 
-      {/* Font Size */}
-      <SettingItem
-        label="Font Size"
-        description="Adjust text size for better readability"
-        icon={<AdjustmentsHorizontalIcon className="w-5 h-5 text-amber-500" />}
-      >
-        <FontSizeDropdown
-          value={settings.fontSize || "base"}
-          onChange={val => updateSetting("fontSize", val)}
-        />
-      </SettingItem>
+        {/* Font Size */}
+        <SettingItem
+          label="Font Size"
+          description="Adjust text size for better readability"
+          icon={<AdjustmentsHorizontalIcon className="w-5 h-5 text-amber-500" />}
+        >
+          <FontSizeDropdown
+            value={settings.fontSize || "base"}
+            onChange={val => updateSetting("fontSize", val)}
+          />
+        </SettingItem>
+      </div>
     </div>
   );
 }
 
-// Setting Item Container
 function SettingItem({
   label,
   description,
@@ -152,7 +129,6 @@ function SettingItem({
   );
 }
 
-// Modern Select Component
 function SettingSelect({
   value,
   options,
@@ -163,39 +139,13 @@ function SettingSelect({
   onChange: (val: string) => void;
 }) {
   return (
-    <div>
-      <label 
-        className="flex items-center font-semibold text-gray-700 dark:text-gray-200"
-        style={{ 
-          fontSize: "var(--body)",
-          marginBottom: `calc(var(--body) * 0.25)`,
-          gap: `calc(var(--body) * 0.5)`
-        }}
-      >
-        {icon} {label}
-      </label>
-      <select
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100 shadow focus:ring-2 focus:ring-blue-400 transition"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{ 
-          fontSize: "var(--body)",
-          padding: `calc(var(--body) * 0.75) calc(var(--body) * 1.0)`
-        }}
-      >
-        {options.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
     <select
       className="
-        w-full rounded-lg border border-gray-300 dark:border-gray-600
-        bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+        w-full rounded-lg border border-gray-300 dark:border-gray-700
+        bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100
+        shadow focus:ring-2 focus:ring-blue-400 transition
         py-2.5 px-3 text-sm
-        focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+        focus:border-blue-500
         transition-colors duration-200
         appearance-none cursor-pointer
         hover:border-gray-400 dark:hover:border-gray-500
