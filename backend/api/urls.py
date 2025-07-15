@@ -10,6 +10,15 @@ from .views.default_user_tables.customers import CustomerViewSet
 from .views.default_user_tables.orders import OrderViewSet, OrderItemViewSet
 from .views.default_user_tables.shipments import ShipmentViewSet
 
+# --- Enhanced Airflow Operations ---
+from .views.airflow_operations import (
+    EnhancedIngestDAGView,
+    EnhancedMongoToPostgresDAGView, 
+    ForecastInventoryDAGView,
+    DAGStatusView,
+    PipelineStatusView
+)
+
 # --- DRF router for default ViewSets ---
 router = DefaultRouter()
 router.register(r'suppliers', SupplierViewSet)
@@ -23,4 +32,14 @@ router.register(r'shipments', ShipmentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    
+    # Enhanced Airflow DAG endpoints
+    path('airflow/trigger/enhanced-ingest/', EnhancedIngestDAGView.as_view(), name='trigger-enhanced-ingest'),
+    path('airflow/trigger/mongo-to-postgres/', EnhancedMongoToPostgresDAGView.as_view(), name='trigger-mongo-to-postgres'),
+    path('airflow/trigger/forecast-inventory/', ForecastInventoryDAGView.as_view(), name='trigger-forecast-inventory'),
+    
+    # DAG status and monitoring
+    path('airflow/status/<str:dag_id>/', DAGStatusView.as_view(), name='dag-status'),
+    path('airflow/status/<str:dag_id>/<str:dag_run_id>/', DAGStatusView.as_view(), name='dag-run-status'),
+    path('airflow/pipeline-status/', PipelineStatusView.as_view(), name='pipeline-status'),
 ]
