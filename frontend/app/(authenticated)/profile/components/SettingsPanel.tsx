@@ -35,7 +35,10 @@ export default function SettingsPanel({
   updateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+    <div 
+      className="grid grid-cols-1 lg:grid-cols-2"
+      style={{ gap: `calc(var(--body) * 1.0) calc(var(--body) * 1.5)` }}
+    >
       {/* Timezone */}
       <SettingSelect
         label="Timezone"
@@ -59,11 +62,17 @@ export default function SettingsPanel({
         value={settings.theme || "system"}
         options={themes}
         onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
-
       />
       {/* Font Size */}
       <div>
-        <label className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-200 mb-1">
+        <label 
+          className="flex items-center font-semibold text-gray-700 dark:text-gray-200"
+          style={{ 
+            fontSize: "var(--body)",
+            marginBottom: `calc(var(--body) * 0.25)`,
+            gap: `calc(var(--body) * 0.5)`
+          }}
+        >
           <span className="text-yellow-500"><FaFont /></span> Font Size
         </label>
         <FontSizeDropdown
@@ -91,13 +100,24 @@ function SettingSelect({
 }) {
   return (
     <div>
-      <label className="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-200 mb-1">
+      <label 
+        className="flex items-center font-semibold text-gray-700 dark:text-gray-200"
+        style={{ 
+          fontSize: "var(--body)",
+          marginBottom: `calc(var(--body) * 0.25)`,
+          gap: `calc(var(--body) * 0.5)`
+        }}
+      >
         {icon} {label}
       </label>
       <select
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100 py-3 px-4 text-base shadow focus:ring-2 focus:ring-blue-400 transition"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100 shadow focus:ring-2 focus:ring-blue-400 transition"
         value={value}
         onChange={e => onChange(e.target.value)}
+        style={{ 
+          fontSize: "var(--body)",
+          padding: `calc(var(--body) * 0.75) calc(var(--body) * 1.0)`
+        }}
       >
         {options.map(opt => (
           <option key={opt.value} value={opt.value}>

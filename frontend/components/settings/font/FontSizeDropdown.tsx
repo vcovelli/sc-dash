@@ -20,21 +20,26 @@ export const FONT_SIZE_PRESETS_MAP: Record<string, number> = Object.fromEntries(
 );
 
 export default function FontSizeDropdown({ value, onChange }: FontSizeDropdownProps) {
+  const currentPreset = FONT_SIZE_PRESETS.find(f => f.value === value);
+  
   return (
     <div>
       <div className="relative">
         <select
-          className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100 py-3 px-4 text-base shadow focus:ring-2 focus:ring-blue-400 transition"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100 shadow focus:ring-2 focus:ring-blue-400 transition"
           value={value}
           onChange={e => onChange(e.target.value)}
-          style={{ fontSize: FONT_SIZE_PRESETS.find(f => f.value === value)?.fontSize || 14 }}
+          style={{ 
+            fontSize: "var(--body)",
+            padding: `calc(var(--body) * 0.75) calc(var(--body) * 1.0)`
+          }}
         >
           {FONT_SIZE_PRESETS.map(opt => (
             <option
               key={opt.value}
               value={opt.value}
               style={{
-                fontSize: opt.fontSize,
+                fontSize: Math.min(opt.fontSize, 16), // Cap option font size for readability
                 fontWeight: value === opt.value ? "bold" : "normal"
               }}
             >
