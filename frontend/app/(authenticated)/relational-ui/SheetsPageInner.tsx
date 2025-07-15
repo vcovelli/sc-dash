@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import RelationalWorkspaceLayout from "@/app/(authenticated)/relational-ui/components/Sheet/RelationalWorkspaceLayout";
 import GridTable from "@/app/(authenticated)/relational-ui/components/Grid/GridTable";
 import ColumnSettingsPanel from "@/app/(authenticated)/relational-ui/components/UX/ColumnSettingsPanel";
@@ -10,15 +10,82 @@ import { useProfile } from "@/hooks/useProfile";
 import { useRouter } from "next/navigation";
 import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
 import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
+import { useTableData } from "@/hooks/useTableData";
+import { 
+  Supplier, 
+  Warehouse, 
+  Product, 
+  Customer, 
+  Order, 
+  OrderItem, 
+  Inventory, 
+  Shipment 
+} from "@/lib/tableAPI";
 
 const PANEL_WIDTH = 320;
-const availableTables = ["orders", "products", "customers", "suppliers", "warehouses"];
+const availableTables = ["orders", "products", "customers", "suppliers", "warehouses", "inventory", "shipments"];
 const schemaNameMap: Record<string, string> = {
   orders: "orders",
-  products: "products",
+  products: "products", 
   customers: "customers",
   suppliers: "suppliers",
   warehouses: "warehouses",
+  inventory: "inventory",
+  shipments: "shipments",
+};
+
+// Column definitions for each table type
+const defaultColumnDefs: Record<string, CustomColumnDef<Row>[]> = {
+  suppliers: [
+    { id: "id", accessorKey: "id", header: "ID", type: "number", width: 80, isVisible: true, isEditable: false },
+    { id: "name", accessorKey: "name", header: "Supplier Name", type: "text", width: 200, isVisible: true, isEditable: true },
+    { id: "contact_name", accessorKey: "contact_name", header: "Contact Name", type: "text", width: 150, isVisible: true, isEditable: true },
+    { id: "email", accessorKey: "email", header: "Email", type: "email", width: 200, isVisible: true, isEditable: true },
+    { id: "phone", accessorKey: "phone", header: "Phone", type: "text", width: 120, isVisible: true, isEditable: true },
+    { id: "address", accessorKey: "address", header: "Address", type: "text", width: 250, isVisible: true, isEditable: true },
+  ],
+  warehouses: [
+    { id: "id", accessorKey: "id", header: "ID", type: "number", width: 80, isVisible: true, isEditable: false },
+    { id: "name", accessorKey: "name", header: "Warehouse Name", type: "text", width: 200, isVisible: true, isEditable: true },
+    { id: "location", accessorKey: "location", header: "Location", type: "text", width: 250, isVisible: true, isEditable: true },
+  ],
+  products: [
+    { id: "id", accessorKey: "id", header: "ID", type: "number", width: 80, isVisible: true, isEditable: false },
+    { id: "name", accessorKey: "name", header: "Product Name", type: "text", width: 200, isVisible: true, isEditable: true },
+    { id: "description", accessorKey: "description", header: "Description", type: "text", width: 250, isVisible: true, isEditable: true },
+    { id: "price", accessorKey: "price", header: "Price", type: "currency", width: 120, isVisible: true, isEditable: true },
+    { id: "stock_quantity", accessorKey: "stock_quantity", header: "Stock", type: "number", width: 100, isVisible: true, isEditable: true },
+    { id: "supplier", accessorKey: "supplier", header: "Supplier", type: "reference", referenceTable: "suppliers", referenceDisplayField: "name", width: 150, isVisible: true, isEditable: true },
+  ],
+  customers: [
+    { id: "id", accessorKey: "id", header: "ID", type: "number", width: 80, isVisible: true, isEditable: false },
+    { id: "name", accessorKey: "name", header: "Customer Name", type: "text", width: 200, isVisible: true, isEditable: true },
+    { id: "email", accessorKey: "email", header: "Email", type: "email", width: 200, isVisible: true, isEditable: true },
+    { id: "phone", accessorKey: "phone", header: "Phone", type: "text", width: 120, isVisible: true, isEditable: true },
+    { id: "address", accessorKey: "address", header: "Address", type: "text", width: 250, isVisible: true, isEditable: true },
+  ],
+  orders: [
+    { id: "id", accessorKey: "id", header: "ID", type: "number", width: 80, isVisible: true, isEditable: false },
+    { id: "customer", accessorKey: "customer", header: "Customer", type: "reference", referenceTable: "customers", referenceDisplayField: "name", width: 150, isVisible: true, isEditable: true },
+    { id: "order_date", accessorKey: "order_date", header: "Order Date", type: "date", width: 120, isVisible: true, isEditable: true },
+    { id: "status", accessorKey: "status", header: "Status", type: "choice", choices: ["pending", "processing", "shipped", "delivered", "cancelled"], width: 120, isVisible: true, isEditable: true },
+    { id: "total_amount", accessorKey: "total_amount", header: "Total Amount", type: "currency", width: 120, isVisible: true, isEditable: true },
+  ],
+  inventory: [
+    { id: "id", accessorKey: "id", header: "ID", type: "number", width: 80, isVisible: true, isEditable: false },
+    { id: "product", accessorKey: "product", header: "Product", type: "reference", referenceTable: "products", referenceDisplayField: "name", width: 200, isVisible: true, isEditable: true },
+    { id: "warehouse", accessorKey: "warehouse", header: "Warehouse", type: "reference", referenceTable: "warehouses", referenceDisplayField: "name", width: 150, isVisible: true, isEditable: true },
+    { id: "quantity", accessorKey: "quantity", header: "Quantity", type: "number", width: 100, isVisible: true, isEditable: true },
+  ],
+  shipments: [
+    { id: "id", accessorKey: "id", header: "ID", type: "number", width: 80, isVisible: true, isEditable: false },
+    { id: "order", accessorKey: "order", header: "Order", type: "reference", referenceTable: "orders", referenceDisplayField: "id", width: 100, isVisible: true, isEditable: true },
+    { id: "tracking_number", accessorKey: "tracking_number", header: "Tracking Number", type: "text", width: 150, isVisible: true, isEditable: true },
+    { id: "carrier", accessorKey: "carrier", header: "Carrier", type: "text", width: 120, isVisible: true, isEditable: true },
+    { id: "shipped_date", accessorKey: "shipped_date", header: "Shipped Date", type: "date", width: 120, isVisible: true, isEditable: true },
+    { id: "delivered_date", accessorKey: "delivered_date", header: "Delivered Date", type: "date", width: 120, isVisible: true, isEditable: true },
+    { id: "status", accessorKey: "status", header: "Status", type: "choice", choices: ["pending", "shipped", "in_transit", "delivered"], width: 120, isVisible: true, isEditable: true },
+  ],
 };
 
 const activeBtn = "bg-blue-100 text-blue-700 border-blue-400 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-600";
@@ -48,279 +115,383 @@ function MobileRotatePrompt() {
 
   if (!show) return null;
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md">
-      <span className="text-6xl mb-4 animate-bounce">🔄</span>
-      <div className="text-white text-2xl font-bold text-center mb-2">
-        Please rotate your device
-        <br />
-        <span className="text-base font-normal text-gray-300">
-          Landscape mode is required for this view on mobile.
-        </span>
+    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm text-center">
+        <div className="text-6xl mb-4">📱↻</div>
+        <h3 className="text-lg font-semibold mb-2 dark:text-white">
+          Better Experience in Landscape
+        </h3>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
+          Please rotate your device to landscape mode for the best spreadsheet experience.
+        </p>
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+        >
+          Go to Dashboard
+        </button>
       </div>
-      <button
-        onClick={() => router.back()}
-        className="mt-6 px-6 py-3 bg-white/90 text-blue-700 dark:bg-gray-800 dark:text-blue-300 rounded-xl font-bold shadow-lg hover:bg-blue-100 dark:hover:bg-blue-900/80 transition-all text-base"
-      >
-        ← Go Back
-      </button>
     </div>
   );
 }
 
-// Utility for new Option IDs (shared)
-const makeId = (name: string, type: string = "") => {
-  const id = (
-    name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 36) +
-    "_" +
-    Math.random().toString(36).slice(2, 5)
-  );
-  return id;
-};
-
-function useAddChoice(
-  columns: CustomColumnDef<unknown>[],
-  setColumns: React.Dispatch<React.SetStateAction<CustomColumnDef<unknown>[]>>
-) {
-  return React.useCallback(
-    async (columnKey: string, newName: string, color?: string) => {
-      const id = makeId(newName, "Choice");
-      setColumns((cols) => {
-        const newCols = cols.map((col) => {
-          if (col.accessorKey === columnKey) {
-            const newChoice = { id, name: newName, color } as Option;
-            let updatedChoices: Option[] = [];
-            if (Array.isArray(col.choices)) {
-              if (typeof col.choices[0] === "string") {
-                updatedChoices = [
-                  ...(col.choices as string[]).map((name) => ({ id: makeId(name, "Choice"), name, color: undefined })),
-                  newChoice,
-                ];
-              } else {
-                updatedChoices = [
-                  ...(col.choices as Option[]),
-                  newChoice,
-                ];
-              }
-            } else {
-              updatedChoices = [newChoice];
-            }
-            return { ...col, choices: updatedChoices };
-          }
-          return col;
-        });
-        return newCols;
-      });
-      return { id, name: newName, color };
-    },
-    [setColumns]
+function ErrorDisplay({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center">
+        <div className="text-red-500 mb-2">⚠️</div>
+        <h3 className="text-lg font-semibold mb-2 dark:text-white">Error Loading Data</h3>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">{error}</p>
+        <button
+          onClick={onRetry}
+          className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
   );
 }
 
-function useAddReference(
-  columns: CustomColumnDef<unknown>[],
-  setColumns: React.Dispatch<React.SetStateAction<CustomColumnDef<unknown>[]>>
-) {
-  return React.useCallback(
-    async (columnKey: string, newName: string) => {
-      const id = makeId(newName, "Reference");
-      setColumns((cols) => {
-        const newCols = cols.map((col) => {
-          if (col.accessorKey === columnKey) {
-            const newRef = { id, name: newName };
-            let updatedRef: Option[] = [];
-            if (Array.isArray(col.referenceData)) {
-              updatedRef = [
-                ...(col.referenceData as Option[]),
-                newRef,
-              ];
-            } else {
-              updatedRef = [newRef];
-            }
-            return { ...col, referenceData: updatedRef };
-          }
-          return col;
-        });
-        return newCols;
-      });
-      return { id, name: newName };
-    },
-    [setColumns]
+function LoadingDisplay() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-300">Loading data...</p>
+      </div>
+    </div>
   );
 }
 
-// --- MAIN INNER PAGE ---
 export default function SheetsPageInner() {
-  const [activeTableName, setActiveTableName] = useState<string>("orders");
-  const [columns, setColumns] = useState<CustomColumnDef<unknown>[]>([]);
-  const [rows, setRows] = useState<Row[]>([]);
-  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
-  const [isTablePanelOpen, setIsTablePanelOpen] = useState(true);
-  const [columnSettingsTarget, setColumnSettingsTarget] = useState<CustomColumnDef<unknown> | null>(null);
-  const { showDesktopNav, setShowDesktopNav } = useNavContext();
   const { profile } = useProfile();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const { setIsSidebarOpen } = useNavContext();
+  const router = useRouter();
 
-  const addChoice = useAddChoice(columns, setColumns);
-  const addReference = useAddReference(columns, setColumns);
+  const [activeTableName, setActiveTableName] = useState("suppliers");
+  const [columns, setColumns] = useState<CustomColumnDef<Row>[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [selectedColumn, setSelectedColumn] = useState<CustomColumnDef<Row> | null>(null);
+  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
+  const [isTableSelectorOpen, setIsTableSelectorOpen] = useState(false);
+
+  // Use the table data hook for CRUD operations
+  const {
+    state: { data, loading, error, permissions },
+    actions: { refresh, createRecord, updateRecord, deleteRecord, bulkUpdate },
+    utils: { canPerformAction, hasError }
+  } = useTableData({
+    tableName: activeTableName,
+    autoRefresh: true,
+    refreshInterval: 30000,
+    enableOptimisticUpdates: true,
+  });
 
   useEffect(() => {
-    if (!activeTableName) return;
-    const fetchData = async () => {
+    setIsSidebarOpen(false);
+  }, [setIsSidebarOpen]);
+
+  useEffect(() => {
+    if (!profile) {
+      router.push("/login");
+      return;
+    }
+  }, [profile, router]);
+
+  // Update columns and rows when table changes or data loads
+  useEffect(() => {
+    const loadTableStructure = async () => {
+      if (!activeTableName) return;
+
       try {
-        const token = localStorage.getItem("access_token");
-        if (!token) return;
-
-        const apiSlug = schemaNameMap[activeTableName] || activeTableName;
-        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/datagrid/schemas/${apiSlug}/`;
-
-        const res = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          console.error("Schema fetch failed", res.status);
-          return;
-        }
-
-        const json = await res.json();
-
-        const fixedCols: CustomColumnDef<unknown>[] = (json.columns || []).map((col: unknown, i: number) => {
-          const column = col as CustomColumnDef<unknown>;
-          return {
-            ...column,
-            id: column.id || column.accessorKey || `col_${i}_${Math.random().toString(36).slice(2, 8)}`,
-          };
-        });
-
-        const enrichedCols = await enrichSchemaWithReferenceData(fixedCols);
-        const populatedRows = (json.rows || []).length > 0
-          ? json.rows
-          : [{ ...generateEmptyRow(enrichedCols) }];
-
+        // Get default column definitions for the table
+        const defaultCols = defaultColumnDefs[activeTableName] || [];
+        const enrichedCols = await enrichSchemaWithReferenceData(defaultCols);
         setColumns(enrichedCols);
-        setRows(populatedRows);
+
+        // Transform API data to match Row format
+        const transformedRows = data.length > 0 
+          ? data.map((record: any) => ({ ...record }))
+          : [generateEmptyRow(enrichedCols)];
+        
+        setRows(transformedRows);
       } catch (error) {
-        console.error("Error loading table data:", error);
+        console.error("Error setting up table structure:", error);
       }
     };
-    fetchData();
-  }, [activeTableName]);
 
-  // --- Add new options to both choice and reference columns
+    loadTableStructure();
+  }, [activeTableName, data]);
+
+  // Add new options to both choice and reference columns
   const columnsWithAdders = columns.map(col => {
     if (["choice", "choice_list"].includes(col.type?.toLowerCase?.())) {
+      const existingChoices = col.choices || [];
+      const addNewOption: Option = {
+        value: "__ADD_NEW__",
+        label: "+ Add new choice",
+        isAddNew: true,
+      };
       return {
         ...col,
-        onAddChoice: (name: string, color?: string) =>
-          addChoice(col.accessorKey, name, color),
+        choices: [...existingChoices, addNewOption],
       };
     }
-    if (col.type?.toLowerCase?.() === "reference") {
+
+    if (col.type?.toLowerCase?.() === "reference" && col.referenceTable) {
+      const existingChoices = col.choices || [];
+      const addNewOption: Option = {
+        value: "__ADD_NEW__",
+        label: `+ Add new ${col.referenceTable?.slice(0, -1) || "item"}`,
+        isAddNew: true,
+      };
       return {
         ...col,
-        onAddReference: (name: string) =>
-          addReference(col.accessorKey, name),
+        choices: [...existingChoices, addNewOption],
       };
     }
+
     return col;
   });
 
-  const toolbarFontSize = mounted ? "inherit" : "inherit";
+  // Handle cell updates with proper API calls
+  const handleCellUpdate = async (rowIndex: number, columnId: string, newValue: any) => {
+    if (!canPerformAction('update')) {
+      console.error('No permission to update records');
+      return;
+    }
+
+    const row = rows[rowIndex];
+    if (!row?.id) {
+      console.error('Cannot update row without ID');
+      return;
+    }
+
+    const updatedRecord = await updateRecord(row.id, { [columnId]: newValue });
+    if (updatedRecord) {
+      // Update local state
+      const updatedRows = [...rows];
+      updatedRows[rowIndex] = { ...updatedRows[rowIndex], [columnId]: newValue };
+      setRows(updatedRows);
+    }
+  };
+
+  // Handle adding new rows
+  const handleAddRow = async () => {
+    if (!canPerformAction('create')) {
+      console.error('No permission to create records');
+      return;
+    }
+
+    const emptyRow = generateEmptyRow(columns);
+    const newRecord = await createRecord(emptyRow);
+    
+    if (newRecord) {
+      setRows([...rows, newRecord]);
+    }
+  };
+
+  // Handle deleting rows
+  const handleDeleteRow = async (rowIndex: number) => {
+    if (!canPerformAction('delete')) {
+      console.error('No permission to delete records');
+      return;
+    }
+
+    const row = rows[rowIndex];
+    if (!row?.id) {
+      console.error('Cannot delete row without ID');
+      return;
+    }
+
+    const success = await deleteRecord(row.id);
+    if (success) {
+      const updatedRows = rows.filter((_, index) => index !== rowIndex);
+      setRows(updatedRows);
+    }
+  };
+
+  // Update table function for GridTable
+  const onUpdateTable = useCallback(
+    async (name: string, updated: { columns: CustomColumnDef<Row>[]; data: Row[] }) => {
+      // Handle bulk updates if needed
+      const changedRows = updated.data.filter((row, index) => {
+        const originalRow = rows[index];
+        return originalRow && JSON.stringify(row) !== JSON.stringify(originalRow);
+      });
+
+      if (changedRows.length > 0 && canPerformAction('update')) {
+        const updates = changedRows
+          .filter(row => row.id)
+          .map(row => ({ id: row.id, data: row }));
+        
+        if (updates.length > 0) {
+          await bulkUpdate(updates);
+        }
+      }
+
+      setColumns(updated.columns);
+      setRows(updated.data);
+    },
+    [rows, canPerformAction, bulkUpdate]
+  );
+
+  // Other handlers
+  const onRenameColumn = (accessorKey: string, newHeader: string) => {
+    setColumns(prev =>
+      prev.map(col =>
+        col.accessorKey === accessorKey ? { ...col, header: newHeader } : col
+      )
+    );
+  };
+
+  const onReorderColumns = (newColumns: CustomColumnDef<Row>[]) => {
+    setColumns(newColumns);
+  };
+
+  const onAddColumn = (newCol: CustomColumnDef<Row>) => {
+    setColumns(prev => [...prev, newCol]);
+  };
+
+  const onDeleteColumn = (accessorKey: string) => {
+    setColumns(prev => prev.filter(col => col.accessorKey !== accessorKey));
+  };
+
+  const onOpenSettingsPanel = (col: CustomColumnDef<Row>) => {
+    setSelectedColumn(col);
+    setIsSettingsPanelOpen(true);
+  };
+
+  if (!profile) {
+    return <LoadingDisplay />;
+  }
+
+  if (hasError && error) {
+    return <ErrorDisplay error={error} onRetry={refresh} />;
+  }
 
   return (
-    <>
+    <RelationalWorkspaceLayout>
       <MobileRotatePrompt />
-      <RelationalWorkspaceLayout
-        leftPanel={
-          <TableSelectorPanel
-            isOpen={isTablePanelOpen}
-            tables={availableTables}
-            activeTable={activeTableName}
-            onSelectTable={setActiveTableName}
-            onClose={() => setIsTablePanelOpen((v) => !v)}
-            isProUser={profile?.plan === "pro" || profile?.plan === "enterprise"}
-            onAddTable={() => {
-              // Replace with your logic or just a stub for now:
-              console.log("Add table clicked!");
-            }}
-          />
-        }
-        rightPanel={
-          isSettingsPanelOpen ? (
-            <div style={{ width: PANEL_WIDTH }}>
-              <ColumnSettingsPanel
-                isOpen={isSettingsPanelOpen}
-                column={columnSettingsTarget}
-                onClose={() => setIsSettingsPanelOpen(false)}
-                onUpdate={(updatedCol) => {
-                  setColumns((cols) => cols.map((col) => (col.id === updatedCol.id ? updatedCol : col)));
-                  setIsSettingsPanelOpen(false);
-                }}
-              />
-            </div>
-          ) : (
-            <div style={{ width: 0 }} />
-          )
-        }
-      >
-        <div className="flex justify-between items-center px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 transition-colors">
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() => setIsTablePanelOpen((v) => !v)}
-              className={`${baseBtn} ${isTablePanelOpen ? activeBtn : inactiveBtn}`}
-              title={isTablePanelOpen ? "Hide Tables Sidebar" : "Show Tables Sidebar"}
-              style={{ fontSize: "var(--body)" }} // <- Will pick up the correct local font size
-            >
-              📋 {isTablePanelOpen ? "Hide Tables" : "Show Tables"}
-            </button>
+      
+      {/* Main content area */}
+      <div className="flex h-full">
+        {/* Table selector panel */}
+        {isTableSelectorOpen && (
+          <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <TableSelectorPanel
+              tables={availableTables}
+              activeTable={activeTableName}
+              onTableSelect={(tableName) => {
+                setActiveTableName(tableName);
+                setIsTableSelectorOpen(false);
+              }}
+              onClose={() => setIsTableSelectorOpen(false)}
+            />
           </div>
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() => setShowDesktopNav(!showDesktopNav)}
-              className={`${baseBtn} ${!showDesktopNav ? activeBtn : inactiveBtn}`}
-              title={showDesktopNav ? "Hide Desktop Navbar" : "Show Desktop Navbar"}
-              style={{ fontSize: "var(--body)" }} // <- Will pick up the correct local font size
-            >
-              {showDesktopNav ? "Hide Navbar" : "👁️ Show Navbar"}
-            </button>
-            <button
-              onClick={() => setIsSettingsPanelOpen((v) => !v)}
-              className={`${baseBtn} ${isSettingsPanelOpen ? activeBtn : inactiveBtn}`}
-              title={isSettingsPanelOpen ? "Close Settings" : "Open Settings"}
-              style={{ fontSize: "var(--body)" }} // <- Will pick up the correct local font size
-            >
-              ⚙️ {isSettingsPanelOpen ? "Close Settings" : "Open Settings"}
-            </button>
+        )}
+
+        {/* Main spreadsheet area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header with table selector and controls */}
+          <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setIsTableSelectorOpen(!isTableSelectorOpen)}
+                  className={`${baseBtn} ${isTableSelectorOpen ? activeBtn : inactiveBtn}`}
+                >
+                  📊 Tables
+                </button>
+                
+                <div className="flex items-center space-x-2">
+                  {availableTables.map((tableName) => (
+                    <button
+                      key={tableName}
+                      onClick={() => setActiveTableName(tableName)}
+                      className={`${baseBtn} ${
+                        activeTableName === tableName ? activeBtn : inactiveBtn
+                      }`}
+                    >
+                      {tableName.charAt(0).toUpperCase() + tableName.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {/* Permission indicators */}
+                <div className="flex items-center space-x-2 text-xs">
+                  {permissions.canCreate && <span className="text-green-600">✓ Create</span>}
+                  {permissions.canUpdate && <span className="text-blue-600">✓ Edit</span>}
+                  {permissions.canDelete && <span className="text-red-600">✓ Delete</span>}
+                </div>
+
+                <button
+                  onClick={refresh}
+                  disabled={loading}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded text-sm"
+                >
+                  {loading ? "↻" : "🔄"} Refresh
+                </button>
+                
+                {canPerformAction('create') && (
+                  <button
+                    onClick={handleAddRow}
+                    className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
+                  >
+                    + Add Row
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Spreadsheet grid */}
+          <div className="flex-1 overflow-hidden">
+            {loading ? (
+              <LoadingDisplay />
+            ) : (
+              <GridTable
+                tableName={activeTableName}
+                columns={columnsWithAdders}
+                data={rows}
+                onOpenSettingsPanel={onOpenSettingsPanel}
+                isSettingsPanelOpen={isSettingsPanelOpen}
+                onUpdateTable={onUpdateTable}
+                onRenameColumn={onRenameColumn}
+                onReorderColumns={onReorderColumns}
+                onAddColumn={onAddColumn}
+                onDeleteColumn={onDeleteColumn}
+                onCellUpdate={handleCellUpdate}
+                onDeleteRow={handleDeleteRow}
+                permissions={permissions}
+              />
+            )}
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col">
-          <GridTable
-            tableName={activeTableName}
-            columns={columnsWithAdders}
-            data={rows}
-            onUpdateTable={() => {}} // stub
-            onOpenSettingsPanel={(col) => {
-              setColumnSettingsTarget(col);
-              setIsSettingsPanelOpen(true);
-            }}
-            isSettingsPanelOpen={isSettingsPanelOpen}
-            onRenameColumn={() => {}}        // stub, no lint error
-            onReorderColumns={() => {}}      // stub, no lint error
-            onAddColumn={() => {}}           // stub, no lint error
-            onDeleteColumn={() => {}}        // stub, no lint error
-          />
-        </div>
-      </RelationalWorkspaceLayout>
-    </>
+        {/* Column settings panel */}
+        {isSettingsPanelOpen && selectedColumn && (
+          <div
+            className="border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto"
+            style={{ width: PANEL_WIDTH }}
+          >
+            <ColumnSettingsPanel
+              column={selectedColumn}
+              onClose={() => setIsSettingsPanelOpen(false)}
+              onColumnUpdate={(updatedColumn) => {
+                setColumns(prev =>
+                  prev.map(col =>
+                    col.id === updatedColumn.id ? updatedColumn : col
+                  )
+                );
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </RelationalWorkspaceLayout>
   );
 }
