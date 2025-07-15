@@ -313,7 +313,7 @@ export default function UsersPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="space-y-6">
               {/* Users Table */}
               <div className="xl:col-span-2">
                 <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-lg border border-white/20 dark:border-gray-900/30 overflow-hidden">
