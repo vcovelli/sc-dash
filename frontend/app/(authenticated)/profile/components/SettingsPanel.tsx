@@ -42,6 +42,11 @@ export default function SettingsPanel({
   updateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
 }) {
   return (
+    <div 
+      className="grid grid-cols-1 lg:grid-cols-2"
+      style={{ gap: `calc(var(--body) * 1.0) calc(var(--body) * 1.5)` }}
+    >
+
     <div className="space-y-6">
       {/* Timezone */}
       <SettingItem
@@ -70,6 +75,26 @@ export default function SettingsPanel({
       </SettingItem>
 
       {/* Theme */}
+      <SettingSelect
+        label="Theme"
+        icon={<FaAdjust className="text-indigo-500" />}
+        value={settings.theme || "system"}
+        options={themes}
+        onChange={val => updateSetting("theme", val as "light" | "dark" | "system")}
+      />
+      {/* Font Size */}
+      <div>
+        <label 
+          className="flex items-center font-semibold text-gray-700 dark:text-gray-200"
+          style={{ 
+            fontSize: "var(--body)",
+            marginBottom: `calc(var(--body) * 0.25)`,
+            gap: `calc(var(--body) * 0.5)`
+          }}
+        >
+          <span className="text-yellow-500"><FaFont /></span> Font Size
+        </label>
+
       <SettingItem
         label="Appearance"
         description="Choose your preferred theme"
@@ -138,6 +163,33 @@ function SettingSelect({
   onChange: (val: string) => void;
 }) {
   return (
+    <div>
+      <label 
+        className="flex items-center font-semibold text-gray-700 dark:text-gray-200"
+        style={{ 
+          fontSize: "var(--body)",
+          marginBottom: `calc(var(--body) * 0.25)`,
+          gap: `calc(var(--body) * 0.5)`
+        }}
+      >
+        {icon} {label}
+      </label>
+      <select
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-900/70 text-gray-900 dark:text-gray-100 shadow focus:ring-2 focus:ring-blue-400 transition"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{ 
+          fontSize: "var(--body)",
+          padding: `calc(var(--body) * 0.75) calc(var(--body) * 1.0)`
+        }}
+      >
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
     <select
       className="
         w-full rounded-lg border border-gray-300 dark:border-gray-600
