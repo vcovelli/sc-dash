@@ -42,16 +42,8 @@ export default function ProfilePage() {
     fetchUserProfile();
   }, []);
 
-  if (!user)
+  if (!user) {
     return (
-
-      <p 
-        className="text-center py-10 text-gray-500 dark:text-gray-400"
-        style={{ fontSize: "var(--body)" }}
-      >
-        Loading profile...
-      </p>
-
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950 flex items-center justify-center">
         <div className="text-center">
@@ -59,8 +51,8 @@ export default function ProfilePage() {
           <p className="text-lg text-gray-600 dark:text-gray-300 font-medium">Loading your profile...</p>
         </div>
       </div>
-
     );
+  }
 
   return (
     <FontSizeVarsProvider>
@@ -149,17 +141,6 @@ export default function ProfilePage() {
                   </p>
                 </div>
               </div>
-            </GlassCard>
-          </div>
-
-          {/* MOBILE: Stacked Cards */}
-          <div 
-            className="flex flex-col sm:hidden"
-            style={{ gap: `calc(var(--body) * 0.75)` }}
-          >
-            <ProfileInfoCard user={user} />
-            <PlanInfoCardMobile user={user} />
-
             </div>
           </div>
 
@@ -167,7 +148,9 @@ export default function ProfilePage() {
           <div className="px-4 sm:px-6 lg:px-8 pb-12">
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
                 {/* Left Column - Profile & Plan */}
+
                 <div className="lg:col-span-2 space-y-8">
                   {/* Profile Card */}
                   <GlassCard className="rounded-2xl shadow-xl overflow-hidden p-0">
@@ -206,112 +189,6 @@ export default function ProfilePage() {
                     </div>
                   </GlassCard>
 
-          {/* --- SETTINGS CARDS AT BOTTOM --- */}
-          <div style={{ gap: `calc(var(--body) * 0.75)`, display: 'flex', flexDirection: 'column' }}>
-            {/* Account & App Settings */}
-            <GlassCard 
-              style={{ padding: `calc(var(--body) * 0.75) calc(var(--body) * 1.0)` }}
-              className="sm:p-8"
-            >
-              <div 
-                className="flex items-center gap-2"
-                style={{ marginBottom: `calc(var(--body) * 1.0)` }}
-              >
-                <CogIcon 
-                  className="text-blue-600"
-                  style={{ 
-                    width: `calc(var(--body) * 1.5)`,
-                    height: `calc(var(--body) * 1.5)`
-                  }}
-                />
-                <h3 
-                  className="font-bold text-gray-800 dark:text-white" 
-                  style={{ fontSize: "var(--h2)" }}
-                >
-                  Settings
-                </h3>
-              </div>
-              {/* User-level global settings (font size, dark mode, etc.) */}
-              <SettingsPanel settings={settings} updateSetting={updateSetting} />
-            </GlassCard>
-
-            {/* Account security and notifications - coming soon sections */}
-            <div 
-              className="grid md:grid-cols-2"
-              style={{ gap: `calc(var(--body) * 0.75)` }}
-            >
-              {/* Security */}
-              <GlassCard 
-                className="flex items-center opacity-60"
-                style={{ padding: `calc(var(--body) * 1.0)` }}
-              >
-                <ShieldCheckIcon 
-                  className="text-gray-400"
-                  style={{ 
-                    width: `calc(var(--body) * 1.25)`,
-                    height: `calc(var(--body) * 1.25)`,
-                    marginRight: `calc(var(--body) * 0.75)`
-                  }}
-                />
-                <div>
-                  <h4 
-                    className="font-semibold text-gray-500"
-                    style={{ 
-                      fontSize: "var(--body)",
-                      marginBottom: `calc(var(--body) * 0.25)`
-                    }}
-                  >
-                    Security
-                  </h4>
-                  <p 
-                    className="text-gray-400"
-                    style={{ fontSize: "var(--small)" }}
-                  >
-                    Password, two-factor authentication, and security settings
-                  </p>
-                  <span 
-                    className="ml-2 px-2 py-1 font-medium text-gray-500 bg-gray-100 rounded-full"
-                    style={{ fontSize: "var(--small)" }}
-                  >
-                    Coming Soon
-                  </span>
-                </div>
-              </GlassCard>
-              {/* Notifications */}
-              <GlassCard 
-                className="flex items-center opacity-60"
-                style={{ padding: `calc(var(--body) * 1.0)` }}
-              >
-                <BellIcon 
-                  className="text-gray-400"
-                  style={{ 
-                    width: `calc(var(--body) * 1.25)`,
-                    height: `calc(var(--body) * 1.25)`,
-                    marginRight: `calc(var(--body) * 0.75)`
-                  }}
-                />
-                <div>
-                  <h4 
-                    className="font-semibold text-gray-500"
-                    style={{ 
-                      fontSize: "var(--body)",
-                      marginBottom: `calc(var(--body) * 0.25)`
-                    }}
-                  >
-                    Notifications
-                  </h4>
-                  <p 
-                    className="text-gray-400"
-                    style={{ fontSize: "var(--small)" }}
-                  >
-                    Configure email and in-app notifications
-                  </p>
-                  <span 
-                    className="ml-2 px-2 py-1 font-medium text-gray-500 bg-gray-100 rounded-full"
-                    style={{ fontSize: "var(--small)" }}
-                  >
-                    Coming Soon
-                  </span>
                   {/* Usage Analytics Card */}
                   <GlassCard className="rounded-2xl shadow-xl p-8">
                     <div className="flex items-center justify-between mb-6">
@@ -394,9 +271,12 @@ export default function ProfilePage() {
                         <div className="text-3xl font-bold mb-2">{user.plan_display || "Free"}</div>
                         <p className="text-blue-100 text-sm">Perfect for getting started</p>
                       </div>
-                      <button className="w-full bg-white text-blue-600 font-semibold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors duration-200">
+                      <Link
+                        href="/profile/plans"
+                        className="block w-full bg-white text-blue-600 font-semibold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors duration-200 text-center"
+                      >
                         Upgrade to Pro
-                      </button>
+                      </Link>
                     </div>
                   </div>
                   {/* Quick Actions */}
@@ -445,26 +325,18 @@ export default function ProfilePage() {
           </div>
 
           {/* Cancellation Note */}
-          <p
-            className="text-gray-400 dark:text-gray-500 text-center"
-            style={{ 
-              fontSize: "var(--small)",
-              marginTop: `calc(var(--body) * 0.5)`
-            }}
-          >
-            Want to cancel your plan? Contact support or manage your plan{" "}
-            <Link
-              href="/profile/plans"
-              className="underline text-blue-500 dark:text-blue-400"
-            >
-              here
-            </Link>
-            .
-          </p>
-
-          {/* Settings Modal */}
-          {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-
+          <div className="px-4 sm:px-6 lg:px-8">
+            <p className="text-gray-400 dark:text-gray-500 text-center text-sm">
+              Want to cancel your plan? Contact support or manage your plan{" "}
+              <Link
+                href="/profile/plans"
+                className="underline text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
+              >
+                here
+              </Link>
+              .
+            </p>
+          </div>
         </div>
 
         {/* Settings Modal */}
