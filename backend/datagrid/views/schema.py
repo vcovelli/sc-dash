@@ -15,17 +15,22 @@ from helpers.minio_client import get_minio_client, ensure_bucket_exists
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from dotenv import load_dotenv
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
 
 from datagrid.models import UserTableSchema  # Use your app/model import here!
 from datagrid.serializers import UserTableSchemaSerializer  # Ditto, update path if needed
 
 from accounts.models import UserActivity  # If you track user actions
-from accounts.permissions import IsReadOnlyOrAbove, CanViewAnalytics
+from accounts.permissions import (
+    IsReadOnlyOrAbove, CanViewAnalytics, CanCreateSchemas, 
+    CanShareSchemas, CanAccessSharedSchemas, CanAccessSchema, CanEditSchema
+)
 from accounts.mixins import CombinedOrgMixin
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -381,26 +386,54 @@ def normalize_columns(columns):
     return out
 
 class UserTableSchemasView(CombinedOrgMixin, APIView):
-    """Handle CRUD for user table schemas (multi-table, per user)."""
-    permission_classes = [IsReadOnlyOrAbove]
+    """Handle CRUD for user table schemas with organization-wide sharing support."""
+    permission_classes = [CanCreateSchemas]
 
     def get(self, request):
-        """Get all table schemas for this user."""
-        # CombinedOrgMixin automatically filters by org
-        schemas = UserTableSchema.objects.filter(user=request.user, org=request.user.org)
+        """
+        Get all accessible table schemas for this user.
+        Includes personal schemas and organization-wide shared schemas.
+        """
+        # Base queryset - schemas in user's organization
+        base_query = UserTableSchema.objects.filter(org=request.user.org)
+        
+        # Get personal schemas + shared schemas user can access
+        accessible_schemas = base_query.filter(
+            Q(user=request.user) |  # Own schemas
+            Q(sharing_level='organization', is_shared=True)  # Shared schemas
+        ).distinct()
+        
+        # Check if user has permission to access shared schemas
+        if request.user.role not in ['admin', 'owner', 'ceo', 'national_manager', 
+                                   'regional_manager', 'local_manager', 'employee', 'client']:
+            # Read-only users can only see their own schemas
+            accessible_schemas = base_query.filter(user=request.user)
+        
+        # Add query parameter to filter by sharing level
+        sharing_filter = request.query_params.get('sharing_level')
+        if sharing_filter:
+            if sharing_filter == 'personal':
+                accessible_schemas = accessible_schemas.filter(user=request.user, sharing_level='personal')
+            elif sharing_filter == 'shared':
+                accessible_schemas = accessible_schemas.filter(sharing_level='organization', is_shared=True)
+        
         # Normalize every schema's columns
-        for schema in schemas:
+        for schema in accessible_schemas:
             schema.columns = normalize_columns(schema.columns)
-        serializer = UserTableSchemaSerializer(schemas, many=True)
+        
+        serializer = UserTableSchemaSerializer(accessible_schemas, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
-        """Create a new table schema for this user (unique per table_name)."""
+        """Create a new table schema for this user."""
         table_name = request.data.get("table_name")
         columns = request.data.get("columns")
+        sharing_level = request.data.get("sharing_level", "personal")
 
         if not table_name or not columns:
             return Response({"error": "Missing table_name or columns."}, status=400)
+        
+        # Check if schema already exists for this user
         if UserTableSchema.objects.filter(
             user=request.user, 
             org=request.user.org, 
@@ -408,55 +441,204 @@ class UserTableSchemasView(CombinedOrgMixin, APIView):
         ).exists():
             return Response({"error": "Schema already exists. Use PATCH to update."}, status=409)
 
+        # Validate sharing level permissions
+        if sharing_level == 'organization':
+            SCHEMA_SHARE_ROLES = [
+                'admin', 'owner', 'ceo', 'national_manager', 
+                'regional_manager', 'local_manager'
+            ]
+            if request.user.role not in SCHEMA_SHARE_ROLES:
+                return Response({
+                    "error": "You don't have permission to create organization-wide schemas. "
+                            "Create a personal schema instead."
+                }, status=403)
+
         columns = normalize_columns(columns)
         serializer = UserTableSchemaSerializer(data={
-            "user": request.user.id,
-            "org": request.user.org.id,
             "table_name": table_name,
             "columns": columns,
-        })
+            "sharing_level": sharing_level,
+        }, context={'request': request})
+        
         if serializer.is_valid():
-            serializer.save(user=request.user, org=request.user.org)
-            return Response(serializer.data, status=201)
+            schema = serializer.save(user=request.user, org=request.user.org)
+            
+            # If creating as organization-wide, set sharing fields
+            if sharing_level == 'organization':
+                schema.share_organization_wide(request.user)
+            
+            return Response(UserTableSchemaSerializer(schema, context={'request': request}).data, status=201)
         return Response(serializer.errors, status=400)
 
+
 class UserTableSchemaDetailView(CombinedOrgMixin, APIView):
-    """Handle GET, PATCH, DELETE for a single table schema."""
-    permission_classes = [IsReadOnlyOrAbove]
+    """Handle GET, PATCH, DELETE for a single table schema with sharing support."""
+    permission_classes = [CanCreateSchemas]
+
+    def get_object(self, request, table_name):
+        """Get schema that user can access (own or shared)."""
+        # Try to get user's own schema first
+        try:
+            return UserTableSchema.objects.get(
+                user=request.user, 
+                org=request.user.org, 
+                table_name=table_name
+            )
+        except UserTableSchema.DoesNotExist:
+            # If not found, try to get shared schema
+            try:
+                shared_schema = UserTableSchema.objects.get(
+                    org=request.user.org,
+                    table_name=table_name,
+                    sharing_level='organization',
+                    is_shared=True
+                )
+                # Check if user has permission to access shared schema
+                if request.user.role in ['admin', 'owner', 'ceo', 'national_manager', 
+                                       'regional_manager', 'local_manager', 'employee', 'client']:
+                    return shared_schema
+            except UserTableSchema.DoesNotExist:
+                pass
+            
+            # Schema not found or no permission
+            return None
 
     def get(self, request, table_name):
-        schema = get_object_or_404(
-            UserTableSchema, 
-            user=request.user, 
-            org=request.user.org, 
-            table_name=table_name
-        )
+        schema = self.get_object(request, table_name)
+        if not schema:
+            return Response({"error": "Schema not found or access denied."}, status=404)
+        
         schema.columns = normalize_columns(schema.columns)
-        serializer = UserTableSchemaSerializer(schema)
+        serializer = UserTableSchemaSerializer(schema, context={'request': request})
         return Response(serializer.data)
 
     def patch(self, request, table_name):
-        schema = get_object_or_404(
-            UserTableSchema, 
-            user=request.user, 
-            org=request.user.org, 
-            table_name=table_name
-        )
+        schema = self.get_object(request, table_name)
+        if not schema:
+            return Response({"error": "Schema not found or access denied."}, status=404)
+        
+        # Check edit permissions
+        if not schema.can_user_edit(request.user):
+            return Response({
+                "error": "You don't have permission to edit this schema."
+            }, status=403)
+        
         columns = request.data.get("columns")
         if columns is not None:
             columns = normalize_columns(columns)
-            schema.columns = columns
-            schema.save()
-        serializer = UserTableSchemaSerializer(schema)
+            request.data["columns"] = columns
+        
+        serializer = UserTableSchemaSerializer(
+            schema, 
+            data=request.data, 
+            partial=True, 
+            context={'request': request}
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, table_name):
+        schema = self.get_object(request, table_name)
+        if not schema:
+            return Response({"error": "Schema not found or access denied."}, status=404)
+        
+        # Only schema owner can delete
+        if schema.user != request.user:
+            return Response({
+                "error": "Only the schema owner can delete it."
+            }, status=403)
+        
+        schema.delete()
+        return Response({"success": True})
+
+
+class SharedSchemasView(CombinedOrgMixin, APIView):
+    """Handle organization-wide shared schemas."""
+    permission_classes = [CanAccessSharedSchemas]
+
+    def get(self, request):
+        """Get all organization-wide shared schemas."""
+        shared_schemas = UserTableSchema.objects.filter(
+            org=request.user.org,
+            sharing_level='organization',
+            is_shared=True
+        )
+        
+        # Normalize columns for each schema
+        for schema in shared_schemas:
+            schema.columns = normalize_columns(schema.columns)
+        
+        serializer = UserTableSchemaSerializer(shared_schemas, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class SchemaShareView(CombinedOrgMixin, APIView):
+    """Handle sharing and unsharing of schemas."""
+    permission_classes = [CanShareSchemas]
+
+    def post(self, request, table_name):
+        """Share a schema organization-wide."""
+        try:
+            schema = UserTableSchema.objects.get(
+                user=request.user,
+                org=request.user.org,
+                table_name=table_name
+            )
+        except UserTableSchema.DoesNotExist:
+            return Response({"error": "Schema not found."}, status=404)
+        
+        if not schema.can_user_share(request.user):
+            return Response({
+                "error": "You don't have permission to share this schema."
+            }, status=403)
+        
+        if schema.is_shared:
+            return Response({"error": "Schema is already shared."}, status=400)
+        
+        schema.share_organization_wide(request.user)
+        
+        # Log the activity
+        UserActivity.objects.create(
+            user=request.user,
+            verb=f"shared schema '{table_name}' organization-wide",
+            target=f"schema:{table_name}",
+            meta={"table_name": table_name, "org_id": request.user.org.id}
+        )
+        
+        serializer = UserTableSchemaSerializer(schema, context={'request': request})
         return Response(serializer.data)
 
     def delete(self, request, table_name):
-        schema = get_object_or_404(
-            UserTableSchema, 
-            user=request.user, 
-            org=request.user.org, 
-            table_name=table_name
+        """Unshare a schema (make it personal)."""
+        try:
+            schema = UserTableSchema.objects.get(
+                user=request.user,
+                org=request.user.org,
+                table_name=table_name
+            )
+        except UserTableSchema.DoesNotExist:
+            return Response({"error": "Schema not found."}, status=404)
+        
+        if not schema.can_user_share(request.user):
+            return Response({
+                "error": "You don't have permission to unshare this schema."
+            }, status=403)
+        
+        if not schema.is_shared:
+            return Response({"error": "Schema is not currently shared."}, status=400)
+        
+        schema.make_personal()
+        
+        # Log the activity
+        UserActivity.objects.create(
+            user=request.user,
+            verb=f"made schema '{table_name}' personal",
+            target=f"schema:{table_name}",
+            meta={"table_name": table_name, "org_id": request.user.org.id}
         )
-        schema.delete()
-        return Response({"success": True})
+        
+        serializer = UserTableSchemaSerializer(schema, context={'request': request})
+        return Response(serializer.data)
 

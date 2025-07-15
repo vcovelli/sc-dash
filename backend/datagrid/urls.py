@@ -3,6 +3,8 @@ from django.urls import path
 from .views.schema import (
     UserTableSchemasView,
     UserTableSchemaDetailView,
+    SharedSchemasView,
+    SchemaShareView,
     generate_schema,
 )
 from .views.row import (
@@ -16,6 +18,10 @@ urlpatterns = [
     # Schema management
     path('schemas/', UserTableSchemasView.as_view(), name='user-table-schemas-list-create'),
     path('schemas/<str:table_name>/', UserTableSchemaDetailView.as_view(), name='user-table-schema-detail'),
+
+    # Schema sharing
+    path('schemas/shared/', SharedSchemasView.as_view(), name='shared-schemas-list'),
+    path('schemas/<str:table_name>/share/', SchemaShareView.as_view(), name='schema-share'),
 
     # API-driven schema management (dynamic)
     # path('schema/', UserSchemaListAPIView.as_view(), name='schema-list-create'),
