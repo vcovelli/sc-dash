@@ -227,29 +227,21 @@ export default function SheetsPageInner() {
   // Add new options to both choice and reference columns
   const columnsWithAdders = columns.map(col => {
     if (["choice", "choice_list"].includes(col.type?.toLowerCase?.())) {
-      const existingChoices = col.choices || [];
+      const existingChoices = normalizeChoices(col.choices);  // <--- normalize!
       const addNewOption: Option = {
-        value: "__ADD_NEW__",
-        label: "+ Add new choice",
+        id: "__ADD_NEW__",
+        name: "+ Add new choice",
         isAddNew: true,
       };
       return {
         ...col,
-        choices: [...existingChoices, addNewOption],
+        choices: [...existingChoices, addNewOption],  // now always Option[]
       };
     }
 
     if (col.type?.toLowerCase?.() === "reference" && col.referenceTable) {
-      const existingChoices = col.choices || [];
-      const addNewOption: Option = {
-        value: "__ADD_NEW__",
-        label: `+ Add new ${col.referenceTable?.slice(0, -1) || "item"}`,
-        isAddNew: true,
-      };
-      return {
-        ...col,
-        choices: [...existingChoices, addNewOption],
-      };
+      // Optionally normalize referenceData if you use it similarly
+      return col;
     }
 
     return col;
@@ -263,12 +255,12 @@ export default function SheetsPageInner() {
     }
 
     const row = rows[rowIndex];
-    if (!row?.id) {
+    const rowId = typeof row.id === "number" ? row.id : row.__rowId;
+    if (!rowId) {
       console.error('Cannot update row without ID');
       return;
     }
-
-    const updatedRecord = await updateRecord(row.id, { [columnId]: newValue });
+    const updatedRecord = await updateRecord(rowId, { [columnId]: newValue });
     if (updatedRecord) {
       // Update local state
       const updatedRows = [...rows];
@@ -300,12 +292,12 @@ export default function SheetsPageInner() {
     }
 
     const row = rows[rowIndex];
-    if (!row?.id) {
+    const rowId = typeof row.id === "number" ? row.id : row.__rowId;
+    if (!rowId) {
       console.error('Cannot delete row without ID');
       return;
     }
-
-    const success = await deleteRecord(row.id);
+    const success = await deleteRecord(rowId);
     if (success) {
       const updatedRows = rows.filter((_, index) => index !== rowIndex);
       setRows(updatedRows);
@@ -323,8 +315,11 @@ export default function SheetsPageInner() {
 
       if (changedRows.length > 0 && canPerformAction('update')) {
         const updates = changedRows
-          .filter(row => row.id)
-          .map(row => ({ id: row.id, data: row }));
+          .filter(row => typeof row.id === "number")
+          .map(row => ({
+            id: row.id as number,
+            data: row
+          }));
         
         if (updates.length > 0) {
           await bulkUpdate(updates);
@@ -371,6 +366,20 @@ export default function SheetsPageInner() {
     return <ErrorDisplay error={error} onRetry={refresh} />;
   }
 
+  const isProUser = true; // or false, or pull from your user profile
+
+  const handleAddTable = () => { 
+    alert("Add Table clicked (coming soon!)");
+  };
+
+  function normalizeChoices(choices?: string[] | Option[]): Option[] {
+    if (!choices) return [];
+    if (typeof choices[0] === "string") {
+      return (choices as string[]).map(s => ({ id: s, name: s }));
+    }
+    return choices as Option[];
+  }
+
   return (
     <RelationalWorkspaceLayout>
       <MobileRotatePrompt />
@@ -381,13 +390,16 @@ export default function SheetsPageInner() {
         {isTableSelectorOpen && (
           <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <TableSelectorPanel
+              isOpen={isTableSelectorOpen} 
               tables={availableTables}
               activeTable={activeTableName}
-              onTableSelect={(tableName) => {
+              onSelectTable={(tableName) => {
                 setActiveTableName(tableName);
                 setIsTableSelectorOpen(false);
               }}
               onClose={() => setIsTableSelectorOpen(false)}
+              isProUser={isProUser}
+              onAddTable={handleAddTable}
             />
           </div>
         )}
@@ -479,9 +491,10 @@ export default function SheetsPageInner() {
             style={{ width: PANEL_WIDTH }}
           >
             <ColumnSettingsPanel
+              isOpen={isSettingsPanelOpen}
               column={selectedColumn}
               onClose={() => setIsSettingsPanelOpen(false)}
-              onColumnUpdate={(updatedColumn) => {
+              onUpdate={(updatedColumn) => {
                 setColumns(prev =>
                   prev.map(col =>
                     col.id === updatedColumn.id ? updatedColumn : col
