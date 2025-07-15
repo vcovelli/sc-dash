@@ -6,11 +6,15 @@ from datetime import datetime, timezone
 
 User = get_user_model()
 
+# ====== ENHANCED SCHEMA MODELS ======
+
 class UserTableSchema(models.Model):
-    # Schema sharing options
-    SHARING_CHOICES = [
-        ('personal', 'Personal (Private)'),
-        ('organization', 'Organization-wide (Shared)'),
+    """Enhanced schema model with versioning and sharing capabilities"""
+    
+    SHARING_LEVEL_CHOICES = [
+        ('private', 'Private'),
+        ('org', 'Organization'),
+        ('public', 'Public'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="table_schemas")
@@ -24,6 +28,22 @@ class UserTableSchema(models.Model):
     table_name = models.CharField(max_length=128)
     db_table_name = models.CharField(max_length=128, blank=True, null=True)
     primary_key = models.CharField(max_length=128, default="id")
+    
+    # Legacy column field - will be migrated to Column model
+    columns = models.JSONField(default=list, help_text="Legacy columns field - use Column model instead")
+    
+    # Versioning
+    version = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True, help_text="Whether this version is the active one")
+    
+    # Validation
+    is_valid = models.BooleanField(default=True)
+    validation_errors = models.JSONField(default=list, blank=True)
+    
+    # Metadata
+    description = models.TextField(blank=True, null=True)
+    tags = models.JSONField(default=list, blank=True)
+    
     columns = models.JSONField(default=list)
     
     # New sharing fields
@@ -74,10 +94,16 @@ class UserTableSchema(models.Model):
         # Set shared_at timestamp when first shared
         if self.is_shared and not self.shared_at:
             self.shared_at = timezone.now()
+          
+            if not self.shared_by:
+                self.shared_by = self.user
+                
+
         elif not self.is_shared:
             self.shared_at = None
             self.shared_by = None
             
+
         super().save(*args, **kwargs)
 
     def share_organization_wide(self, shared_by_user):
@@ -125,8 +151,229 @@ class UserTableSchema(models.Model):
         return user.role in SCHEMA_SHARE_ROLES
 
     def __str__(self):
+        return f"{self.user.email or self.user.username} - {self.table_name} v{self.version} ({self.org.name})"
+    
+    def create_new_version(self):
+        """Create a new version of this schema"""
+        # Mark current versions as inactive
+        UserTableSchema.objects.filter(
+            user=self.user, 
+            org=self.org, 
+            table_name=self.table_name
+        ).update(is_active=False)
+        
+        # Create new version
+        new_version = UserTableSchema.objects.create(
+            user=self.user,
+            org=self.org,
+            table_name=self.table_name,
+            db_table_name=self.db_table_name,
+            primary_key=self.primary_key,
+            columns=self.columns,
+            version=self.version + 1,
+            sharing_level=self.sharing_level,
+            description=self.description,
+            tags=self.tags,
+        )
+        
+        # Copy columns to new version
+        for column in self.schema_columns.all():
+            Column.objects.create(
+                schema=new_version,
+                name=column.name,
+                data_type=column.data_type,
+                order=column.order,
+                is_required=column.is_required,
+                default_value=column.default_value,
+                choices=column.choices,
+                description=column.description,
+                max_length=column.max_length,
+                is_primary_key=column.is_primary_key,
+                is_foreign_key=column.is_foreign_key,
+                foreign_key_table=column.foreign_key_table,
+                foreign_key_column=column.foreign_key_column,
+            )
+        
+        return new_version
+    
+    def validate_schema(self):
+        """Validate the schema structure"""
+        errors = []
+        
+        # Check if columns exist
+        if not self.schema_columns.exists() and not self.columns:
+            errors.append("Schema must have at least one column")
+        
+        # Check for duplicate column names
+        column_names = list(self.schema_columns.values_list('name', flat=True))
+        if len(column_names) != len(set(column_names)):
+            errors.append("Duplicate column names found")
+        
+        # Check primary key exists
+        if not self.schema_columns.filter(is_primary_key=True).exists():
+            errors.append("Schema must have a primary key column")
+        
+        # Update validation status
+        self.is_valid = len(errors) == 0
+        self.validation_errors = errors
+        self.save(update_fields=['is_valid', 'validation_errors'])
+        
+        return self.is_valid
+
+
+class Column(models.Model):
+    """Separate model for schema columns with enhanced metadata"""
+    
+    DATA_TYPE_CHOICES = [
+        ('text', 'Text'),
+        ('integer', 'Integer'),
+        ('decimal', 'Decimal'),
+        ('boolean', 'Boolean'),
+        ('date', 'Date'),
+        ('datetime', 'DateTime'),
+        ('email', 'Email'),
+        ('url', 'URL'),
+        ('json', 'JSON'),
+        ('file', 'File'),
+        ('reference', 'Reference'),
+    ]
+    
+    schema = models.ForeignKey(UserTableSchema, on_delete=models.CASCADE, related_name='schema_columns')
+    name = models.CharField(max_length=128)
+    display_name = models.CharField(max_length=128, blank=True, null=True)
+    data_type = models.CharField(max_length=20, choices=DATA_TYPE_CHOICES, default='text')
+    order = models.PositiveIntegerField(default=0)
+    
+    # Field properties
+    is_required = models.BooleanField(default=False)
+    is_unique = models.BooleanField(default=False)
+    default_value = models.TextField(blank=True, null=True)
+    choices = models.JSONField(default=list, blank=True, help_text="List of valid choices for this field")
+    
+    # Text field properties
+    max_length = models.PositiveIntegerField(null=True, blank=True)
+    min_length = models.PositiveIntegerField(null=True, blank=True)
+    
+    # Numeric field properties
+    max_value = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
+    min_value = models.DecimalField(max_digits=20, decimal_places=10, null=True, blank=True)
+    decimal_places = models.PositiveIntegerField(null=True, blank=True)
+    
+    # Relationship properties
+    is_primary_key = models.BooleanField(default=False)
+    is_foreign_key = models.BooleanField(default=False)
+    foreign_key_table = models.CharField(max_length=128, blank=True, null=True)
+    foreign_key_column = models.CharField(max_length=128, blank=True, null=True)
+    
+    # UI properties
+    is_visible = models.BooleanField(default=True)
+    is_editable = models.BooleanField(default=True)
+    width = models.PositiveIntegerField(null=True, blank=True, help_text="Column width in pixels")
+    
+    # Metadata
+    description = models.TextField(blank=True, null=True)
+    help_text = models.TextField(blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('schema', 'name')
+        ordering = ['order', 'name']
+        indexes = [
+            models.Index(fields=['schema', 'order']),
+            models.Index(fields=['is_primary_key']),
+            models.Index(fields=['data_type']),
+        ]
+    
+    def __str__(self):
+        return f"{self.schema.table_name}.{self.name} ({self.data_type})"
+    
+    @property
+    def effective_display_name(self):
+        """Return display_name if set, otherwise name"""
+        return self.display_name or self.name
+
+
+class SchemaHistory(models.Model):
+    """Audit trail for schema changes"""
+    
+    ACTION_CHOICES = [
+        ('created', 'Created'),
+        ('updated', 'Updated'),
+        ('deleted', 'Deleted'),
+        ('shared', 'Shared'),
+        ('unshared', 'Unshared'),
+        ('version_created', 'Version Created'),
+        ('column_added', 'Column Added'),
+        ('column_updated', 'Column Updated'),
+        ('column_deleted', 'Column Deleted'),
+        ('column_reordered', 'Column Reordered'),
+    ]
+    
+    schema = models.ForeignKey(UserTableSchema, on_delete=models.CASCADE, related_name='history')
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    # Change details
+    field_changed = models.CharField(max_length=128, blank=True, null=True)
+    old_value = models.JSONField(null=True, blank=True)
+    new_value = models.JSONField(null=True, blank=True)
+    
+    # Additional context
+    description = models.TextField(blank=True, null=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['schema', '-timestamp']),
+            models.Index(fields=['action', '-timestamp']),
+            models.Index(fields=['user', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.schema.table_name} - {self.action} by {self.user} at {self.timestamp}"
+
+
+class SchemaPermission(models.Model):
+    """Fine-grained permissions for schema access"""
+    
+    PERMISSION_CHOICES = [
+        ('view', 'View'),
+        ('edit', 'Edit'),
+        ('admin', 'Admin'),
+    ]
+    
+    schema = models.ForeignKey(UserTableSchema, on_delete=models.CASCADE, related_name='permissions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    org = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
+    permission = models.CharField(max_length=10, choices=PERMISSION_CHOICES)
+    
+    granted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='granted_permissions')
+    granted_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('schema', 'user', 'org')
+        indexes = [
+            models.Index(fields=['schema', 'permission']),
+            models.Index(fields=['user', 'permission']),
+            models.Index(fields=['org', 'permission']),
+        ]
+    
+    def __str__(self):
+        target = self.user.username if self.user else f"org:{self.org.name}"
+        return f"{self.schema.table_name} - {self.permission} for {target}"
+
+
+# ====== EXISTING MODELS (UNCHANGED) ======
+
         sharing_indicator = " [SHARED]" if self.is_shared else ""
         return f"{self.user.email or self.user.username} - {self.table_name} schema ({self.org.name}){sharing_indicator}"
+
 
 class UserTableRow(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

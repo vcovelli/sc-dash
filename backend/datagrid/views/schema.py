@@ -23,8 +23,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
 
-from datagrid.models import UserTableSchema  # Use your app/model import here!
-from datagrid.serializers import UserTableSchemaSerializer  # Ditto, update path if needed
+from datagrid.models import UserTableSchema, Column, SchemaHistory, SchemaPermission  # Use your app/model import here!
+from datagrid.serializers import (
+    UserTableSchemaSerializer, UserTableSchemaCreateUpdateSerializer, 
+    ColumnSerializer, SchemaHistorySerializer, SchemaPermissionSerializer
+)  # Ditto, update path if needed
 
 from accounts.models import UserActivity  # If you track user actions
 from accounts.permissions import (
@@ -33,6 +36,10 @@ from accounts.permissions import (
 )
 from accounts.mixins import CombinedOrgMixin
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.contrib.auth import get_user_model
+from django.db import models
+
+User = get_user_model()
 
 # ====== SCHEMA CONSTANTS AND HELPERS =======
 
@@ -552,6 +559,634 @@ class UserTableSchemaDetailView(CombinedOrgMixin, APIView):
         
         schema.delete()
         return Response({"success": True})
+
+# ====== ENHANCED SCHEMA VIEWS ======
+
+class EnhancedSchemasView(CombinedOrgMixin, APIView):
+    """Enhanced schema management with versioning, sharing, and validation"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsReadOnlyOrAbove]
+
+    def get(self, request):
+        """Get schemas with enhanced filtering and sharing logic"""
+        try:
+            org = self.get_user_org(request.user)
+            
+            # Base queryset - user's schemas + shared schemas
+            user_schemas = UserTableSchema.objects.filter(
+                user=request.user, 
+                org=org,
+                is_active=True
+            )
+            
+            # Add organization shared schemas
+            org_shared = UserTableSchema.objects.filter(
+                org=org,
+                sharing_level='org',
+                is_active=True
+            ).exclude(user=request.user)
+            
+            # Add public schemas
+            public_schemas = UserTableSchema.objects.filter(
+                sharing_level='public',
+                is_active=True
+            ).exclude(user=request.user)
+            
+            # Combine querysets
+            all_schemas = user_schemas.union(org_shared, public_schemas)
+            
+            # Apply additional filters
+            table_name = request.GET.get('table_name')
+            if table_name:
+                all_schemas = all_schemas.filter(table_name__icontains=table_name)
+            
+            show_invalid = request.GET.get('show_invalid', 'false').lower() == 'true'
+            if not show_invalid:
+                all_schemas = all_schemas.filter(is_valid=True)
+            
+            # Order by sharing level (own first), then by name
+            all_schemas = all_schemas.order_by('sharing_level', 'table_name')
+            
+            serializer = UserTableSchemaSerializer(all_schemas, many=True, context={'request': request})
+            return Response(serializer.data)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to retrieve schemas: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def post(self, request):
+        """Create new schema with enhanced features"""
+        try:
+            org = self.get_user_org(request.user)
+            
+            # Add user and org to the data
+            data = request.data.copy()
+            
+            serializer = UserTableSchemaCreateUpdateSerializer(
+                data=data, 
+                context={'request': request}
+            )
+            
+            if serializer.is_valid():
+                schema = serializer.save(user=request.user, org=org)
+                
+                # Return full schema data
+                response_serializer = UserTableSchemaSerializer(
+                    schema, 
+                    context={'request': request}
+                )
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to create schema: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class EnhancedSchemaDetailView(CombinedOrgMixin, APIView):
+    """Enhanced individual schema management"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsReadOnlyOrAbove]
+
+    def get_schema(self, request, schema_id):
+        """Get schema with permission checking"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            
+            # Check if user can access this schema
+            if schema.user == request.user:
+                return schema
+            elif schema.sharing_level == 'org' and schema.org == self.get_user_org(request.user):
+                return schema
+            elif schema.sharing_level == 'public':
+                return schema
+            elif schema.permissions.filter(user=request.user).exists():
+                return schema
+            else:
+                return None
+        except UserTableSchema.DoesNotExist:
+            return None
+
+    def get(self, request, schema_id):
+        """Get detailed schema information"""
+        schema = self.get_schema(request, schema_id)
+        if not schema:
+            return Response(
+                {"error": "Schema not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Include history in detail view
+        serializer = UserTableSchemaSerializer(schema, context={'request': request})
+        return Response(serializer.data)
+
+    def put(self, request, schema_id):
+        """Update schema with change tracking"""
+        schema = self.get_schema(request, schema_id)
+        if not schema:
+            return Response(
+                {"error": "Schema not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check edit permissions
+        can_edit = (
+            schema.user == request.user or
+            schema.permissions.filter(
+                user=request.user, 
+                permission__in=['edit', 'admin']
+            ).exists()
+        )
+        
+        if not can_edit:
+            return Response(
+                {"error": "Permission denied - cannot edit this schema"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = UserTableSchemaCreateUpdateSerializer(
+            schema, 
+            data=request.data, 
+            partial=True,
+            context={'request': request}
+        )
+        
+        if serializer.is_valid():
+            updated_schema = serializer.save()
+            response_serializer = UserTableSchemaSerializer(
+                updated_schema, 
+                context={'request': request}
+            )
+            return Response(response_serializer.data)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, schema_id):
+        """Delete schema (soft delete by marking inactive)"""
+        schema = self.get_schema(request, schema_id)
+        if not schema:
+            return Response(
+                {"error": "Schema not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Only owner or admin can delete
+        can_delete = (
+            schema.user == request.user or
+            schema.permissions.filter(
+                user=request.user, 
+                permission='admin'
+            ).exists()
+        )
+        
+        if not can_delete:
+            return Response(
+                {"error": "Permission denied - cannot delete this schema"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Soft delete
+        schema.is_active = False
+        schema.save()
+        
+        # Create history entry
+        SchemaHistory.objects.create(
+            schema=schema,
+            action='deleted',
+            user=request.user,
+            description=f"Deleted schema '{schema.table_name}'"
+        )
+        
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SchemaVersionView(CombinedOrgMixin, APIView):
+    """Manage schema versions"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsReadOnlyOrAbove]
+
+    def post(self, request, schema_id):
+        """Create new version of schema"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            
+            # Check permissions
+            if schema.user != request.user:
+                return Response(
+                    {"error": "Only schema owner can create versions"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            new_version = schema.create_new_version()
+            
+            # Create history entry
+            SchemaHistory.objects.create(
+                schema=new_version,
+                action='version_created',
+                user=request.user,
+                description=f"Created version {new_version.version} from {schema.version}"
+            )
+            
+            serializer = UserTableSchemaSerializer(new_version, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except UserTableSchema.DoesNotExist:
+            return Response(
+                {"error": "Schema not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to create version: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def get(self, request, schema_id):
+        """Get all versions of a schema"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            
+            # Get all versions
+            versions = UserTableSchema.objects.filter(
+                user=schema.user,
+                org=schema.org,
+                table_name=schema.table_name
+            ).order_by('-version')
+            
+            serializer = UserTableSchemaSerializer(versions, many=True, context={'request': request})
+            return Response(serializer.data)
+            
+        except UserTableSchema.DoesNotExist:
+            return Response(
+                {"error": "Schema not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class SchemaColumnsView(CombinedOrgMixin, APIView):
+    """Manage schema columns with drag-drop ordering"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsReadOnlyOrAbove]
+
+    def get(self, request, schema_id):
+        """Get columns for a schema"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            columns = schema.schema_columns.all().order_by('order')
+            serializer = ColumnSerializer(columns, many=True)
+            return Response(serializer.data)
+        except UserTableSchema.DoesNotExist:
+            return Response(
+                {"error": "Schema not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def post(self, request, schema_id):
+        """Add new column to schema"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            
+            # Check edit permissions
+            if schema.user != request.user:
+                return Response(
+                    {"error": "Permission denied"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Set order if not provided
+            if 'order' not in request.data:
+                max_order = schema.schema_columns.aggregate(
+                    max_order=models.Max('order')
+                )['max_order'] or 0
+                request.data['order'] = max_order + 1
+            
+            serializer = ColumnSerializer(data=request.data)
+            if serializer.is_valid():
+                column = serializer.save(schema=schema)
+                
+                # Re-validate schema
+                schema.validate_schema()
+                
+                # Create history entry
+                SchemaHistory.objects.create(
+                    schema=schema,
+                    action='column_added',
+                    user=request.user,
+                    description=f"Added column '{column.name}'"
+                )
+                
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except UserTableSchema.DoesNotExist:
+            return Response(
+                {"error": "Schema not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def put(self, request, schema_id):
+        """Reorder columns (drag-drop support)"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            
+            # Check edit permissions
+            if schema.user != request.user:
+                return Response(
+                    {"error": "Permission denied"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Expect array of column IDs in new order
+            column_ids = request.data.get('column_order', [])
+            
+            for i, column_id in enumerate(column_ids):
+                Column.objects.filter(
+                    id=column_id, 
+                    schema=schema
+                ).update(order=i)
+            
+            # Create history entry
+            SchemaHistory.objects.create(
+                schema=schema,
+                action='column_reordered',
+                user=request.user,
+                description="Reordered columns"
+            )
+            
+            # Return updated columns
+            columns = schema.schema_columns.all().order_by('order')
+            serializer = ColumnSerializer(columns, many=True)
+            return Response(serializer.data)
+            
+        except UserTableSchema.DoesNotExist:
+            return Response(
+                {"error": "Schema not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class SchemaColumnDetailView(CombinedOrgMixin, APIView):
+    """Individual column management"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsReadOnlyOrAbove]
+
+    def get(self, request, schema_id, column_id):
+        """Get column details"""
+        try:
+            column = Column.objects.get(id=column_id, schema__id=schema_id)
+            serializer = ColumnSerializer(column)
+            return Response(serializer.data)
+        except Column.DoesNotExist:
+            return Response(
+                {"error": "Column not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def put(self, request, schema_id, column_id):
+        """Update column"""
+        try:
+            column = Column.objects.get(id=column_id, schema__id=schema_id)
+            
+            # Check edit permissions
+            if column.schema.user != request.user:
+                return Response(
+                    {"error": "Permission denied"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            old_data = ColumnSerializer(column).data
+            
+            serializer = ColumnSerializer(column, data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_column = serializer.save()
+                
+                # Re-validate schema
+                column.schema.validate_schema()
+                
+                # Create history entry
+                SchemaHistory.objects.create(
+                    schema=column.schema,
+                    action='column_updated',
+                    user=request.user,
+                    field_changed=column.name,
+                    old_value=old_data,
+                    new_value=serializer.data,
+                    description=f"Updated column '{column.name}'"
+                )
+                
+                return Response(serializer.data)
+            
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Column.DoesNotExist:
+            return Response(
+                {"error": "Column not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def delete(self, request, schema_id, column_id):
+        """Delete column"""
+        try:
+            column = Column.objects.get(id=column_id, schema__id=schema_id)
+            
+            # Check edit permissions
+            if column.schema.user != request.user:
+                return Response(
+                    {"error": "Permission denied"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            column_name = column.name
+            schema = column.schema
+            column.delete()
+            
+            # Re-validate schema
+            schema.validate_schema()
+            
+            # Create history entry
+            SchemaHistory.objects.create(
+                schema=schema,
+                action='column_deleted',
+                user=request.user,
+                description=f"Deleted column '{column_name}'"
+            )
+            
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        except Column.DoesNotExist:
+            return Response(
+                {"error": "Column not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class SchemaSharingView(CombinedOrgMixin, APIView):
+    """Manage schema sharing and permissions"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsReadOnlyOrAbove]
+
+    def post(self, request, schema_id):
+        """Share schema or grant permissions"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            
+            # Only owner or admin can manage sharing
+            can_share = (
+                schema.user == request.user or
+                schema.permissions.filter(
+                    user=request.user, 
+                    permission='admin'
+                ).exists()
+            )
+            
+            if not can_share:
+                return Response(
+                    {"error": "Permission denied - cannot manage sharing"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            action = request.data.get('action')
+            
+            if action == 'make_public':
+                schema.sharing_level = 'public'
+                schema.save()
+                
+                SchemaHistory.objects.create(
+                    schema=schema,
+                    action='shared',
+                    user=request.user,
+                    description="Made schema public"
+                )
+                
+            elif action == 'make_org_shared':
+                schema.sharing_level = 'org'
+                schema.save()
+                
+                SchemaHistory.objects.create(
+                    schema=schema,
+                    action='shared',
+                    user=request.user,
+                    description="Shared schema with organization"
+                )
+                
+            elif action == 'make_private':
+                schema.sharing_level = 'private'
+                schema.save()
+                
+                SchemaHistory.objects.create(
+                    schema=schema,
+                    action='unshared',
+                    user=request.user,
+                    description="Made schema private"
+                )
+                
+            elif action == 'grant_permission':
+                # Grant specific user permission
+                target_user_id = request.data.get('user_id')
+                permission_level = request.data.get('permission', 'view')
+                
+                try:
+                    target_user = User.objects.get(id=target_user_id)
+                    
+                    permission, created = SchemaPermission.objects.get_or_create(
+                        schema=schema,
+                        user=target_user,
+                        defaults={
+                            'permission': permission_level,
+                            'granted_by': request.user
+                        }
+                    )
+                    
+                    if not created:
+                        permission.permission = permission_level
+                        permission.granted_by = request.user
+                        permission.save()
+                    
+                    SchemaHistory.objects.create(
+                        schema=schema,
+                        action='shared',
+                        user=request.user,
+                        description=f"Granted {permission_level} permission to {target_user.username}"
+                    )
+                    
+                except User.DoesNotExist:
+                    return Response(
+                        {"error": "Target user not found"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+            
+            # Return updated schema
+            serializer = UserTableSchemaSerializer(schema, context={'request': request})
+            return Response(serializer.data)
+            
+        except UserTableSchema.DoesNotExist:
+            return Response(
+                {"error": "Schema not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class SchemaValidationView(CombinedOrgMixin, APIView):
+    """Schema validation endpoint"""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsReadOnlyOrAbove]
+
+    def post(self, request, schema_id):
+        """Validate schema and return detailed report"""
+        try:
+            schema = UserTableSchema.objects.get(id=schema_id)
+            
+            # Run validation
+            is_valid = schema.validate_schema()
+            
+            return Response({
+                "is_valid": is_valid,
+                "errors": schema.validation_errors,
+                "warnings": self.get_warnings(schema),
+                "suggestions": self.get_suggestions(schema)
+            })
+            
+        except UserTableSchema.DoesNotExist:
+            return Response(
+                {"error": "Schema not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+    def get_warnings(self, schema):
+        """Get validation warnings"""
+        warnings = []
+        
+        # Check for potential data loss scenarios
+        if schema.sharing_level == 'public':
+            warnings.append("Public schemas are visible to all users")
+        
+        # Check column types
+        text_columns = schema.schema_columns.filter(data_type='text', max_length__isnull=True)
+        if text_columns.exists():
+            warnings.append(f"{text_columns.count()} text columns have no max_length set")
+        
+        return warnings
+    
+    def get_suggestions(self, schema):
+        """Get optimization suggestions"""
+        suggestions = []
+        
+        # Suggest adding indexes
+        if not schema.schema_columns.filter(is_primary_key=True).exists():
+            suggestions.append("Add a primary key column for better performance")
+        
+        # Suggest adding descriptions
+        undocumented = schema.schema_columns.filter(description__isnull=True)
+        if undocumented.exists():
+            suggestions.append(f"Add descriptions to {undocumented.count()} columns for better documentation")
+        
+        return suggestions
 
 
 class SharedSchemasView(CombinedOrgMixin, APIView):
