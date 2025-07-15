@@ -34,6 +34,14 @@ interface GridTableProps {
   onReorderColumns: (newColumns: CustomColumnDef<Row>[]) => void;
   onAddColumn: (newCol: CustomColumnDef<Row>) => void;
   onDeleteColumn: (accessorKey: string) => void;
+  onCellUpdate?: (rowIndex: number, columnId: string, newValue: any) => void;
+  onDeleteRow?: (rowIndex: number) => void;
+  permissions?: {
+    canRead: boolean;
+    canCreate: boolean;
+    canUpdate: boolean;
+    canDelete: boolean;
+  };
 }
 
 const GridTable: React.FC<GridTableProps> = ({
@@ -47,6 +55,9 @@ const GridTable: React.FC<GridTableProps> = ({
   onReorderColumns,
   onAddColumn,
   onDeleteColumn,
+  onCellUpdate,
+  onDeleteRow,
+  permissions = { canRead: true, canCreate: false, canUpdate: false, canDelete: false },
 }) => {
   // Local columns state to enable immediate updates and control
   const [rawColumns, setRawColumns] = useState<CustomColumnDef<Row>[]>(
