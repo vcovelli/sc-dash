@@ -38,7 +38,10 @@ export default function ProfilePage() {
 
   if (!user)
     return (
-      <p className="text-center py-10 text-gray-500 dark:text-gray-400">
+      <p 
+        className="text-center py-10 text-gray-500 dark:text-gray-400"
+        style={{ fontSize: "var(--body)" }}
+      >
         Loading profile...
       </p>
     );
@@ -51,30 +54,62 @@ export default function ProfilePage() {
           bg-gradient-to-br from-blue-50 to-indigo-100
           dark:from-gray-900 dark:to-gray-950
           transition-colors duration-500
-          flex justify-center items-start py-6 sm:py-10 px-1 sm:px-2
+          flex justify-center items-start py-3 sm:py-6 lg:py-10 px-2 sm:px-4
         "
         style={{ fontSize: "var(--body)" }}
       >
-        <div className="w-full max-w-3xl space-y-5 sm:space-y-8 mx-auto">
+        <div 
+          className="w-full max-w-3xl mx-auto"
+          style={{ 
+            gap: `calc(var(--body) * 0.75)`,
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
 
           {/* Header + Settings */}
           <ProfileHeader onShowSettings={() => setShowSettings(true)} />
 
           {/* DESKTOP: Unified Profile & Plan card */}
           <div className="hidden sm:flex">
-            <GlassCard className="p-8 flex flex-col items-center w-full max-w-2xl mx-auto">
+            <GlassCard 
+              className="flex flex-col items-center w-full max-w-2xl mx-auto"
+              style={{ padding: `calc(var(--body) * 1.5)` }}
+            >
               {/* Profile avatar and info */}
               <div className="flex flex-col items-center w-full">
                 <ProfileInfoCard user={user} hideCard />
               </div>
-              <div className="w-full border-t border-gray-200 dark:border-gray-800 my-6" />
+              <div 
+                className="w-full border-t border-gray-200 dark:border-gray-800"
+                style={{ 
+                  marginTop: `calc(var(--body) * 1.0)`,
+                  marginBottom: `calc(var(--body) * 1.0)`
+                }}
+              />
               {/* Plan section */}
               <div className="flex flex-col items-center w-full">
-                <span className="text-sm text-gray-500 dark:text-gray-400 mb-1">Plan</span>
-                <span className="font-semibold text-lg mb-3 text-blue-700 dark:text-blue-300">{user.plan_display || "Free"}</span>
+                <span 
+                  className="text-gray-500 dark:text-gray-400 mb-1"
+                  style={{ fontSize: "var(--small)" }}
+                >
+                  Plan
+                </span>
+                <span 
+                  className="font-semibold text-blue-700 dark:text-blue-300"
+                  style={{ 
+                    fontSize: "var(--h2)",
+                    marginBottom: `calc(var(--body) * 0.75)`
+                  }}
+                >
+                  {user.plan_display || "Free"}
+                </span>
                 <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-                  // Add your plan upgrade handler here!
+                  className="bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                  style={{ 
+                    fontSize: "var(--body)",
+                    padding: `calc(var(--body) * 0.5) calc(var(--body) * 1.0)`
+                  }}
                 >
                   Upgrade to Pro
                 </button>
@@ -83,7 +118,10 @@ export default function ProfilePage() {
           </div>
 
           {/* MOBILE: Stacked Cards */}
-          <div className="flex flex-col sm:hidden gap-4">
+          <div 
+            className="flex flex-col sm:hidden"
+            style={{ gap: `calc(var(--body) * 0.75)` }}
+          >
             <ProfileInfoCard user={user} />
             <PlanInfoCardMobile user={user} />
           </div>
@@ -92,12 +130,27 @@ export default function ProfilePage() {
           <UsageCard user={user} />
 
           {/* --- SETTINGS CARDS AT BOTTOM --- */}
-          <div className="space-y-5">
+          <div style={{ gap: `calc(var(--body) * 0.75)`, display: 'flex', flexDirection: 'column' }}>
             {/* Account & App Settings */}
-            <GlassCard className="p-3 sm:p-8">
-              <div className="mb-4 flex items-center gap-2">
-                <CogIcon className="w-7 h-7 text-blue-600" />
-                <h3 className="font-bold text-gray-800 dark:text-white text-lg" style={{ fontSize: "var(--h2)" }}>
+            <GlassCard 
+              style={{ padding: `calc(var(--body) * 0.75) calc(var(--body) * 1.0)` }}
+              className="sm:p-8"
+            >
+              <div 
+                className="flex items-center gap-2"
+                style={{ marginBottom: `calc(var(--body) * 1.0)` }}
+              >
+                <CogIcon 
+                  className="text-blue-600"
+                  style={{ 
+                    width: `calc(var(--body) * 1.5)`,
+                    height: `calc(var(--body) * 1.5)`
+                  }}
+                />
+                <h3 
+                  className="font-bold text-gray-800 dark:text-white" 
+                  style={{ fontSize: "var(--h2)" }}
+                >
                   Settings
                 </h3>
               </div>
@@ -106,25 +159,80 @@ export default function ProfilePage() {
             </GlassCard>
 
             {/* Account security and notifications - coming soon sections */}
-            <div className="grid md:grid-cols-2 gap-5">
+            <div 
+              className="grid md:grid-cols-2"
+              style={{ gap: `calc(var(--body) * 0.75)` }}
+            >
               {/* Security */}
-              <GlassCard className="p-4 flex items-center opacity-60">
-                <ShieldCheckIcon className="w-6 h-6 text-gray-400 mr-3" />
+              <GlassCard 
+                className="flex items-center opacity-60"
+                style={{ padding: `calc(var(--body) * 1.0)` }}
+              >
+                <ShieldCheckIcon 
+                  className="text-gray-400"
+                  style={{ 
+                    width: `calc(var(--body) * 1.25)`,
+                    height: `calc(var(--body) * 1.25)`,
+                    marginRight: `calc(var(--body) * 0.75)`
+                  }}
+                />
                 <div>
-                  <h4 className="font-semibold text-gray-500 mb-1">Security</h4>
-                  <p className="text-gray-400 text-sm">Password, two-factor authentication, and security settings</p>
-                  <span className="ml-2 px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full">
+                  <h4 
+                    className="font-semibold text-gray-500"
+                    style={{ 
+                      fontSize: "var(--body)",
+                      marginBottom: `calc(var(--body) * 0.25)`
+                    }}
+                  >
+                    Security
+                  </h4>
+                  <p 
+                    className="text-gray-400"
+                    style={{ fontSize: "var(--small)" }}
+                  >
+                    Password, two-factor authentication, and security settings
+                  </p>
+                  <span 
+                    className="ml-2 px-2 py-1 font-medium text-gray-500 bg-gray-100 rounded-full"
+                    style={{ fontSize: "var(--small)" }}
+                  >
                     Coming Soon
                   </span>
                 </div>
               </GlassCard>
               {/* Notifications */}
-              <GlassCard className="p-4 flex items-center opacity-60">
-                <BellIcon className="w-6 h-6 text-gray-400 mr-3" />
+              <GlassCard 
+                className="flex items-center opacity-60"
+                style={{ padding: `calc(var(--body) * 1.0)` }}
+              >
+                <BellIcon 
+                  className="text-gray-400"
+                  style={{ 
+                    width: `calc(var(--body) * 1.25)`,
+                    height: `calc(var(--body) * 1.25)`,
+                    marginRight: `calc(var(--body) * 0.75)`
+                  }}
+                />
                 <div>
-                  <h4 className="font-semibold text-gray-500 mb-1">Notifications</h4>
-                  <p className="text-gray-400 text-sm">Configure email and in-app notifications</p>
-                  <span className="ml-2 px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded-full">
+                  <h4 
+                    className="font-semibold text-gray-500"
+                    style={{ 
+                      fontSize: "var(--body)",
+                      marginBottom: `calc(var(--body) * 0.25)`
+                    }}
+                  >
+                    Notifications
+                  </h4>
+                  <p 
+                    className="text-gray-400"
+                    style={{ fontSize: "var(--small)" }}
+                  >
+                    Configure email and in-app notifications
+                  </p>
+                  <span 
+                    className="ml-2 px-2 py-1 font-medium text-gray-500 bg-gray-100 rounded-full"
+                    style={{ fontSize: "var(--small)" }}
+                  >
                     Coming Soon
                   </span>
                 </div>
@@ -134,8 +242,11 @@ export default function ProfilePage() {
 
           {/* Cancellation Note */}
           <p
-            className="text-xs text-gray-400 dark:text-gray-500 text-center"
-            style={{ fontSize: "var(--small)" }}
+            className="text-gray-400 dark:text-gray-500 text-center"
+            style={{ 
+              fontSize: "var(--small)",
+              marginTop: `calc(var(--body) * 0.5)`
+            }}
           >
             Want to cancel your plan? Contact support or manage your plan{" "}
             <Link
