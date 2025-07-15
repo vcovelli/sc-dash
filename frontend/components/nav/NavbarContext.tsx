@@ -8,6 +8,8 @@ type NavContextType = {
   setFullscreen: (v: boolean) => void;
   showDesktopNav: boolean;
   setShowDesktopNav: (v: boolean) => void;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (v: boolean) => void;
 };
 
 const NavContext = createContext<NavContextType | undefined>(undefined);
@@ -16,9 +18,21 @@ export function NavbarProvider({ children }: { children: React.ReactNode }) {
   const [showNav, setShowNav] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [showDesktopNav, setShowDesktopNav] = useState(true); // default: visible
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <NavContext.Provider value={{ showNav, setShowNav, fullscreen, setFullscreen, showDesktopNav, setShowDesktopNav }}>
+    <NavContext.Provider 
+      value={{
+        showNav,
+        setShowNav,
+        fullscreen,
+        setFullscreen,
+        showDesktopNav,
+        setShowDesktopNav,
+        isSidebarOpen,
+        setIsSidebarOpen,
+      }}
+      >
       {children}
     </NavContext.Provider>
   );
