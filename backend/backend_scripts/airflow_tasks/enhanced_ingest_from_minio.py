@@ -164,11 +164,30 @@ class EnhancedDataIngestion:
     def get_required_fields_for_table(self, table_name: str) -> List[str]:
         """Get required fields based on table type - customize per organization needs"""
         table_requirements = {
+            # Original supported tables
             "orders": ["order_id", "customer_id", "order_date"],
             "products": ["product_id", "product_name"],
             "inventory": ["product_id", "location_id", "quantity"],
-            "customers": ["customer_id", "customer_name"]
+            "customers": ["customer_id", "customer_name"],
+            
+            # Additional common business tables
+            "sales": ["sale_id", "customer_id", "product_id", "sale_date"],
+            "employees": ["employee_id", "name", "department"],
+            "suppliers": ["supplier_id", "supplier_name"],
+            "transactions": ["transaction_id", "amount", "date"],
+            "invoices": ["invoice_id", "customer_id", "total"],
+            "shipments": ["shipment_id", "order_id", "tracking_number"],
+            
+            # Allow "unknown" tables with minimal validation
+            "unknown": []  # Permissive for unknown table types
         }
+        
+        # Log unknown table types for debugging
+        if table_name not in table_requirements:
+            print(f"[WARNING] Unrecognized table type: '{table_name}'. Consider adding validation rules.")
+            print(f"[INFO] Available table types: {list(table_requirements.keys())}")
+            return []  # Permissive - allow any fields for unrecognized tables
+        
         return table_requirements.get(table_name, [])
 
     def insert_versioned_record(self, collection, record: Dict, version: int, 
