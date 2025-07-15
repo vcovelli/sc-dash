@@ -77,14 +77,30 @@ class UploadCSVView(CombinedOrgMixin, APIView):
                     "minio_path": minio_path
                 }
             )
-            dag_id = "ingest_csv_to_mongo_dag"
+            # Use the new enhanced organization-aware ingest DAG
+            dag_id = "enhanced_org_aware_ingest_dag"
             airflow_url = f"{os.getenv('AIRFLOW_API_BASE')}/dags/{dag_id}/dagRuns"
             airflow_user = os.getenv("AIRFLOW_USERNAME", "airflow")
             airflow_pass = os.getenv("AIRFLOW_PASSWORD", "airflow")
+            
+            # Enhanced DAG configuration with organization awareness
+            dag_config = {
+                "org_id": str(request.user.org.id),
+                "table": request.data.get("table", "unknown"),  # Allow specifying target table
+                "file_id": str(uploaded_file.id),
+                "user_id": str(request.user.id),
+                "triggered_by": "file_upload"
+            }
+            
+            dag_run_data = {
+                "conf": dag_config,
+                "dag_run_id": f"upload_trigger_{request.user.org.id}_{uploaded_file.id}"
+            }
+            
             airflow_response = requests.post(
                 airflow_url,
                 auth=(airflow_user, airflow_pass),
-                json={"conf": {"file_id": uploaded_file.id}},
+                json=dag_run_data,
                 timeout=10
             )
             if airflow_response.status_code not in [200, 201]:

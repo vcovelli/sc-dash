@@ -541,6 +541,159 @@ class DataPipelineManager:
             "report_timestamp": datetime.now().isoformat()
         }
 
+    def trigger_enhanced_ingest_dag(self, org_id: str, table: str, file_id: str, user_id: str = None) -> Dict:
+        """Trigger enhanced organization-aware ingest DAG"""
+        import requests
+        
+        airflow_base_url = os.getenv('AIRFLOW_API_BASE', 'http://airflow:8080/api/v1')
+        airflow_user = os.getenv('AIRFLOW_USERNAME', 'airflow')
+        airflow_password = os.getenv('AIRFLOW_PASSWORD', 'airflow')
+        
+        dag_config = {
+            'org_id': org_id,
+            'table': table,
+            'file_id': file_id,
+            'user_id': user_id,
+            'triggered_by': 'data_pipeline_manager'
+        }
+        
+        dag_run_data = {
+            'conf': dag_config,
+            'dag_run_id': f"manager_trigger_{org_id}_{table}_{file_id}"
+        }
+        
+        try:
+            response = requests.post(
+                f"{airflow_base_url}/dags/enhanced_org_aware_ingest_dag/dagRuns",
+                auth=(airflow_user, airflow_password),
+                json=dag_run_data,
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            
+            if response.status_code in [200, 201]:
+                return {
+                    'success': True,
+                    'dag_run_id': dag_run_data['dag_run_id'],
+                    'message': 'Enhanced ingest DAG triggered successfully'
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Failed to trigger DAG: {response.text}'
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Exception triggering DAG: {str(e)}'
+            }
+
+    def trigger_postgres_load_dag(self, org_id: str = None, table: str = None) -> Dict:
+        """Trigger enhanced MongoDB to PostgreSQL load DAG"""
+        import requests
+        
+        airflow_base_url = os.getenv('AIRFLOW_API_BASE', 'http://airflow:8080/api/v1')
+        airflow_user = os.getenv('AIRFLOW_USERNAME', 'airflow')
+        airflow_password = os.getenv('AIRFLOW_PASSWORD', 'airflow')
+        
+        dag_config = {
+            'org_id': org_id,
+            'table': table,
+            'triggered_by': 'data_pipeline_manager',
+            'source_task': 'manual_trigger'
+        }
+        
+        dag_run_data = {
+            'conf': dag_config,
+            'dag_run_id': f"manager_postgres_load_{org_id or 'all'}_{table or 'all'}"
+        }
+        
+        try:
+            response = requests.post(
+                f"{airflow_base_url}/dags/enhanced_mongo_to_postgres_dag/dagRuns",
+                auth=(airflow_user, airflow_password),
+                json=dag_run_data,
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            
+            if response.status_code in [200, 201]:
+                return {
+                    'success': True,
+                    'dag_run_id': dag_run_data['dag_run_id'],
+                    'message': 'PostgreSQL load DAG triggered successfully'
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Failed to trigger DAG: {response.text}'
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Exception triggering DAG: {str(e)}'
+            }
+
+    def trigger_forecast_dag(self, client_id: str) -> Dict:
+        """Trigger inventory forecasting DAG"""
+        import requests
+        
+        airflow_base_url = os.getenv('AIRFLOW_API_BASE', 'http://airflow:8080/api/v1')
+        airflow_user = os.getenv('AIRFLOW_USERNAME', 'airflow')
+        airflow_password = os.getenv('AIRFLOW_PASSWORD', 'airflow')
+        
+        dag_run_data = {
+            'conf': {'client_id': client_id},
+            'dag_run_id': f"manager_forecast_{client_id}"
+        }
+        
+        try:
+            response = requests.post(
+                f"{airflow_base_url}/dags/forecast_inventory_dag/dagRuns",
+                auth=(airflow_user, airflow_password),
+                json=dag_run_data,
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            
+            if response.status_code in [200, 201]:
+                return {
+                    'success': True,
+                    'dag_run_id': dag_run_data['dag_run_id'],
+                    'message': 'Forecast DAG triggered successfully'
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': f'Failed to trigger DAG: {response.text}'
+                }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Exception triggering DAG: {str(e)}'
+            }
+
+    def get_organization_status(self, org_id: str) -> Dict:
+        """Get status for a specific organization"""
+        return self.show_pipeline_status(org_id=org_id, days=7)
+
+    def get_overall_status(self) -> Dict:
+        """Get overall pipeline status"""
+        return self.show_pipeline_status(days=7)
+
+    def generate_quality_report(self, org_id: str, table_name: str = None, days: int = 7) -> Dict:
+        """Generate data quality report for organization"""
+        return self.show_data_quality_report(org_id=org_id, table_name=table_name, days=days)
+
+    def get_audit_trail(self, org_id: str) -> List[Dict]:
+        """Get audit trail for organization"""
+        audit_data = self.show_audit_trail(org_id=org_id)
+        return audit_data.get('audit_entries', [])
+
+
+# Create an alias for backwards compatibility and easier imports
+EnhancedDataPipelineManager = DataPipelineManager
+
 def main():
     """Main CLI interface"""
     parser = argparse.ArgumentParser(description="Enhanced Data Pipeline Management Tool")
