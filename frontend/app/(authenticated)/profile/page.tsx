@@ -1,24 +1,22 @@
+// ProfilePage.tsx — unified color way, matches privacy/page.tsx and dashboard glass cards
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import GlassCard from "./components/GlassCard";
 import ProfileHeader from "./components/ProfileHeader";
 import ProfileInfoCard from "./components/ProfileInfoCard";
 import PlanInfoCard, { PlanInfoCardMobile } from "./components/PlanInfoCard";
 import UsageCard from "./components/UsageCard";
 import SettingsPanel from "./components/SettingsPanel";
-import SettingsModal from "./components/SettingsModal";
-import GlassCard from "./components/GlassCard";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
-// Optionally, bring in icons from heroicons or your library:
-import { 
-  CogIcon, 
-  ShieldCheckIcon, 
-  BellIcon, 
-  UserCircleIcon,
+import {
+  CogIcon,
+  ShieldCheckIcon,
+  BellIcon,
   ChartBarIcon,
   StarIcon,
-  CheckCircleIcon 
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
@@ -46,7 +44,7 @@ export default function ProfilePage() {
 
   if (!user)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
           <p className="text-lg text-gray-600 dark:text-gray-300 font-medium">Loading your profile...</p>
@@ -57,17 +55,11 @@ export default function ProfilePage() {
   return (
     <FontSizeVarsProvider>
       <div
-        className="
-          min-h-screen w-full
-          bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50
-          dark:from-gray-950 dark:via-gray-900 dark:to-gray-800
-          transition-all duration-700
-        "
+        className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-950 transition-all duration-700 relative"
         style={{ fontSize: "var(--body)" }}
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800 opacity-50 pointer-events-none"></div>
-        
+        {/* Background Pattern (optional, can remove for simplicity) */}
+        <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-800 opacity-40 pointer-events-none"></div>
         <div className="relative z-10">
           {/* Header Section */}
           <div className="px-4 sm:px-6 lg:px-8 pt-8 pb-6">
@@ -81,13 +73,6 @@ export default function ProfilePage() {
                     Manage your account settings and preferences
                   </p>
                 </div>
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                >
-                  <CogIcon className="w-5 h-5 mr-2" />
-                  Settings
-                </button>
               </div>
             </div>
           </div>
@@ -96,11 +81,10 @@ export default function ProfilePage() {
           <div className="px-4 sm:px-6 lg:px-8 pb-12">
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
                 {/* Left Column - Profile & Plan */}
                 <div className="lg:col-span-2 space-y-8">
                   {/* Profile Card */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <GlassCard className="rounded-2xl shadow-xl overflow-hidden p-0">
                     <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white">
                       <div className="flex items-center space-x-6">
                         <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-2xl font-bold border-2 border-white/30">
@@ -118,26 +102,26 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     </div>
-                    <div className="p-6 bg-gray-50 dark:bg-gray-700/50">
+                    <div className="p-6 bg-white/70 dark:bg-gray-900/50">
                       <div className="flex space-x-4">
                         <Link
                           href="/auth/change-password"
-                          className="flex-1 text-center py-2 px-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                          className="flex-1 text-center py-2 px-4 bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-gray-900/30 rounded-lg text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-white/90 dark:hover:bg-gray-900 transition-colors duration-200"
                         >
                           Change Password
                         </Link>
                         <Link
                           href="/auth/change-email"
-                          className="flex-1 text-center py-2 px-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                          className="flex-1 text-center py-2 px-4 bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-gray-900/30 rounded-lg text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-white/90 dark:hover:bg-gray-900 transition-colors duration-200"
                         >
                           Change Email
                         </Link>
                       </div>
                     </div>
-                  </div>
+                  </GlassCard>
 
                   {/* Usage Analytics Card */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+                  <GlassCard className="rounded-2xl shadow-xl p-8">
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-lg flex items-center justify-center">
@@ -152,7 +136,6 @@ export default function ProfilePage() {
                         {user.plan || 'Free'} Plan
                       </span>
                     </div>
-                    
                     <div className="space-y-4">
                       <div className="flex items-end justify-between">
                         <div>
@@ -169,7 +152,6 @@ export default function ProfilePage() {
                           </p>
                         </div>
                       </div>
-                      
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-green-400 to-blue-500 rounded-full transition-all duration-500 ease-out"
@@ -178,25 +160,24 @@ export default function ProfilePage() {
                           }}
                         />
                       </div>
-                      
                       {user.days_left && (
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between pt-4 border-t border-white/20 dark:border-gray-900/30">
                           <span className="text-sm text-gray-600 dark:text-gray-400">
                             {user.days_left} days left on trial
                           </span>
-                          <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-200">
+                          <button className="text-sm font-medium text-blue-600 dark:text-blue-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors duration-200">
                             Upgrade Now →
                           </button>
                         </div>
                       )}
                     </div>
-                  </div>
+                  </GlassCard>
 
                   {/* Settings Panel */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+                  <GlassCard className="rounded-2xl shadow-xl p-8">
                     <div className="flex items-center space-x-3 mb-6">
-                      <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-lg flex items-center justify-center">
-                        <CogIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-600/50 rounded-lg flex items-center justify-center">
+                        <CogIcon className="w-5 h-5 text-black dark:text-white" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Preferences</h3>
@@ -204,12 +185,11 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <SettingsPanel settings={settings} updateSetting={updateSetting} />
-                  </div>
+                  </GlassCard>
                 </div>
-
                 {/* Right Column - Plan & Quick Actions */}
                 <div className="space-y-8">
-                  {/* Plan Card */}
+                  {/* Plan Card (keep gradient for primary brand highlight) */}
                   <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl shadow-xl text-white p-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
@@ -227,33 +207,30 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </div>
-
                   {/* Quick Actions */}
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+                  <GlassCard className="rounded-2xl shadow-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 cursor-pointer opacity-60">
+                      <div className="flex items-center p-3 rounded-lg border border-white/20 dark:border-gray-900/30 hover:bg-white/60 dark:hover:bg-gray-900/40 transition-colors duration-200 cursor-pointer opacity-60">
                         <ShieldCheckIcon className="w-5 h-5 text-gray-400 mr-3" />
                         <div className="flex-1">
                           <div className="font-medium text-gray-500">Security Settings</div>
                           <div className="text-xs text-gray-400">Two-factor authentication</div>
                         </div>
-                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full">Soon</span>
+                        <span className="text-xs px-2 py-1 bg-white/50 dark:bg-gray-900/50 text-gray-500 rounded-full">Soon</span>
                       </div>
-                      
-                      <div className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 cursor-pointer opacity-60">
+                      <div className="flex items-center p-3 rounded-lg border border-white/20 dark:border-gray-900/30 hover:bg-white/60 dark:hover:bg-gray-900/40 transition-colors duration-200 cursor-pointer opacity-60">
                         <BellIcon className="w-5 h-5 text-gray-400 mr-3" />
                         <div className="flex-1">
                           <div className="font-medium text-gray-500">Notifications</div>
                           <div className="text-xs text-gray-400">Email and app alerts</div>
                         </div>
-                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full">Soon</span>
+                        <span className="text-xs px-2 py-1 bg-white/50 dark:bg-gray-900/50 text-gray-500 rounded-full">Soon</span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Support Card */}
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-2xl border border-gray-200 dark:border-gray-600 p-6">
+                  </GlassCard>
+                  {/* Support Card (optional: glass, or keep light gradient for contrast) */}
+                  <GlassCard className="rounded-2xl border shadow-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Need Help?</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                       Our support team is here to help you get the most out of SupplyWise.
@@ -261,7 +238,7 @@ export default function ProfilePage() {
                     <div className="space-y-2">
                       <Link
                         href="/profile/plans"
-                        className="block w-full text-center py-2 px-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                        className="block w-full text-center py-2 px-4 bg-white/80 dark:bg-gray-900/70 border border-white/20 dark:border-gray-900/30 rounded-lg text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-white/90 dark:hover:bg-gray-900 transition-colors duration-200"
                       >
                         Manage Plan
                       </Link>
@@ -269,15 +246,12 @@ export default function ProfilePage() {
                         Contact Support
                       </button>
                     </div>
-                  </div>
+                  </GlassCard>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Settings Modal */}
-        {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       </div>
     </FontSizeVarsProvider>
   );
