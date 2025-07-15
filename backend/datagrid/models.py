@@ -36,12 +36,6 @@ class UserTableSchema(models.Model):
     version = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True, help_text="Whether this version is the active one")
     
-    # Sharing functionality
-    sharing_level = models.CharField(max_length=10, choices=SHARING_LEVEL_CHOICES, default='private')
-    is_shared = models.BooleanField(default=False, help_text="Auto-calculated based on sharing_level")
-    shared_at = models.DateTimeField(null=True, blank=True)
-    shared_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='shared_schemas')
-    
     # Validation
     is_valid = models.BooleanField(default=True)
     validation_errors = models.JSONField(default=list, blank=True)
@@ -50,32 +44,111 @@ class UserTableSchema(models.Model):
     description = models.TextField(blank=True, null=True)
     tags = models.JSONField(default=list, blank=True)
     
+    columns = models.JSONField(default=list)
+    
+    # New sharing fields
+    sharing_level = models.CharField(
+        max_length=20, 
+        choices=SHARING_CHOICES, 
+        default='personal',
+        help_text="Determines who can access this schema"
+    )
+    is_shared = models.BooleanField(
+        default=False, 
+        help_text="Quick flag to identify shared schemas"
+    )
+    shared_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True,
+        related_name='shared_schemas',
+        help_text="User who shared this schema organization-wide"
+    )
+    shared_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text="When this schema was shared organization-wide"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "org", "table_name", "version")
+        # Updated unique constraint to handle sharing
+        unique_together = [
+            ("user", "org", "table_name"),  # Keep existing constraint for personal schemas
+        ]
         indexes = [
             models.Index(fields=['org', 'sharing_level']),
-            models.Index(fields=['is_active', 'is_shared']),
-            models.Index(fields=['table_name', 'version']),
+            models.Index(fields=['org', 'is_shared']),
+            models.Index(fields=['user', 'org', 'table_name']),
         ]
 
     def save(self, *args, **kwargs):
         # Auto-assign org from user if not set
         if not self.org and self.user and self.user.org:
             self.org = self.user.org
-            
-        # Auto-calculate is_shared based on sharing_level
-        self.is_shared = self.sharing_level in ['org', 'public']
+        
+        # Update is_shared flag based on sharing_level
+        self.is_shared = (self.sharing_level == 'organization')
         
         # Set shared_at timestamp when first shared
         if self.is_shared and not self.shared_at:
             self.shared_at = timezone.now()
+          
             if not self.shared_by:
                 self.shared_by = self.user
                 
+
+        elif not self.is_shared:
+            self.shared_at = None
+            self.shared_by = None
+            
+
         super().save(*args, **kwargs)
+
+    def share_organization_wide(self, shared_by_user):
+        """Make this schema available to all users in the organization"""
+        self.sharing_level = 'organization'
+        self.shared_by = shared_by_user
+        self.shared_at = timezone.now()
+        self.save()
+
+    def make_personal(self):
+        """Make this schema private to the original user"""
+        self.sharing_level = 'personal'
+        self.shared_by = None
+        self.shared_at = None
+        self.save()
+
+    def can_user_edit(self, user):
+        """Check if a user can edit this schema"""
+        # Original owner can always edit
+        if self.user == user:
+            return True
+        
+        # For shared schemas, check if user has schema management permissions
+        if self.is_shared and user.org == self.org:
+            # Allow managers and above to edit shared schemas
+            SCHEMA_EDIT_ROLES = [
+                'admin', 'owner', 'ceo', 'national_manager', 
+                'regional_manager', 'local_manager'
+            ]
+            return user.role in SCHEMA_EDIT_ROLES
+        
+        return False
+
+    def can_user_share(self, user):
+        """Check if a user can share/unshare this schema"""
+        # Must be the owner and have sharing permissions
+        if self.user != user:
+            return False
+        
+        # Check if user has permission to share schemas
+        SCHEMA_SHARE_ROLES = [
+            'admin', 'owner', 'ceo', 'national_manager', 
+            'regional_manager', 'local_manager'
+        ]
+        return user.role in SCHEMA_SHARE_ROLES
 
     def __str__(self):
         return f"{self.user.email or self.user.username} - {self.table_name} v{self.version} ({self.org.name})"
@@ -297,6 +370,10 @@ class SchemaPermission(models.Model):
 
 
 # ====== EXISTING MODELS (UNCHANGED) ======
+
+        sharing_indicator = " [SHARED]" if self.is_shared else ""
+        return f"{self.user.email or self.user.username} - {self.table_name} schema ({self.org.name}){sharing_indicator}"
+
 
 class UserTableRow(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
