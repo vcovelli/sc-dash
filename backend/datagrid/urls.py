@@ -7,6 +7,14 @@ from datagrid.views.schema import (
     EnhancedSchemasView, EnhancedSchemaDetailView, SchemaVersionView,
     SchemaColumnsView, SchemaColumnDetailView, SchemaSharingView,
     SchemaValidationView
+
+from .views.schema import (
+    
+    UserTableSchemaDetailView,
+    SharedSchemasView,
+    SchemaShareView,
+    generate_schema,
+
 )
 from datagrid.views.data import (
     DataGridAPIView, DataImportView, GridConfigView, 
@@ -54,5 +62,12 @@ urlpatterns = [
     path('sync/', DataSyncView.as_view(), name='data-sync'),
     
     # Commented out unused endpoints
+    # Schema sharing
+    path('schemas/shared/', SharedSchemasView.as_view(), name='shared-schemas-list'),
+    path('schemas/<str:table_name>/share/', SchemaShareView.as_view(), name='schema-share'),
+
+    # API-driven schema management (dynamic)
+    # path('schema/', UserSchemaListAPIView.as_view(), name='schema-list-create'),
+    # path('schema/<str:sheet_name>/', SheetSchemaAPIView.as_view(), name='sheet-schema'),
     # path('schema/<str:table_name>/columns/<str:accessor_key>/', SheetColumnAPIView.as_view(), name='sheet-column-patch'),
 ]
