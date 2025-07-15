@@ -46,7 +46,7 @@ from dotenv import load_dotenv
 
 # Import Django models
 from accounts.models import Organization, CustomUser
-from datagrid.enhanced_models import (
+from datagrid.models import (
     DataIngestionJob, DataLineage, DataQualityReport, 
     DataVersionHistory, OrganizationDataMetrics, DataAlert
 )

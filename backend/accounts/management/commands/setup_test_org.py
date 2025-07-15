@@ -2,6 +2,8 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from accounts.models import Organization, CustomUser
 
+from allauth.account.models import EmailAddress
+
 User = get_user_model()
 
 
@@ -109,11 +111,17 @@ class Command(BaseCommand):
                     )
                 )
             else:
-                # Update existing user to ensure it's in the right org
                 user.org = org
                 user.role = user_data['role']
                 user.save()
                 self.stdout.write(f'Updated existing user: {user.email}')
+
+            # Ensure email is marked as verified
+            EmailAddress.objects.update_or_create(
+                user=user,
+                email=user.email,
+                defaults={'verified': True, 'primary': True}
+            )
 
         # Create a platform admin (no org)
         admin_user, admin_created = CustomUser.objects.get_or_create(
@@ -135,6 +143,13 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(f'Created platform admin: {admin_user.email}')
             )
+
+        # Ensure admin email is verified too
+        EmailAddress.objects.update_or_create(
+            user=admin_user,
+            email=admin_user.email,
+            defaults={'verified': True, 'primary': True}
+        )
 
         self.stdout.write(
             self.style.SUCCESS(
