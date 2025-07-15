@@ -67,6 +67,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "config.middleware.OrgContextMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -175,6 +176,9 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+# Database routing for multi-tenant organization databases
+DATABASE_ROUTERS = ['config.routers.OrgDatabaseRouter']
 
 # ======================
 # Password Validation
