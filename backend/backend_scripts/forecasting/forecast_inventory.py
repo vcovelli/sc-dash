@@ -12,7 +12,7 @@ def forecast_inventory():
     if not client_id:
         raise ValueError("CLIENT_NAME environment variable is required.")
 
-    pg_database = f"clientdata_{client_id}"
+    pg_database = f"orgdata_{client_id}"
 
     # Build connection string
     conn_str = f"postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}/{pg_database}"
