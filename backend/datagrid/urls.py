@@ -1,12 +1,15 @@
 from django.urls import path
 from datagrid.views.schema import (
-    UserTableSchemasView, UserTableSchemaDetailView, SchemaFeatureView, 
-    UploadJSONSchemaToGsheetView, ShareableTemplateGeneratorView, 
-    ShareableTemplateReaderView,
+    UserTableSchemasView, UserTableSchemaDetailView, 
+    #SchemaFeatureView, 
+    #UploadJSONSchemaToGsheetView, 
+    #ShareableTemplateGeneratorView, 
+    #ShareableTemplateReaderView,
     # Enhanced views
     EnhancedSchemasView, EnhancedSchemaDetailView, SchemaVersionView,
     SchemaColumnsView, SchemaColumnDetailView, SchemaSharingView,
     SchemaValidationView
+)
 
 from .views.schema import (
     
@@ -16,10 +19,10 @@ from .views.schema import (
     generate_schema,
 
 )
-from datagrid.views.data import (
-    DataGridAPIView, DataImportView, GridConfigView, 
-    DynamicTableDataView, DynamicTableDetailView, DataSyncView
-)
+#from .views.schema import (
+    #DataGridAPIView, DataImportView, GridConfigView, 
+    #DynamicTableDataView, DynamicTableDetailView, DataSyncView
+#)
 
 app_name = 'datagrid'
 
@@ -27,10 +30,10 @@ urlpatterns = [
     # ====== LEGACY SCHEMA ENDPOINTS (KEEP FOR BACKWARD COMPATIBILITY) ======
     path('schemas/', UserTableSchemasView.as_view(), name='user-table-schemas'),
     path('schemas/<int:pk>/', UserTableSchemaDetailView.as_view(), name='user-table-schema-detail'),
-    path('schemas/features/<str:feature_name>/', SchemaFeatureView.as_view(), name='schema-feature'),
-    path('upload-schema-to-gsheet/', UploadJSONSchemaToGsheetView.as_view(), name='upload-schema-to-gsheet'),
-    path('shareable-template-generator/<str:schema_name>/', ShareableTemplateGeneratorView.as_view(), name='shareable-template-generator'),
-    path('shareable-template-reader/<str:schema_name>/', ShareableTemplateReaderView.as_view(), name='shareable-template-reader'),
+    #path('schemas/features/<str:feature_name>/', SchemaFeatureView.as_view(), name='schema-feature'),
+    #path('upload-schema-to-gsheet/', UploadJSONSchemaToGsheetView.as_view(), name='upload-schema-to-gsheet'),
+    #path('shareable-template-generator/<str:schema_name>/', ShareableTemplateGeneratorView.as_view(), name='shareable-template-generator'),
+    #path('shareable-template-reader/<str:schema_name>/', ShareableTemplateReaderView.as_view(), name='shareable-template-reader'),
     
     # ====== ENHANCED SCHEMA ENDPOINTS ======
     # Main schema management
@@ -54,12 +57,12 @@ urlpatterns = [
     path('v2/schemas/<int:schema_id>/validate/', SchemaValidationView.as_view(), name='schema-validate'),
     
     # ====== DATA ENDPOINTS (UNCHANGED) ======
-    path('data/', DataGridAPIView.as_view(), name='data-grid'),
-    path('import/', DataImportView.as_view(), name='data-import'),
-    path('config/', GridConfigView.as_view(), name='grid-config'),
-    path('dynamic-tables/', DynamicTableDataView.as_view(), name='dynamic-table-data'),
-    path('dynamic-tables/<str:table_name>/', DynamicTableDetailView.as_view(), name='dynamic-table-detail'),
-    path('sync/', DataSyncView.as_view(), name='data-sync'),
+    #path('data/', DataGridAPIView.as_view(), name='data-grid'),
+    #path('import/', DataImportView.as_view(), name='data-import'),
+    #path('config/', GridConfigView.as_view(), name='grid-config'),
+    #path('dynamic-tables/', DynamicTableDataView.as_view(), name='dynamic-table-data'),
+    #path('dynamic-tables/<str:table_name>/', DynamicTableDetailView.as_view(), name='dynamic-table-detail'),
+    #path('sync/', DataSyncView.as_view(), name='data-sync'),
     
     # Commented out unused endpoints
     # Schema sharing

@@ -49,7 +49,7 @@ class UserTableSchema(models.Model):
     # New sharing fields
     sharing_level = models.CharField(
         max_length=20, 
-        choices=SHARING_CHOICES, 
+        choices=SHARING_LEVEL_CHOICES, 
         default='personal',
         help_text="Determines who can access this schema"
     )

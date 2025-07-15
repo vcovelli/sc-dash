@@ -91,10 +91,10 @@ class UserTableSchemaSerializer(serializers.ModelSerializer):
             'columns', 'expected_headers', 'schema_columns',  # Column fields
             'version', 'is_active',  # Versioning
             'sharing_level', 'is_shared', 'is_shared_display', 'shared_at', 
-            'shared_by', 'shared_by_display',  # Sharing
+            'shared_by', 'shared_by_display', 'shared_by_username',  # Sharing
             'is_valid', 'validation_errors', 'validation_status',  # Validation
             'description', 'tags',  # Metadata
-            'can_edit', 'can_share',  # Permissions
+            'can_edit', 'can_share', 'can_unshare',  # Permissions
             'history', 'permissions',  # Related data
             'created_at', 'updated_at',
         ]
@@ -126,6 +126,16 @@ class UserTableSchemaSerializer(serializers.ModelSerializer):
         if obj.is_valid:
             return {"status": "valid", "errors": []}
         return {"status": "invalid", "errors": obj.validation_errors}
+    
+    def get_shared_by_username(self, obj):
+        return obj.shared_by.username if obj.shared_by else None
+    
+    def get_can_unshare(self, obj):
+        request = self.context.get('request')
+        if not request or not hasattr(request, "user") or not request.user.is_authenticated:
+            return False
+        # Can unshare if can share and it's currently shared
+        return obj.can_user_share(request.user) and obj.is_shared
     
     def get_can_edit(self, obj):
         user = self.context.get('request').user if self.context.get('request') else None
