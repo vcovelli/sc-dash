@@ -164,8 +164,36 @@ function LoadingDisplay() {
   );
 }
 
+function EmptyStateDisplay({ tableName, onAddData }: { tableName: string; onAddData: () => void }) {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center max-w-md">
+        <div className="text-6xl mb-4">📋</div>
+        <h3 className="text-xl font-semibold mb-2 dark:text-white">No {tableName} data found</h3>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">
+          Get started by adding some {tableName} data to see the relational spreadsheet in action.
+        </p>
+        <div className="space-y-3">
+          <button
+            onClick={onAddData}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+          >
+            Add First {tableName.slice(0, -1).charAt(0).toUpperCase() + tableName.slice(0, -1).slice(1)}
+          </button>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            <p>💡 <strong>Tip:</strong> You can also set up test data by running:</p>
+            <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs">
+              python manage.py setup_relational_test_data
+            </code>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SheetsPageInner() {
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const { setIsSidebarOpen } = useNavContext();
   const router = useRouter();
 
@@ -193,11 +221,11 @@ export default function SheetsPageInner() {
   }, [setIsSidebarOpen]);
 
   useEffect(() => {
-    if (!profile) {
+    if (!profile && !profileLoading) {
       router.push("/login");
       return;
     }
-  }, [profile, router]);
+  }, [profile, profileLoading, router]);
 
   // Update columns and rows when table changes or data loads
   useEffect(() => {
@@ -213,7 +241,7 @@ export default function SheetsPageInner() {
         // Transform API data to match Row format
         const transformedRows = data.length > 0 
           ? data.map((record: any) => ({ ...record }))
-          : [generateEmptyRow(enrichedCols)];
+          : [];
         
         setRows(transformedRows);
       } catch (error) {
@@ -464,6 +492,8 @@ export default function SheetsPageInner() {
           <div className="flex-1 overflow-hidden">
             {loading ? (
               <LoadingDisplay />
+            ) : rows.length === 0 ? (
+              <EmptyStateDisplay tableName={activeTableName} onAddData={handleAddRow} />
             ) : (
               <GridTable
                 tableName={activeTableName}
