@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied
 from rest_framework.exceptions import NotFound
+from config.routers import set_org_context
 
 
 class OrgFilterMixin:
@@ -22,6 +23,9 @@ class OrgFilterMixin:
         # Regular users only see their org's data
         if not self.request.user.org:
             return queryset.none()
+        
+        # Ensure organization context is set for database routing
+        set_org_context(self.request.user.org.id)
             
         # Filter by org_id or org foreign key
         if hasattr(queryset.model, 'org'):
@@ -44,6 +48,9 @@ class OrgCreateMixin:
         """Automatically set the organization when creating objects"""
         if not self.request.user.is_authenticated or not self.request.user.org:
             raise PermissionDenied("User must belong to an organization")
+        
+        # Ensure organization context is set for database routing
+        set_org_context(self.request.user.org.id)
             
         # Set org on the object if the model has org field
         if hasattr(serializer.Meta.model, 'org'):
@@ -63,17 +70,20 @@ class OrgOwnershipMixin:
     
     def get_object(self):
         """Override to ensure object belongs to user's organization"""
-        obj = super().get_object()
-        
         if not self.request.user.is_authenticated:
             raise PermissionDenied("Authentication required")
             
         # Platform admins can access anything
         if self.request.user.is_admin():
-            return obj
+            return super().get_object()
             
         if not self.request.user.org:
             raise PermissionDenied("User must belong to an organization")
+        
+        # Ensure organization context is set for database routing
+        set_org_context(self.request.user.org.id)
+        
+        obj = super().get_object()
         
         # Check if object belongs to user's organization
         if hasattr(obj, 'org') and obj.org != self.request.user.org:
