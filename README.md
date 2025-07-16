@@ -114,8 +114,11 @@ docker compose logs -f
 
 4. **Initialize test data**
 ```bash
-# Set up test organization and users
-docker compose exec backend python manage.py setup_test_org
+# Install testing dependencies
+pip install -r requirements-testing.txt
+
+# Run unified test suite for complete setup
+python unified_test_suite.py --full-setup
 ```
 
 5. **Access the platform**
@@ -123,6 +126,8 @@ docker compose exec backend python manage.py setup_test_org
 - **Backend API**: http://localhost:8000
 - **Airflow**: http://localhost:8080
 - **MinIO Console**: http://localhost:9001
+
+For comprehensive testing options and troubleshooting, see **[TESTING_GUIDE.md](TESTING_GUIDE.md)**
 
 ### Test Accounts
 | Email | Role | Password | Capabilities |
