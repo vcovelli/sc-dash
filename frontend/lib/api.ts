@@ -1,11 +1,10 @@
 // API service layer for relational spreadsheet
-import { CustomColumnDef, Row } from "@/app/(authenticated)/relational-ui/components/Sheet";
 
 // Types for API responses
 export interface SchemaResponse {
   id: number;
   table_name: string;
-  columns: any[];
+  columns: Record<string, unknown>[];
   sharing_level: string;
   is_valid: boolean;
   version: number;
@@ -16,7 +15,7 @@ export interface SchemaResponse {
 export interface RowResponse {
   id: number;
   table_name: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -31,13 +30,13 @@ export interface ColumnResponse {
   is_unique: boolean;
   is_visible: boolean;
   is_editable: boolean;
-  choices?: any[];
+  choices?: Record<string, unknown>[];
   foreign_key_table?: string;
   foreign_key_column?: string;
 }
 
 class APIError extends Error {
-  constructor(public status: number, message: string, public response?: any) {
+  constructor(public status: number, message: string, public response?: unknown) {
     super(message);
     this.name = 'APIError';
   }
@@ -130,7 +129,7 @@ class RelationalAPI {
     table_name: string;
     description?: string;
     sharing_level?: 'private' | 'org' | 'public';
-    columns: any[];
+    columns: Record<string, unknown>[];
   }): Promise<SchemaResponse> {
     return this.request<SchemaResponse>('/api/datagrid/v2/schemas/', {
       method: 'POST',
@@ -162,7 +161,7 @@ class RelationalAPI {
     data_type: string;
     is_required?: boolean;
     is_unique?: boolean;
-    choices?: any[];
+    choices?: Record<string, unknown>[];
     foreign_key_table?: string;
     foreign_key_column?: string;
   }): Promise<ColumnResponse> {
@@ -197,21 +196,21 @@ class RelationalAPI {
     return this.request<RowResponse[]>(`/api/datagrid/rows/${tableName}/`);
   }
 
-  async createRow(tableName: string, data: Record<string, any>): Promise<RowResponse> {
+  async createRow(tableName: string, data: Record<string, unknown>): Promise<RowResponse> {
     return this.request<RowResponse>(`/api/datagrid/rows/${tableName}/`, {
       method: 'POST',
       body: JSON.stringify({ data }),
     });
   }
 
-  async updateRow(tableName: string, rowId: number, data: Record<string, any>): Promise<RowResponse> {
+  async updateRow(tableName: string, rowId: number, data: Record<string, unknown>): Promise<RowResponse> {
     return this.request<RowResponse>(`/api/datagrid/rows/${tableName}/${rowId}/`, {
       method: 'PATCH',
       body: JSON.stringify({ data }),
     });
   }
 
-  async updateRowField(tableName: string, rowId: number, fieldName: string, value: any): Promise<RowResponse> {
+  async updateRowField(tableName: string, rowId: number, fieldName: string, value: unknown): Promise<RowResponse> {
     return this.request<RowResponse>(`/api/datagrid/rows/${tableName}/${rowId}/`, {
       method: 'PATCH',
       body: JSON.stringify({ data: { [fieldName]: value } }),
@@ -229,8 +228,8 @@ class RelationalAPI {
     sharing_level?: 'private' | 'org' | 'public';
     user_permissions?: { user_id: number; permission: string }[];
     org_permissions?: { org_id: number; permission: string }[];
-  }): Promise<any> {
-    return this.request<any>(`/api/datagrid/v2/schemas/${schemaId}/share/`, {
+  }): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/api/datagrid/v2/schemas/${schemaId}/share/`, {
       method: 'POST',
       body: JSON.stringify(shareData),
     });
@@ -246,8 +245,8 @@ class RelationalAPI {
   }
 
   // Feature-based schema loading (for backward compatibility)
-  async getFeatureSchema(featureName: string): Promise<any> {
-    return this.request<any>(`/api/datagrid/schemas/features/${featureName}/`);
+  async getFeatureSchema(featureName: string): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(`/api/datagrid/schemas/features/${featureName}/`);
   }
 }
 

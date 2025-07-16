@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { updateUserRole, deleteUser } from "@/lib/invitesAPI";
 import { User } from "@/types";
-import { FaTrash, FaEdit, FaCrown, FaUser, FaShieldAlt } from "react-icons/fa";
+import { FaTrash, FaEdit, FaUser } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 type Props = {
@@ -52,7 +52,7 @@ export default function UserTable({ users, onAction, canManage }: Props) {
       await deleteUser(user.id);
       toast.success(`User ${user.username} removed successfully`);
       onAction?.();
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove user");
     }
   };
@@ -63,7 +63,7 @@ export default function UserTable({ users, onAction, canManage }: Props) {
       toast.success(`Role updated to ${ROLE_OPTIONS.find(r => r.value === newRole)?.label}`);
       setEditingRoles(prev => ({ ...prev, [user.id]: false }));
       onAction?.();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update role");
     }
   };

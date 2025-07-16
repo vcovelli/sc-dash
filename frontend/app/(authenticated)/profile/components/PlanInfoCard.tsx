@@ -1,8 +1,9 @@
 import React from "react";
 import GlassCard from "./GlassCard";
 import { useRouter } from "next/navigation";
+import { User } from "@/types";
 
-export default function PlanInfoCard({ user }: { user: any }) {
+export default function PlanInfoCard({ user }: { user: User }) {
   const router = useRouter();
   return (
     <div 
@@ -37,7 +38,7 @@ export default function PlanInfoCard({ user }: { user: any }) {
 }
 
 // For mobile, use this inside your main page
-export function PlanInfoCardMobile({ user }: { user: any }) {
+export function PlanInfoCardMobile({ user }: { user: User }) {
   const router = useRouter();
   return (
     <GlassCard 

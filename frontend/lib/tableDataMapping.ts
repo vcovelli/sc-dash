@@ -4,23 +4,21 @@ import {
   Warehouse, 
   Product, 
   Customer, 
-  Order, 
-  OrderItem, 
-  Inventory, 
-  Shipment 
+  Order
 } from './tableAPI';
 
 // Map backend data to frontend Row format
-export function mapApiDataToRows<T = any>(data: T[], tableName: string): Row[] {
-  return data.map((record: any) => ({
+export function mapApiDataToRows<T = Record<string, unknown>>(data: T[]): Row[] {
+  return data.map((record: Record<string, unknown>) => ({
     ...record,
     __rowId: record.id,
   }));
 }
 
 // Map frontend Row format back to backend data format
-export function mapRowsToApiData(rows: Row[], tableName: string): any[] {
+export function mapRowsToApiData(rows: Row[]): Record<string, unknown>[] {
   return rows.map(row => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { __rowId, ...cleanRow } = row;
     return cleanRow;
   });
@@ -48,9 +46,9 @@ export function getColumnTypeFromBackendField(fieldType: string): string {
 
 // Get display value for reference fields
 export function getDisplayValueForReference(
-  value: any, 
+  value: unknown, 
   column: CustomColumnDef<Row>, 
-  referenceData?: any[]
+  referenceData?: Record<string, unknown>[]
 ): string {
   if (!value) return '';
   
@@ -67,7 +65,7 @@ export function getDisplayValueForReference(
 
 // Validate field value based on column type and constraints
 export function validateFieldValue(
-  value: any, 
+  value: unknown, 
   column: CustomColumnDef<Row>
 ): { isValid: boolean; error?: string } {
   
@@ -114,7 +112,7 @@ export function validateFieldValue(
 }
 
 // Transform backend field value for frontend display
-export function transformBackendValue(value: any, column: CustomColumnDef<Row>): any {
+export function transformBackendValue(value: unknown, column: CustomColumnDef<Row>): unknown {
   if (value === null || value === undefined) {
     return '';
   }
@@ -147,7 +145,7 @@ export function transformBackendValue(value: any, column: CustomColumnDef<Row>):
 }
 
 // Transform frontend value for backend submission
-export function transformFrontendValue(value: any, column: CustomColumnDef<Row>): any {
+export function transformFrontendValue(value: unknown, column: CustomColumnDef<Row>): unknown {
   if (value === '' || value === null || value === undefined) {
     return null;
   }
@@ -176,9 +174,9 @@ export function transformFrontendValue(value: any, column: CustomColumnDef<Row>)
 
 // Get relationship data for reference columns
 export function buildReferenceChoices(
-  referenceData: any[],
+  referenceData: Record<string, unknown>[],
   displayField: string = 'name'
-): { value: any; label: string }[] {
+): { value: unknown; label: string }[] {
   if (!Array.isArray(referenceData)) return [];
   
   return referenceData.map(item => ({
@@ -189,10 +187,10 @@ export function buildReferenceChoices(
 
 // Handle table-specific data transformations
 export function getTableSpecificTransforms(tableName: string) {
-  const transforms: Record<string, any> = {
+  const transforms: Record<string, Record<string, unknown>> = {
     products: {
       // Add supplier name from reference
-      transformRow: (row: any, allData: { suppliers?: Supplier[] }) => {
+      transformRow: (row: Record<string, unknown>, allData: { suppliers?: Supplier[] }) => {
         if (row.supplier && allData.suppliers) {
           const supplier = allData.suppliers.find(s => s.id === row.supplier);
           return { ...row, supplier_name: supplier?.name || '' };
@@ -203,7 +201,7 @@ export function getTableSpecificTransforms(tableName: string) {
     
     orders: {
       // Add customer name from reference
-      transformRow: (row: any, allData: { customers?: Customer[] }) => {
+      transformRow: (row: Record<string, unknown>, allData: { customers?: Customer[] }) => {
         if (row.customer && allData.customers) {
           const customer = allData.customers.find(c => c.id === row.customer);
           return { ...row, customer_name: customer?.name || '' };
@@ -214,17 +212,17 @@ export function getTableSpecificTransforms(tableName: string) {
     
     inventory: {
       // Add product and warehouse names from references
-      transformRow: (row: any, allData: { products?: Product[], warehouses?: Warehouse[] }) => {
+      transformRow: (row: Record<string, unknown>, allData: { products?: Product[], warehouses?: Warehouse[] }) => {
         let transformedRow = { ...row };
         
         if (row.product && allData.products) {
           const product = allData.products.find(p => p.id === row.product);
-          transformedRow.product_name = product?.name || '';
+          transformedRow = { ...transformedRow, product_name: product?.name || '' };
         }
         
         if (row.warehouse && allData.warehouses) {
           const warehouse = allData.warehouses.find(w => w.id === row.warehouse);
-          transformedRow.warehouse_name = warehouse?.name || '';
+          transformedRow = { ...transformedRow, warehouse_name: warehouse?.name || '' };
         }
         
         return transformedRow;
@@ -233,7 +231,7 @@ export function getTableSpecificTransforms(tableName: string) {
     
     shipments: {
       // Add order details from reference
-      transformRow: (row: any, allData: { orders?: Order[] }) => {
+      transformRow: (row: Record<string, unknown>, allData: { orders?: Order[] }) => {
         if (row.order && allData.orders) {
           const order = allData.orders.find(o => o.id === row.order);
           return { ...row, order_details: order ? `Order #${order.id}` : '' };

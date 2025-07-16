@@ -80,8 +80,21 @@ export interface APIResponse<T> {
 }
 
 // Error handling
+interface AxiosError {
+  response?: {
+    status?: number;
+    data?: {
+      detail?: string;
+    };
+  };
+}
+
+interface TableError {
+  status?: number;
+}
+
 export class TableAPIError extends Error {
-  constructor(public status: number, message: string, public detail?: any) {
+  constructor(public status: number, message: string, public detail?: unknown) {
     super(message);
     this.name = 'TableAPIError';
   }
@@ -91,15 +104,16 @@ export class TableAPIError extends Error {
 class TableAPI {
   
   // Generic methods that work with any table
-  async getTableData<T>(tableName: string, params?: Record<string, any>): Promise<APIResponse<T>> {
+  async getTableData<T>(tableName: string, params?: Record<string, unknown>): Promise<APIResponse<T>> {
     try {
       const response = await api.get(`/${tableName}/`, { params });
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
       throw new TableAPIError(
-        error.response?.status || 500,
-        error.response?.data?.detail || `Failed to fetch ${tableName}`,
-        error.response?.data
+        axiosError.response?.status || 500,
+        axiosError.response?.data?.detail || `Failed to fetch ${tableName}`,
+        axiosError.response?.data
       );
     }
   }
@@ -108,11 +122,12 @@ class TableAPI {
     try {
       const response = await api.post(`/${tableName}/`, data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
       throw new TableAPIError(
-        error.response?.status || 500,
-        error.response?.data?.detail || `Failed to create ${tableName} record`,
-        error.response?.data
+        axiosError.response?.status || 500,
+        axiosError.response?.data?.detail || `Failed to create ${tableName} record`,
+        axiosError.response?.data
       );
     }
   }
@@ -121,11 +136,12 @@ class TableAPI {
     try {
       const response = await api.patch(`/${tableName}/${id}/`, data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
       throw new TableAPIError(
-        error.response?.status || 500,
-        error.response?.data?.detail || `Failed to update ${tableName} record`,
-        error.response?.data
+        axiosError.response?.status || 500,
+        axiosError.response?.data?.detail || `Failed to update ${tableName} record`,
+        axiosError.response?.data
       );
     }
   }
@@ -133,11 +149,12 @@ class TableAPI {
   async deleteTableRecord(tableName: string, id: number): Promise<void> {
     try {
       await api.delete(`/${tableName}/${id}/`);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
       throw new TableAPIError(
-        error.response?.status || 500,
-        error.response?.data?.detail || `Failed to delete ${tableName} record`,
-        error.response?.data
+        axiosError.response?.status || 500,
+        axiosError.response?.data?.detail || `Failed to delete ${tableName} record`,
+        axiosError.response?.data
       );
     }
   }
@@ -146,18 +163,19 @@ class TableAPI {
     try {
       const response = await api.get(`/${tableName}/${id}/`);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
       throw new TableAPIError(
-        error.response?.status || 500,
-        error.response?.data?.detail || `Failed to fetch ${tableName} record`,
-        error.response?.data
+        axiosError.response?.status || 500,
+        axiosError.response?.data?.detail || `Failed to fetch ${tableName} record`,
+        axiosError.response?.data
       );
     }
   }
 
   // Specific methods for each table type
   // Suppliers
-  async getSuppliers(params?: Record<string, any>): Promise<APIResponse<Supplier>> {
+  async getSuppliers(params?: Record<string, unknown>): Promise<APIResponse<Supplier>> {
     return this.getTableData<Supplier>('suppliers', params);
   }
 
@@ -174,7 +192,7 @@ class TableAPI {
   }
 
   // Warehouses
-  async getWarehouses(params?: Record<string, any>): Promise<APIResponse<Warehouse>> {
+  async getWarehouses(params?: Record<string, unknown>): Promise<APIResponse<Warehouse>> {
     return this.getTableData<Warehouse>('warehouses', params);
   }
 
@@ -191,7 +209,7 @@ class TableAPI {
   }
 
   // Products
-  async getProducts(params?: Record<string, any>): Promise<APIResponse<Product>> {
+  async getProducts(params?: Record<string, unknown>): Promise<APIResponse<Product>> {
     return this.getTableData<Product>('products', params);
   }
 
@@ -208,7 +226,7 @@ class TableAPI {
   }
 
   // Customers
-  async getCustomers(params?: Record<string, any>): Promise<APIResponse<Customer>> {
+  async getCustomers(params?: Record<string, unknown>): Promise<APIResponse<Customer>> {
     return this.getTableData<Customer>('customers', params);
   }
 
@@ -225,7 +243,7 @@ class TableAPI {
   }
 
   // Orders
-  async getOrders(params?: Record<string, any>): Promise<APIResponse<Order>> {
+  async getOrders(params?: Record<string, unknown>): Promise<APIResponse<Order>> {
     return this.getTableData<Order>('orders', params);
   }
 
@@ -242,7 +260,7 @@ class TableAPI {
   }
 
   // Order Items
-  async getOrderItems(params?: Record<string, any>): Promise<APIResponse<OrderItem>> {
+  async getOrderItems(params?: Record<string, unknown>): Promise<APIResponse<OrderItem>> {
     return this.getTableData<OrderItem>('order-items', params);
   }
 
@@ -259,7 +277,7 @@ class TableAPI {
   }
 
   // Inventory
-  async getInventory(params?: Record<string, any>): Promise<APIResponse<Inventory>> {
+  async getInventory(params?: Record<string, unknown>): Promise<APIResponse<Inventory>> {
     return this.getTableData<Inventory>('inventory', params);
   }
 
@@ -276,7 +294,7 @@ class TableAPI {
   }
 
   // Shipments
-  async getShipments(params?: Record<string, any>): Promise<APIResponse<Shipment>> {
+  async getShipments(params?: Record<string, unknown>): Promise<APIResponse<Shipment>> {
     return this.getTableData<Shipment>('shipments', params);
   }
 
@@ -299,9 +317,10 @@ class TableAPI {
         this.updateTableRecord<T>(tableName, update.id, update.data)
       );
       return await Promise.all(promises);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const tableError = error as TableError;
       throw new TableAPIError(
-        error.status || 500,
+        tableError.status || 500,
         `Failed to bulk update ${tableName} records`,
         error
       );
@@ -314,9 +333,10 @@ class TableAPI {
         this.createTableRecord<T>(tableName, record)
       );
       return await Promise.all(promises);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const tableError = error as TableError;
       throw new TableAPIError(
-        error.status || 500,
+        tableError.status || 500,
         `Failed to bulk create ${tableName} records`,
         error
       );
@@ -327,9 +347,10 @@ class TableAPI {
     try {
       const promises = ids.map(id => this.deleteTableRecord(tableName, id));
       await Promise.all(promises);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const tableError = error as TableError;
       throw new TableAPIError(
-        error.status || 500,
+        tableError.status || 500,
         `Failed to bulk delete ${tableName} records`,
         error
       );
@@ -351,7 +372,7 @@ class TableAPI {
       };
       
       return allowedMethods.includes(methodMap[action]);
-    } catch (error) {
+    } catch {
       // If we can't check permissions, assume no access
       return false;
     }
