@@ -1,8 +1,12 @@
 import threading
+import logging
 from django.conf import settings
 from django.db import connections
 from django.core.exceptions import ImproperlyConfigured
 import os
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Thread-local storage for the current organization context
 _thread_local = threading.local()
@@ -11,17 +15,22 @@ _thread_local = threading.local()
 def set_org_context(org_id):
     """Set the current organization context for this thread"""
     _thread_local.org_id = org_id
+    logger.debug(f"Set organization context to: {org_id}")
 
 
 def get_org_context():
     """Get the current organization context for this thread"""
-    return getattr(_thread_local, 'org_id', None)
+    org_id = getattr(_thread_local, 'org_id', None)
+    logger.debug(f"Retrieved organization context: {org_id}")
+    return org_id
 
 
 def clear_org_context():
     """Clear the organization context for this thread"""
     if hasattr(_thread_local, 'org_id'):
+        org_id = _thread_local.org_id
         delattr(_thread_local, 'org_id')
+        logger.debug(f"Cleared organization context: {org_id}")
 
 
 class OrgDatabaseRouter:
@@ -52,30 +61,60 @@ class OrgDatabaseRouter:
     def _ensure_org_database_config(self, org_id):
         """Ensure the organization database is configured in Django"""
         if not org_id:
+            logger.warning("No organization ID provided for database configuration")
             return None
             
         db_alias = self._get_org_db_alias(org_id)
+        logger.info(f"Ensuring database configuration for org {org_id} (alias: {db_alias})")
         
         # Check if database configuration already exists
         if db_alias in settings.DATABASES:
+            logger.debug(f"Database configuration for {db_alias} already exists")
             return db_alias
+        
+        # Get environment variables
+        db_user = os.getenv('APP_DB_USER')
+        db_password = os.getenv('APP_DB_PASSWORD')
+        db_host = os.getenv('PG_HOST', 'postgres')
+        db_port = os.getenv('PG_PORT', '5432')
+        
+        # Validate required environment variables
+        if not db_user:
+            logger.error("APP_DB_USER environment variable is not set")
+            raise ImproperlyConfigured("APP_DB_USER environment variable is required")
+        
+        if not db_password:
+            logger.error("APP_DB_PASSWORD environment variable is not set")
+            raise ImproperlyConfigured("APP_DB_PASSWORD environment variable is required")
+        
+        logger.info(f"Creating database configuration for {db_alias} - Host: {db_host}, Port: {db_port}, User: {db_user}")
             
         # Create database configuration dynamically
         org_db_config = {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': f'orgdata_{org_id}',
-            'USER': os.getenv('APP_DB_USER'),
-            'PASSWORD': os.getenv('APP_DB_PASSWORD'),
-            'HOST': os.getenv('PG_HOST', 'postgres'),
-            'PORT': os.getenv('PG_PORT', '5432'),
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host,
+            'PORT': db_port,
+            'OPTIONS': {
+                'connect_timeout': 30,
+            }
         }
         
-        # Add to Django's database configuration
-        settings.DATABASES[db_alias] = org_db_config
-        
-        # Clear connection cache to ensure new config is used
-        if db_alias in connections.databases:
-            del connections.databases[db_alias]
+        try:
+            # Add to Django's database configuration
+            settings.DATABASES[db_alias] = org_db_config
+            logger.info(f"Successfully added database configuration for {db_alias}")
+            
+            # Clear connection cache to ensure new config is used
+            if db_alias in connections.databases:
+                del connections.databases[db_alias]
+                logger.debug(f"Cleared connection cache for {db_alias}")
+                
+        except Exception as e:
+            logger.error(f"Failed to configure database {db_alias}: {e}")
+            raise ImproperlyConfigured(f"Failed to configure database {db_alias}: {e}")
             
         return db_alias
     
@@ -88,24 +127,44 @@ class OrgDatabaseRouter:
     def db_for_read(self, model, **hints):
         """Determine which database to read from"""
         model_id = self._get_model_identifier(model)
+        logger.debug(f"Routing read for model: {model_id}")
         
         if model_id in self.org_models:
             # Check for organization context
             org_id = get_org_context()
             if org_id:
-                db_alias = self._ensure_org_database_config(org_id)
-                if db_alias:
-                    return db_alias
+                logger.debug(f"Found organization context {org_id} for model {model_id}")
+                try:
+                    db_alias = self._ensure_org_database_config(org_id)
+                    if db_alias:
+                        logger.info(f"Routing {model_id} read to database: {db_alias}")
+                        return db_alias
+                except Exception as e:
+                    logger.error(f"Failed to configure database for org {org_id}: {e}")
+                    # Fall back to default database
+                    logger.warning(f"Falling back to default database for {model_id}")
+                    return 'default'
+            else:
+                logger.debug(f"No organization context found for model {model_id}")
             
             # If no org context, check the instance for org information
             instance = hints.get('instance')
             if instance and hasattr(instance, 'org') and instance.org:
                 org_id = instance.org.id
+                logger.debug(f"Found org ID {org_id} from instance for model {model_id}")
                 set_org_context(org_id)  # Set context for subsequent queries
-                db_alias = self._ensure_org_database_config(org_id)
-                if db_alias:
-                    return db_alias
+                try:
+                    db_alias = self._ensure_org_database_config(org_id)
+                    if db_alias:
+                        logger.info(f"Routing {model_id} read to database: {db_alias}")
+                        return db_alias
+                except Exception as e:
+                    logger.error(f"Failed to configure database for org {org_id}: {e}")
+                    # Fall back to default database
+                    logger.warning(f"Falling back to default database for {model_id}")
+                    return 'default'
         
+        logger.debug(f"Routing {model_id} read to default database")
         return 'default'
     
     def db_for_write(self, model, **hints):
@@ -131,11 +190,17 @@ class OrgDatabaseRouter:
         
         # Organization models should only migrate to organization databases
         if model_id in self.org_models:
-            return db.startswith('orgdata_')
+            should_migrate = db.startswith('orgdata_')
+            logger.debug(f"Migration for {model_id} on {db}: {'allowed' if should_migrate else 'denied'}")
+            return should_migrate
         
         # Core models (accounts, auth, etc.) should only migrate to default
         if app_label in ['accounts', 'auth', 'contenttypes', 'sessions', 'admin', 'sites']:
-            return db == 'default'
+            should_migrate = db == 'default'
+            logger.debug(f"Migration for {app_label} on {db}: {'allowed' if should_migrate else 'denied'}")
+            return should_migrate
         
         # Other models go to default database
-        return db == 'default'
+        should_migrate = db == 'default'
+        logger.debug(f"Migration for {app_label}.{model_name} on {db}: {'allowed' if should_migrate else 'denied'}")
+        return should_migrate
