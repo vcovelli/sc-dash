@@ -140,14 +140,18 @@ class Command(BaseCommand):
             connection.close()
 
     def get_org_db_connection(self, db_name):
-        """Get connection to organization-specific database"""
+        from dotenv import load_dotenv
+        load_dotenv()  # ensure .env is loaded every time
+        print("APP_DB_USER:", os.getenv('APP_DB_USER'))
+        print("APP_DB_PASSWORD:", os.getenv('APP_DB_PASSWORD'))
+        print("Connecting as user:", os.getenv('APP_DB_USER', 'app_user'))
         try:
             return psycopg2.connect(
-                host=os.getenv('DB_HOST', 'localhost'),
-                port=os.getenv('DB_PORT', 5432),
+                host=os.getenv('PG_HOST', 'postgres'),
+                port=os.getenv('PG_PORT', 5432),
                 database=db_name,
-                user=os.getenv('DB_USER', 'postgres'),
-                password=os.getenv('DB_PASSWORD', 'postgres')
+                user=os.getenv('APP_DB_USER', 'app_user'),      # CORRECT DEFAULT
+                password=os.getenv('APP_DB_PASSWORD', 'app_pass') # CORRECT DEFAULT
             )
         except psycopg2.OperationalError as e:
             self.stdout.write(f'Database connection failed: {e}')
@@ -155,13 +159,13 @@ class Command(BaseCommand):
             return None
 
     def clean_test_data(self, cursor):
-        """Clean existing test data"""
-        tables = ['shipments', 'inventory', 'products', 'orders', 'customers', 'warehouses', 'suppliers']
+        tables = [...]
         for table in tables:
             try:
                 cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;")
-            except psycopg2.Error:
-                pass  # Table might not exist
+            except psycopg2.Error as e:
+                print(f"TRUNCATE failed for table {table}: {e}")
+                cursor.connection.rollback()
 
     def create_tables_if_not_exist(self, cursor):
         """Create tables if they don't exist"""

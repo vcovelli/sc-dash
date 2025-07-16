@@ -17,7 +17,6 @@ from pathlib import Path
 # Add Django settings
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
-sys.path.append(str(BASE_DIR / "backend"))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 import django
@@ -30,7 +29,7 @@ def run_command(command, description, check=True):
     """Run a Django management command"""
     print(f"\n🔄 {description}...")
     try:
-        result = subprocess.run(command, shell=True, check=check, capture_output=True, text=True, cwd=BASE_DIR / "backend")
+        result = subprocess.run(command, shell=True, check=check, capture_output=True, text=True, cwd=BASE_DIR)
         if result.stdout:
             print(result.stdout)
         if result.stderr and result.returncode != 0:
@@ -50,7 +49,7 @@ def main():
     print("=" * 60)
 
     # Change to backend directory for Django commands
-    backend_dir = BASE_DIR / "backend"
+    backend_dir = BASE_DIR
     os.chdir(backend_dir)
 
     # Step 1: Run migrations on default database

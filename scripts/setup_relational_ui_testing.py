@@ -55,7 +55,7 @@ def main():
     print("=" * 60)
 
     # Change to backend directory for Django commands
-    backend_dir = BASE_DIR / "backend"
+    backend_dir = BASE_DIR
     os.chdir(backend_dir)
 
     # Step 1: Set up test organization and users
