@@ -56,7 +56,7 @@ export default function PendingInvitesTable({ invites, onResend, onRevoke }: Pro
       await resendInvite(invite.token);
       toast.success(`Invitation resent to ${invite.email}`);
       onResend();
-    } catch (error) {
+    } catch {
       toast.error("Failed to resend invitation");
     } finally {
       setLoadingStates(prev => ({ ...prev, [invite.id]: "" }));
@@ -74,7 +74,7 @@ export default function PendingInvitesTable({ invites, onResend, onRevoke }: Pro
       // await revokeInvite(invite.id);
       toast.success(`Invitation revoked for ${invite.email}`);
       onRevoke();
-    } catch (error) {
+    } catch {
       toast.error("Failed to revoke invitation");
     } finally {
       setLoadingStates(prev => ({ ...prev, [invite.id]: "" }));

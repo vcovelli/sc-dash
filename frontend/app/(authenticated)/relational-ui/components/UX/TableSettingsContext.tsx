@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import { FONT_SIZE_PRESETS } from "@/components/settings/font/FontSizeDropdown";
-import { getFontVars } from "@/components/settings/font/FontSizeVarsProvider";
 
 type TableSettings = {
   fontSizeIdx: number;

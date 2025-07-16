@@ -1,5 +1,6 @@
 import React from "react";
 import GlassCard from "./GlassCard";
+import { User } from "@/types";
 
 function getRoleDisplayName(role: string): string {
   const roleMap: { [key: string]: string } = {
@@ -18,7 +19,7 @@ function getRoleDisplayName(role: string): string {
   return roleMap[role] || role;
 }
 
-export default function ProfileInfoCard({ user, hideCard = false }: { user: any; hideCard?: boolean }) {
+export default function ProfileInfoCard({ user, hideCard = false }: { user: User; hideCard?: boolean }) {
   const content = (
     <>
       {/* Avatar */}
