@@ -106,8 +106,9 @@ def print_step(text: str):
 class SupplyWiseTestSuite:
     """Comprehensive test suite for SupplyWise AI platform"""
     
-    def __init__(self):
+    def __init__(self, host="localhost"):
         self.base_dir = BASE_DIR
+        self.host = host
         self.services = {
             'postgres': {'container': 'postgres', 'port': 5432, 'health_path': None},
             'mongo': {'container': 'mongo', 'port': 27017, 'health_path': None},
@@ -212,7 +213,7 @@ class SupplyWiseTestSuite:
             try:
                 if health_path:
                     # HTTP health check
-                    response = requests.get(f"http://localhost:{port}{health_path}", timeout=5)
+                    response = requests.get(f"http://{self.host}:{port}{health_path}", timeout=5)
                     if response.status_code == 200:
                         print_success(f"{service_name} is healthy")
                         return True
@@ -221,7 +222,7 @@ class SupplyWiseTestSuite:
                     import socket
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     sock.settimeout(5)
-                    result = sock.connect_ex(('localhost', port))
+                    result = sock.connect_ex((self.host, port))
                     sock.close()
                     if result == 0:
                         print_success(f"{service_name} is responding on port {port}")
@@ -320,16 +321,17 @@ class SupplyWiseTestSuite:
             
         print_success(f"Test organization '{org_name}' created successfully")
         
-        # Extract organization ID from output (you might need to adjust this based on actual output)
-        try:
-            import django
-            django.setup()
-            from accounts.models import Organization
-            org = Organization.objects.get(name=org_name)
-            print_info(f"Organization ID: {org.id}")
-            return str(org.id)
-        except Exception as e:
-            print_warning(f"Could not get organization ID: {e}")
+        # Get organization ID using the management command inside the container
+        success, stdout, stderr = self.run_command(
+            f'docker compose exec -T backend python manage.py get_org_id --org-name "{org_name}"',
+            f"Getting organization ID"
+        )
+        if success and stdout.strip():
+            org_id = stdout.strip()
+            print_info(f"Organization ID: {org_id}")
+            return org_id
+        else:
+            print_warning(f"Could not get organization ID")
             return None
 
     def create_sample_data(self, org_name: str = "Test Organization", clean: bool = False) -> bool:
@@ -428,7 +430,7 @@ class SupplyWiseTestSuite:
         """Test critical API endpoints"""
         print_header("🌐 API ENDPOINT TESTING")
         
-        base_url = "http://localhost:8000"
+        base_url = f"http://{self.host}:8000"
         endpoints = [
             ("/api/health/", "Health check"),
             ("/api/auth/", "Authentication endpoint"),
@@ -490,11 +492,11 @@ class SupplyWiseTestSuite:
         
         # Service URLs
         print(f"{Colors.BOLD}🌐 Service URLs:{Colors.END}")
-        print("├── Frontend:        http://localhost:3000")
-        print("├── Backend API:     http://localhost:8000") 
-        print("├── Django Admin:    http://localhost:8000/admin")
-        print("├── Airflow:         http://localhost:8080")
-        print("└── MinIO Console:   http://localhost:9001")
+        print(f"├── Frontend:        http://{self.host}:3000")
+        print(f"├── Backend API:     http://{self.host}:8000") 
+        print(f"├── Django Admin:    http://{self.host}:8000/admin")
+        print(f"├── Airflow:         http://{self.host}:8080")
+        print(f"└── MinIO Console:   http://{self.host}:9001")
         print()
         
         # Test Accounts
@@ -643,6 +645,13 @@ Examples:
         help="Clean existing test data before setup"
     )
 
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="localhost",
+        help="Backend host/IP for API/health checks (default: localhost)"
+    )
+
     args = parser.parse_args()
     
     # Show help if no arguments provided
@@ -650,7 +659,7 @@ Examples:
         parser.print_help()
         return
     
-    suite = SupplyWiseTestSuite()
+    suite = SupplyWiseTestSuite(host=args.host)
     
     try:
         if args.full_setup:

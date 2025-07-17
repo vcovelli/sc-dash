@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from api.views.health import health
 
 # --- Default Resource ViewSets ---
 from .views.default_user_tables.suppliers import SupplierViewSet
@@ -32,6 +33,8 @@ router.register(r'shipments', ShipmentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+
+    path('health/', health, name='health'),
     
     # Enhanced Airflow DAG endpoints
     path('airflow/trigger/enhanced-ingest/', EnhancedIngestDAGView.as_view(), name='trigger-enhanced-ingest'),
