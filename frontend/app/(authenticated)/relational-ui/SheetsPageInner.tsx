@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
 import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
 import { useTableData } from "@/hooks/useTableData";
+import { useTableSettings } from "@/app/(authenticated)/relational-ui/components/UX/TableSettingsContext";
 
 const PANEL_WIDTH = 320;
 const availableTables = ["orders", "products", "customers", "suppliers", "warehouses", "inventory", "shipments"];
@@ -176,6 +177,7 @@ function EmptyStateDisplay({ tableName, onAddData }: { tableName: string; onAddD
 export default function SheetsPageInner() {
   const { profile, loading: profileLoading } = useProfile();
   const { setIsSidebarOpen } = useNavContext();
+  const { fontSizeIdx, setFontSizeIdx, presets } = useTableSettings();
   const router = useRouter();
 
   const [activeTableName, setActiveTableName] = useState("suppliers");
@@ -508,6 +510,9 @@ export default function SheetsPageInner() {
               isOpen={isSettingsPanelOpen}
               column={selectedColumn}
               onClose={() => setIsSettingsPanelOpen(false)}
+              presets={presets}
+              fontSizeIdx={fontSizeIdx}
+              setFontSizeIdx={setFontSizeIdx}
               onUpdate={(updatedColumn) => {
                 setColumns(prev =>
                   prev.map(col =>

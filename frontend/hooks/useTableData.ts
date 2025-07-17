@@ -70,7 +70,7 @@ export function useTableData<T = any>({
   });
 
   const [currentParams, setCurrentParams] = useState<Record<string, any>>({});
-  const refreshTimeoutRef = useRef<NodeJS.Timeout>();
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isLoadingRef = useRef(false);
 
   // Helper function to update state
