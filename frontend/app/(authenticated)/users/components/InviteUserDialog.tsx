@@ -54,8 +54,12 @@ export default function InviteUserDialog({ onInvited, onClose }: InviteUserDialo
       await inviteUser(email.trim(), role);
       toast.success(`Invitation sent to ${email}!`);
       onInvited();
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.error || error?.message || "Failed to send invite";
+    } catch (error: unknown) {
+      interface ErrorResponse {
+        response?: { data?: { error?: string } };
+      }
+      const axiosError = error as ErrorResponse;
+      const errorMessage = axiosError?.response?.data?.error || (error as Error)?.message || "Failed to send invite";
       toast.error(errorMessage);
     } finally {
       setLoading(false);

@@ -1,14 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import ProfileHeader from "./components/ProfileHeader";
-import ProfileInfoCard from "./components/ProfileInfoCard";
-import PlanInfoCard, { PlanInfoCardMobile } from "./components/PlanInfoCard";
-import UsageCard from "./components/UsageCard";
 import SettingsPanel from "./components/SettingsPanel";
-import GlassCard from "./components/GlassCard";
 import { useUserSettings } from "@/components/UserSettingsContext";
 import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
+import { User } from "@/types";
 // Optionally, bring in icons from heroicons or your library:
 import { 
   CogIcon, 
@@ -21,8 +17,7 @@ import {
 import Link from "next/link";
 
 export default function ProfilePage() {
-  const [showSettings, setShowSettings] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const { settings, updateSetting } = useUserSettings();
 
   useEffect(() => {
@@ -212,7 +207,7 @@ export default function ProfilePage() {
                         <StarIcon className="w-6 h-6 text-yellow-300" />
                       </div>
                       <div className="mb-6">
-                        <div className="text-3xl font-bold mb-2">{user.plan_display || "Free"}</div>
+                        <div className="text-3xl font-bold mb-2">{user.plan || "Free"}</div>
                         <p className="text-blue-100 text-sm">Perfect for getting started</p>
                       </div>
                       <button className="w-full bg-white text-blue-600 font-semibold py-3 px-4 rounded-lg hover:bg-blue-50 transition-colors duration-200">

@@ -11,28 +11,9 @@ import { useRouter } from "next/navigation";
 import { enrichSchemaWithReferenceData } from "@/app/(authenticated)/relational-ui/components/Grid/enrichSchema";
 import { generateEmptyRow } from "@/app/(authenticated)/relational-ui/components/Grid/generateEmptyRow";
 import { useTableData } from "@/hooks/useTableData";
-import { 
-  Supplier, 
-  Warehouse, 
-  Product, 
-  Customer, 
-  Order, 
-  OrderItem, 
-  Inventory, 
-  Shipment 
-} from "@/lib/tableAPI";
 
 const PANEL_WIDTH = 320;
 const availableTables = ["orders", "products", "customers", "suppliers", "warehouses", "inventory", "shipments"];
-const schemaNameMap: Record<string, string> = {
-  orders: "orders",
-  products: "products", 
-  customers: "customers",
-  suppliers: "suppliers",
-  warehouses: "warehouses",
-  inventory: "inventory",
-  shipments: "shipments",
-};
 
 // Column definitions for each table type
 const defaultColumnDefs: Record<string, CustomColumnDef<Row>[]> = {
@@ -240,7 +221,10 @@ export default function SheetsPageInner() {
 
         // Transform API data to match Row format
         const transformedRows = data.length > 0 
-          ? data.map((record: any) => ({ ...record }))
+          ? data.map((record: Record<string, unknown>) => ({ 
+              ...record, 
+              __rowId: (typeof record.id === 'number' ? record.id : Math.floor(Math.random() * 10000))
+            }))
           : [];
         
         setRows(transformedRows);
@@ -276,7 +260,7 @@ export default function SheetsPageInner() {
   });
 
   // Handle cell updates with proper API calls
-  const handleCellUpdate = async (rowIndex: number, columnId: string, newValue: any) => {
+  const handleCellUpdate = async (rowIndex: number, columnId: string, newValue: unknown) => {
     if (!canPerformAction('update')) {
       console.error('No permission to update records');
       return;

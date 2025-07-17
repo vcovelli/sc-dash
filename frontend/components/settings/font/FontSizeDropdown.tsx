@@ -20,8 +20,6 @@ export const FONT_SIZE_PRESETS_MAP: Record<string, number> = Object.fromEntries(
 );
 
 export default function FontSizeDropdown({ value, onChange }: FontSizeDropdownProps) {
-  const currentPreset = FONT_SIZE_PRESETS.find(f => f.value === value);
-  
   return (
     <div>
       <div className="relative">
