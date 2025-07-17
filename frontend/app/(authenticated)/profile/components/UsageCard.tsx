@@ -1,7 +1,8 @@
 import React from "react";
 import GlassCard from "./GlassCard";
+import { User } from "@/types";
 
-export default function UsageCard({ user }: { user: any }) {
+export default function UsageCard({ user }: { user: User }) {
   return (
     <GlassCard 
       style={{ 
@@ -60,7 +61,7 @@ export default function UsageCard({ user }: { user: any }) {
           className="bg-green-400 dark:bg-green-600 rounded transition-all"
           style={{
             height: `calc(var(--body) * 0.5)`,
-            width: `${Math.min(100, (user.usage / user.usage_quota) * 100)}%`
+            width: `${Math.min(100, ((user.usage ?? 0) / (user.usage_quota ?? 1)) * 100)}%`
           }}
         />
       </div>

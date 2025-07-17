@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   LucideUploadCloud,
   LucideUsers,
-  LucideLifeBuoy,
   LucideSparkles,
 } from "lucide-react";
 import { LineChart, TableIcon } from "lucide-react";
@@ -108,7 +107,6 @@ export default function DashboardPage() {
 
   // Grab user name from profile or fallback to generic
   const userName =
-    profile?.name?.trim() ||
     profile?.username?.trim() ||
     profile?.email?.split("@")[0] ||
     "there";

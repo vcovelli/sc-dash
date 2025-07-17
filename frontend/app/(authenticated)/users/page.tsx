@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrashIcon, PencilIcon, UserPlusIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { FaUsers, FaUserPlus, FaClock, FaShieldAlt, FaEnvelope, FaSearch } from "react-icons/fa";
 import FontSizeVarsProvider from "@/components/settings/font/FontSizeVarsProvider";
 import { useUserSettings } from "@/components/UserSettingsContext";
+import { User, Invite } from "@/types";
 
 const ROLE_CHOICES = [
   { value: "owner", label: "Organization Owner", description: "Full access to everything" },
@@ -37,13 +38,13 @@ function getRoleBadgeColor(role: string) {
 }
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [invitations, setInvitations] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [invitations, setInvitations] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newInvite, setNewInvite] = useState({ email: "", role: "employee" });
   const { userRole } = useUserSettings();
 
@@ -207,7 +208,7 @@ export default function UsersPage() {
             </h2>
             <p className="text-gray-600 dark:text-gray-300"
               style={{ fontSize: "var(--body)" }}>
-              You don't have permission to access user management. Contact your organization administrator.
+              You don&apos;t have permission to access user management. Contact your organization administrator.
             </p>
           </div>
         </div>
@@ -235,7 +236,7 @@ export default function UsersPage() {
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1"
                 style={{ fontSize: "var(--body)" }}>
-                Manage your organization's team members and permissions
+                Manage your organization&apos;s team members and permissions
               </p>
             </div>
             {canInviteUsers && (

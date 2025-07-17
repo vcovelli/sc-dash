@@ -8,6 +8,13 @@ export interface User {
   is_pending?: boolean;
   is_suspended?: boolean;
   business_name?: string;
+  plan?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar?: string;
+  usage?: number;
+  usage_quota?: number;
+  days_left?: number;
 }
 
 export interface Invite {
