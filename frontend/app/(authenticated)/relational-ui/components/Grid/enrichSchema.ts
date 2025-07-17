@@ -16,8 +16,8 @@ export async function enrichSchemaWithReferenceData(
 ): Promise<CustomColumnDef[]> {
   const enriched = await Promise.all(
     columns.map(async (col) => {
-      if (col.type === "reference" && col.reference_table) {
-        const referenceData = await fetchReferenceData(col.reference_table);
+      if (col.type === "reference" && col.referenceTable) {
+        const referenceData = await fetchReferenceData(col.referenceTable);
         return { ...col, referenceData };
       }
       return col;

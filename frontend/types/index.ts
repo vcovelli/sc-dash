@@ -15,6 +15,8 @@ export interface User {
   usage?: number;
   usage_quota?: number;
   days_left?: number;
+  last_login?: string | null;
+  total_files?: number;
 }
 
 export interface Invite {
@@ -24,4 +26,5 @@ export interface Invite {
   created_at: string;
   token: string;
   accepted: boolean;
+  invited_by?: string;
 }

@@ -6,7 +6,7 @@ import { FONT_SIZE_PRESETS } from "@/components/settings/font/FontSizeDropdown";
 
 type TableSettings = {
   fontSizeIdx: number;
-  setFontSizeIdx: (idx: number) => void;
+  setFontSizeIdx: React.Dispatch<React.SetStateAction<number>>;
   fontSize: number;
   rowHeight: number;
   presets: typeof FONT_SIZE_PRESETS;
@@ -21,32 +21,55 @@ const TableSettingsContext = createContext<TableSettings | undefined>(undefined)
 // Session-based font size management for relational-ui
 function useRelationalUIFontSize() {
   const { settings: globalSettings } = useUserSettings();
-  
+
   // Get global font size index as default
-  const globalFontSizeIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((preset) => preset.value === (globalSettings.fontSize || "base")));
-  
+  const globalFontSizeIdx = Math.max(
+    0,
+    FONT_SIZE_PRESETS.findIndex(
+      (preset) => preset.value === (globalSettings.fontSize || "base")
+    )
+  );
+
   // Initialize with session storage or global setting
   const [fontSizeIdx, setFontSizeIdx] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const sessionFontSize = sessionStorage.getItem('relational-ui-font-size-idx');
-      return sessionFontSize ? parseInt(sessionFontSize, 10) : globalFontSizeIdx;
+    if (typeof window !== "undefined") {
+      const sessionFontSize = sessionStorage.getItem(
+        "relational-ui-font-size-idx"
+      );
+      return sessionFontSize
+        ? parseInt(sessionFontSize, 10)
+        : globalFontSizeIdx;
     }
     return globalFontSizeIdx;
   });
 
   // Save to session storage when changed
-  const updateFontSizeIdx = (idx: number) => {
-    setFontSizeIdx(idx);
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('relational-ui-font-size-idx', idx.toString());
-    }
+  const updateFontSizeIdx: React.Dispatch<React.SetStateAction<number>> = (
+    idxOrUpdater
+  ) => {
+    setFontSizeIdx((prev) => {
+      const next =
+        typeof idxOrUpdater === "function" ? idxOrUpdater(prev) : idxOrUpdater;
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("relational-ui-font-size-idx", next.toString());
+      }
+      return next;
+    });
   };
 
   // Reset to global setting when global settings change (if user updates profile)
   useEffect(() => {
-    const newGlobalIdx = Math.max(0, FONT_SIZE_PRESETS.findIndex((preset) => preset.value === (globalSettings.fontSize || "base")));
+    const newGlobalIdx = Math.max(
+      0,
+      FONT_SIZE_PRESETS.findIndex(
+        (preset) => preset.value === (globalSettings.fontSize || "base")
+      )
+    );
     // Only reset if user hasn't made local changes in this session
-    if (typeof window !== 'undefined' && !sessionStorage.getItem('relational-ui-font-size-idx')) {
+    if (
+      typeof window !== "undefined" &&
+      !sessionStorage.getItem("relational-ui-font-size-idx")
+    ) {
       setFontSizeIdx(newGlobalIdx);
     }
   }, [globalSettings.fontSize]);
@@ -61,15 +84,17 @@ export function TableSettingsProvider({
 }: {
   children: React.ReactNode;
   fontSizeIdx?: number;
-  setFontSizeIdx?: (idx: number) => void;
+  setFontSizeIdx?: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const sessionFontSize = useRelationalUIFontSize();
   const [zebraStriping, setZebraStriping] = useState(true);
   const [showSystemColumns, setShowSystemColumns] = useState(false);
 
   // Use session-based font size or controlled props
-  const fontSizeIdx = controlledIdx !== undefined ? controlledIdx : sessionFontSize.fontSizeIdx;
-  const setFontSizeIdx = controlledSetter || sessionFontSize.setFontSizeIdx;
+  const fontSizeIdx =
+    controlledIdx !== undefined ? controlledIdx : sessionFontSize.fontSizeIdx;
+  const setFontSizeIdx =
+    controlledSetter || sessionFontSize.setFontSizeIdx;
 
   const ctxValue: TableSettings = {
     fontSizeIdx,
@@ -92,6 +117,9 @@ export function TableSettingsProvider({
 
 export function useTableSettings() {
   const ctx = useContext(TableSettingsContext);
-  if (!ctx) throw new Error("useTableSettings must be used within TableSettingsProvider");
+  if (!ctx)
+    throw new Error(
+      "useTableSettings must be used within TableSettingsProvider"
+    );
   return ctx;
 }

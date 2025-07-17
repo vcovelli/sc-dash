@@ -30,12 +30,18 @@ interface Props {
   column: CustomColumnDef<unknown> | null;
   onClose: () => void;
   onUpdate: (updated: CustomColumnDef<unknown>) => void;
+  presets: { value: string; label: string; fontSize: number; rowHeight: number; }[];
+  fontSizeIdx: number;
+  setFontSizeIdx: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export default function ColumnSettingsPanel({
   column,
   onClose,
   onUpdate,
+  fontSizeIdx,
+  setFontSizeIdx,
+  presets,
 }: Props) {
   const [name, setName] = useState("");
   const [type, setType] = useState<ColumnDataType>("text");
@@ -45,7 +51,7 @@ export default function ColumnSettingsPanel({
   const [references, setReferences] = useState<ReferenceOption[]>([]);
 
   // Table font/row settings
-  const { fontSizeIdx, setFontSizeIdx, presets, zebraStriping, setZebraStriping, showSystemColumns, setShowSystemColumns } = useTableSettings();
+  const { zebraStriping, setZebraStriping, showSystemColumns, setShowSystemColumns } = useTableSettings();
   const preset = presets[fontSizeIdx];
   const fontVars = getFontVars(preset.value);
 

@@ -39,6 +39,7 @@ export interface CustomColumnDef<TData = Row> {
   width?: number;
   isVisible?: boolean;
   isEditable?: boolean;
+  isRequired?: boolean;
 
   onAddChoice?: (newName: string, color?: string) => Promise<Option | null> | Option | null;
   onAddReference?: (newName: string) => Promise<Option | null> | Option | null;
