@@ -164,10 +164,8 @@ services:
     restart: always
     ports:
       - "11434:11434"
-    runtime: nvidia
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - OLLAMA_LLM_LIBRARY=cuda
+      - OLLAMA_LLM_LIBRARY=cpu
     volumes:
       - ai_data:/root/.ai
     healthcheck:
