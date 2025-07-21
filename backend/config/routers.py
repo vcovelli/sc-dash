@@ -128,9 +128,14 @@ class OrgDatabaseRouter:
         """Determine which database to read from"""
         model_id = self._get_model_identifier(model)
         logger.debug(f"Routing read for model: {model_id}")
-        
+
+        # SPECIAL CASE: Always read Organization from 'default'
+        if model_id == "accounts.organization":
+            logger.debug("Routing Organization model read to 'default'")
+            return "default"
+
         if model_id in self.org_models:
-            # Check for organization context
+            # ...rest of your logic unchanged...
             org_id = get_org_context()
             if org_id:
                 logger.debug(f"Found organization context {org_id} for model {model_id}")
@@ -141,18 +146,16 @@ class OrgDatabaseRouter:
                         return db_alias
                 except Exception as e:
                     logger.error(f"Failed to configure database for org {org_id}: {e}")
-                    # Fall back to default database
                     logger.warning(f"Falling back to default database for {model_id}")
                     return 'default'
             else:
                 logger.debug(f"No organization context found for model {model_id}")
             
-            # If no org context, check the instance for org information
             instance = hints.get('instance')
             if instance and hasattr(instance, 'org') and instance.org:
                 org_id = instance.org.id
                 logger.debug(f"Found org ID {org_id} from instance for model {model_id}")
-                set_org_context(org_id)  # Set context for subsequent queries
+                set_org_context(org_id)
                 try:
                     db_alias = self._ensure_org_database_config(org_id)
                     if db_alias:
@@ -160,7 +163,6 @@ class OrgDatabaseRouter:
                         return db_alias
                 except Exception as e:
                     logger.error(f"Failed to configure database for org {org_id}: {e}")
-                    # Fall back to default database
                     logger.warning(f"Falling back to default database for {model_id}")
                     return 'default'
         
@@ -185,22 +187,37 @@ class OrgDatabaseRouter:
         return None
     
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        """Control which migrations run on which databases"""
-        model_id = f"{app_label}.{model_name}" if model_name else None
-        
-        # Organization models should only migrate to organization databases
-        if model_id in self.org_models:
-            should_migrate = db.startswith('orgdata_')
-            logger.debug(f"Migration for {model_id} on {db}: {'allowed' if should_migrate else 'denied'}")
-            return should_migrate
-        
-        # Core models (accounts, auth, etc.) should only migrate to default
-        if app_label in ['accounts', 'auth', 'contenttypes', 'sessions', 'admin', 'sites']:
-            should_migrate = db == 'default'
-            logger.debug(f"Migration for {app_label} on {db}: {'allowed' if should_migrate else 'denied'}")
-            return should_migrate
-        
-        # Other models go to default database
-        should_migrate = db == 'default'
-        logger.debug(f"Migration for {app_label}.{model_name} on {db}: {'allowed' if should_migrate else 'denied'}")
-        return should_migrate
+        """
+        Allow migrations for org models and all needed core Django apps in org DBs.
+        Prevent org models in default DB.
+        """
+        # All apps that must be per-org
+        ORG_APPS = [
+            'api',
+            'accounts',
+            'auth',
+            'contenttypes',
+            # add others as needed ('analytics', etc)
+        ]
+
+        if db.startswith('orgdata_'):
+            # Allow all per-org apps in org DBs
+            if app_label in ORG_APPS:
+                return True
+            # Block other apps in org DBs (optional: or let them fall through)
+            return False
+
+        # Don't allow per-org apps in default DB
+        if db == 'default' and app_label in ORG_APPS:
+            return False
+
+        # Default: let Django decide
+        return None
+    
+def ensure_org_database(org_id):
+    """
+    Ensures the organization DB is configured in Django settings for this org_id.
+    This is a thin wrapper for the OrgDatabaseRouter logic, so middleware can easily call it.
+    """
+    router = OrgDatabaseRouter()
+    return router._ensure_org_database_config(org_id)

@@ -155,8 +155,15 @@ SIMPLE_JWT = {
 # ======================
 # Database
 # ======================
+
+# Multi-tenant database connection base settings
+APP_DB_USER = os.getenv("APP_DB_USER", "app_user")
+APP_DB_PASSWORD = os.getenv("APP_DB_PASSWORD", "app_pass")
+PG_HOST = os.getenv("PG_HOST", "postgres")
+PG_PORT = os.getenv("PG_PORT", "5432")
+
 # Use SQLite for development, PostgreSQL for production
-if os.getenv('APP_DB_NAME'):
+if os.getenv("APP_DB_NAME"):
     # PostgreSQL configuration when environment variables are set
     DATABASES = {
         'default': {
@@ -168,6 +175,18 @@ if os.getenv('APP_DB_NAME'):
             'PORT': os.getenv('PG_PORT', '5432'),
         }
     }
+
+    # Optional: allow CLI access to orgdata_1 for migrations/debugging
+    if os.getenv("INCLUDE_ORGDATA_1", "false").lower() == "true":
+        DATABASES["orgdata_1"] = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "orgdata_1",
+            "USER": os.getenv("APP_DB_USER"),
+            "PASSWORD": os.getenv("APP_DB_PASSWORD"),
+            "HOST": os.getenv("PG_HOST", "postgres"),
+            "PORT": os.getenv("PG_PORT", "5432"),
+        }
+
 else:
     # SQLite configuration for development
     DATABASES = {
