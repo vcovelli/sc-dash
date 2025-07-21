@@ -11,6 +11,14 @@ class TenantScopedViewSet(CombinedOrgMixin, viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Enhanced queryset with org filtering and RBAC support"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Debug logging for authentication issues
+        logger.info(f"User: {self.request.user}, Authenticated: {self.request.user.is_authenticated}")
+        if self.request.user.is_authenticated:
+            logger.info(f"User org: {getattr(self.request.user, 'org', 'None')}")
+        
         # CombinedOrgMixin handles org filtering automatically
         base = super().get_queryset()
         
@@ -18,9 +26,12 @@ class TenantScopedViewSet(CombinedOrgMixin, viewsets.ModelViewSet):
         if hasattr(self.request.user, 'client_id') and not self.request.user.org:
             client_id = getattr(self.request.user, 'client_id', None)
             if client_id and hasattr(base.model, 'client_name'):
+                logger.info(f"Using legacy client_id filtering: {client_id}")
                 return base.filter(client_name=client_id)
         
-        return base
+        queryset = base
+        logger.info(f"Final queryset count for {base.model.__name__}: {queryset.count()}")
+        return queryset
     
     def perform_create(self, serializer):
         """Enhanced creation with org assignment"""

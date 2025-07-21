@@ -106,13 +106,22 @@ class TableAPI {
   // Generic methods that work with any table
   async getTableData<T>(tableName: string, params?: Record<string, unknown>): Promise<APIResponse<T>> {
     try {
+      console.log(`Fetching ${tableName} data from API...`);
       const response = await api.get(`/${tableName}/`, { params });
+      console.log(`Successfully fetched ${response.data.results?.length || 0} ${tableName} records`);
       return response.data;
     } catch (error: unknown) {
       const axiosError = error as AxiosError;
+      const errorMessage = axiosError.response?.data?.detail || `Failed to fetch ${tableName}`;
+      console.error(`API Error fetching ${tableName}:`, {
+        status: axiosError.response?.status,
+        message: errorMessage,
+        url: api.defaults.baseURL + `/${tableName}/`,
+        data: axiosError.response?.data
+      });
       throw new TableAPIError(
         axiosError.response?.status || 500,
-        axiosError.response?.data?.detail || `Failed to fetch ${tableName}`,
+        errorMessage,
         axiosError.response?.data
       );
     }
