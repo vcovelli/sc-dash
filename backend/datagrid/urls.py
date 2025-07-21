@@ -73,4 +73,7 @@ urlpatterns = [
     # path('schema/', UserSchemaListAPIView.as_view(), name='schema-list-create'),
     # path('schema/<str:sheet_name>/', SheetSchemaAPIView.as_view(), name='sheet-schema'),
     # path('schema/<str:table_name>/columns/<str:accessor_key>/', SheetColumnAPIView.as_view(), name='sheet-column-patch'),
+
+    # Schema Wizard Generator
+    path('schema-wizard/generate/', generate_schema, name='schema-wizard-generate'),
 ]
