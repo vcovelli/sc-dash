@@ -396,13 +396,22 @@ def enhanced_ingest_from_minio(**context):
 
         # Notify backend about completion
         try:
+            # Try different token strategies
             token = os.getenv("AIRFLOW_MARK_SUCCESS_TOKEN")
-            headers = {}
+            headers = {"Content-Type": "application/json"}
+            
             if token:
-                headers = {"Authorization": f"Bearer {token}"}
+                headers["Authorization"] = f"Bearer {token}"
+            else:
+                print("[WARNING] No AIRFLOW_MARK_SUCCESS_TOKEN found, attempting without authentication")
+
+            backend_url = ingestion.BACKEND_API_URL or os.getenv("BACKEND_API_URL", "http://backend:8000")
+            endpoint = f"{backend_url}/api/files/mark-success/"
+            
+            print(f"[INFO] Notifying backend at: {endpoint}")
 
             response = requests.post(
-                f"{ingestion.BACKEND_API_URL}/api/files/mark-success/",
+                endpoint,
                 json={
                     "file_id": file_id,
                     "row_count": total_processed,
@@ -419,12 +428,21 @@ def enhanced_ingest_from_minio(**context):
                 headers=headers,
                 timeout=10
             )
+            
             if response.status_code == 200:
                 print(f"[INFO] Successfully notified backend about ingestion completion")
             else:
-                print(f"[WARNING] Failed to notify backend: {response.text}")
+                print(f"[WARNING] Failed to notify backend - Status: {response.status_code}")
+                print(f"[WARNING] Response: {response.text}")
+                try:
+                    error_data = response.json()
+                    print(f"[WARNING] Error details: {error_data}")
+                except:
+                    pass
         except Exception as notify_err:
             print(f"[ERROR] Error notifying backend: {notify_err}")
+            import traceback
+            traceback.print_exc()
 
         # Push summary to XCom for downstream tasks
         context["ti"].xcom_push(key="ingestion_summary", value={
