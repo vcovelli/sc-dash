@@ -41,8 +41,16 @@ export function useProfile() {
           }
         );
         if (isMounted) setProfile(res.data);
-      } catch (err) {
-        if (isMounted) setProfile(null);
+      } catch (err: any) {
+        console.error("Profile fetch error:", err.response?.data || err.message);
+        if (isMounted) {
+          setProfile(null);
+          // Clear invalid tokens
+          if (err.response?.status === 401) {
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+          }
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
