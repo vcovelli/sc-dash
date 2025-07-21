@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import connections
 from django.core.exceptions import ImproperlyConfigured
 import os
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import psycopg2
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -215,9 +217,28 @@ class OrgDatabaseRouter:
         return None
     
 def ensure_org_database(org_id):
-    """
-    Ensures the organization DB is configured in Django settings for this org_id.
-    This is a thin wrapper for the OrgDatabaseRouter logic, so middleware can easily call it.
-    """
-    router = OrgDatabaseRouter()
-    return router._ensure_org_database_config(org_id)
+    dbname = f"orgdata_{org_id}"
+
+    # Connect to the main DB to check for or create the org DB
+    conn = psycopg2.connect(
+        dbname="postgres",  # Use main/default DB
+        user=os.getenv("APP_DB_USER", "app_user"),
+        password=os.getenv("APP_DB_PASSWORD", "app_pass"),
+        host=os.getenv("PG_HOST", "postgres"),
+        port=os.getenv("PG_PORT", 5432)
+    )
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
+
+    # Check if database exists
+    cur.execute("SELECT 1 FROM pg_database WHERE datname = %s;", (dbname,))
+    exists = cur.fetchone()
+
+    if not exists:
+        print(f"Creating database: {dbname}")
+        cur.execute(f'CREATE DATABASE "{dbname}";')
+    else:
+        print(f"Database {dbname} already exists.")
+
+    cur.close()
+    conn.close()

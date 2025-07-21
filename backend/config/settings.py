@@ -292,3 +292,41 @@ MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD")
 MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ======================
+# Dynamic Org Database Injection
+# ======================
+
+if os.getenv("INCLUDE_ORG_DATABASES", "false").lower() == "true":
+    from django.core.exceptions import ImproperlyConfigured
+
+    try:
+        import psycopg2
+        import psycopg2.extras
+
+        conn = psycopg2.connect(
+            dbname=os.getenv("APP_DB_NAME"),
+            user=os.getenv("APP_DB_USER"),
+            password=os.getenv("APP_DB_PASSWORD"),
+            host=os.getenv("PG_HOST", "postgres"),
+            port=os.getenv("PG_PORT", "5432")
+        )
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT id FROM accounts_organization")
+        org_ids = [row["id"] for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+
+        for org_id in org_ids:
+            alias = f"orgdata_{org_id}"
+            DATABASES[alias] = {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": alias,
+                "USER": APP_DB_USER,
+                "PASSWORD": APP_DB_PASSWORD,
+                "HOST": PG_HOST,
+                "PORT": PG_PORT,
+            }
+
+    except Exception as e:
+        raise ImproperlyConfigured(f"Could not dynamically configure org databases: {e}")
