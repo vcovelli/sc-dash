@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from accounts.models import Organization, CustomUser
+from django.db.utils import ProgrammingError, OperationalError
 
 from allauth.account.models import EmailAddress
 
@@ -28,8 +29,14 @@ class Command(BaseCommand):
         
         if options['clean']:
             self.stdout.write('Cleaning existing test data...')
-            Organization.objects.filter(name__icontains='Test').delete()
-            CustomUser.objects.filter(email__icontains='test').delete()
+            try:
+                Organization.objects.filter(name__icontains='Test').delete()
+            except (ProgrammingError, OperationalError) as e:
+                self.stdout.write(self.style.WARNING(f"Skipped Organization cleanup: {e.__class__.__name__} (table may not exist yet)"))
+            try:
+                CustomUser.objects.filter(email__icontains='test').delete()
+            except (ProgrammingError, OperationalError) as e:
+                self.stdout.write(self.style.WARNING(f"Skipped CustomUser cleanup: {e.__class__.__name__} (table may not exist yet)"))
 
         # Create or get organization
         org, created = Organization.objects.get_or_create(
