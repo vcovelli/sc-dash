@@ -60,7 +60,6 @@ INSTALLED_APPS = [
 # Middleware
 # ======================
 MIDDLEWARE = [
-    "config.middleware.OrgContextMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -68,6 +67,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "config.middleware.OrgContextMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -254,22 +254,54 @@ SESSION_COOKIE_DOMAIN = ".supplywise.ai"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
+        "console": {
+            "level": "DEBUG" if DEBUG else "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
             "filename": "logs/uploads.log",
+            "formatter": "verbose",
+        },
+        "db_router_file": {
+            "level": "DEBUG" if DEBUG else "INFO",
+            "class": "logging.FileHandler",
+            "filename": "logs/database_routing.log",
+            "formatter": "verbose",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["file"],
+            "handlers": ["console", "file"],
             "level": "INFO",
             "propagate": True,
         },
         "api.upload": {
             "handlers": ["file"],
             "level": "INFO",
+            "propagate": False,
+        },
+        "config.routers": {
+            "handlers": ["console", "db_router_file"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,
+        },
+        "config.middleware": {
+            "handlers": ["console", "db_router_file"],
+            "level": "DEBUG" if DEBUG else "INFO",
             "propagate": False,
         },
     },
