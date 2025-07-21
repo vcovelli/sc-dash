@@ -396,10 +396,10 @@ def enhanced_ingest_from_minio(**context):
 
         # Notify backend about completion
         try:
-            token = os.getenv("AIRFLOW_MARK_SUCCESS_TOKEN")
+            token = conf.get("access_token") or os.getenv("AIRFLOW_MARK_SUCCESS_TOKEN")
             headers = {}
             if token:
-                headers = {"Authorization": f"Bearer {token}"}
+                headers["Authorization"] = f"Bearer {token}"
 
             response = requests.post(
                 f"{ingestion.BACKEND_API_URL}/api/files/mark-success/",

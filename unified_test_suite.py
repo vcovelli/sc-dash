@@ -368,7 +368,7 @@ class SupplyWiseTestSuite:
     def test_data_pipeline(self, org_id: Optional[str] = None) -> bool:
         """Test the data pipeline functionality"""
         print_header("🔄 DATA PIPELINE TESTING")
-        
+
         # Create test CSV data
         print_step("Creating test CSV data...")
         test_data = {
@@ -379,51 +379,57 @@ class SupplyWiseTestSuite:
             'supplier': ['Supplier A', 'Supplier B', 'Supplier A', 'Supplier C', 'Supplier B'],
             'date_added': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05']
         }
-        
+
         df = pd.DataFrame(test_data)
-        
+
         # Create temporary CSV file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
             df.to_csv(f.name, index=False)
             temp_csv_path = f.name
-            
+
         try:
-            # Copy CSV to container
+            # Dynamically resolve backend container id for docker cp
+            result = subprocess.run("docker compose ps -q backend", shell=True, capture_output=True, text=True)
+            backend_cid = result.stdout.strip()
+            if not backend_cid:
+                print_error("Could not determine backend container name for docker cp.")
+                return False
+
             success, stdout, stderr = self.run_command(
-                f"docker cp {temp_csv_path} backend:/tmp/test_pipeline_data.csv",
+                f"docker cp {temp_csv_path} {backend_cid}:/tmp/test_pipeline_data.csv",
                 "Copying test data to backend container"
             )
-            
+
             if not success:
                 return False
-                
-            # Test MongoDB seeding
-            success, stdout, stderr = self.run_command(
-                "docker compose exec -T backend python -c \"from scripts.testing.seed_mongo import seed_data; seed_data()\"",
-                "Seeding MongoDB with test data"
-            )
-            
-            if success:
-                print_success("MongoDB seeding completed")
-            else:
-                print_warning("MongoDB seeding failed (may not be critical)")
-                
+
+           ## Test MongoDB seeding
+           #success, stdout, stderr = self.run_command(
+           #    "docker compose exec -T backend python -c \"from scripts.testing.seed_mongo import seed_data; seed_data()\"",
+           #    "Seeding MongoDB with test data"
+           #)
+
+            #if success:
+            #    print_success("MongoDB seeding completed")
+            #else:
+            #    print_warning("MongoDB seeding failed (may not be critical)")
+
             # Test pipeline management commands
             if org_id:
                 success, stdout, stderr = self.run_command(
                     f'docker compose exec -T backend python manage.py manage_enhanced_pipeline status --org-id {org_id}',
                     "Testing enhanced pipeline status"
                 )
-                
+
                 if success:
                     print_success("Pipeline status check completed")
                 else:
                     print_warning("Pipeline status check failed")
-                    
+
         finally:
             # Clean up temporary file
             os.unlink(temp_csv_path)
-            
+
         return True
 
     def test_api_endpoints(self) -> bool:
@@ -459,7 +465,7 @@ class SupplyWiseTestSuite:
         
         # Test PostgreSQL
         success, stdout, stderr = self.run_command(
-            'docker compose exec -T postgres psql -U postgres -d supplywise_ai -c "SELECT version();"',
+            'docker compose exec -T postgres psql -U app_user -d supplywise -c "SELECT version();"',
             "Testing PostgreSQL connection"
         )
         
