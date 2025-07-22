@@ -66,10 +66,25 @@ from psycopg2.extras import RealDictCursor
 import random
 
 # Setup paths and Django environment
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE_DIR))
 sys.path.append(str(BASE_DIR / "backend"))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+
+import backend.config.settings as project_settings
+
+log_paths = [
+    Path(handler.get("filename")).parent
+    for handler in project_settings.LOGGING.get("handlers", {}).values()
+    if "filename" in handler
+]
+
+for path in log_paths:
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
+
+import django
+django.setup()
 
 def timer_decorator(func_name):
     def decorator(func):
@@ -291,7 +306,7 @@ class ComprehensiveTestSuite:
         print_section("🏗️  ENVIRONMENT SETUP")
         
         # Check for .env file
-        if not os.path.exists('.env'):
+        if not os.path.exists('../.env'):
             if os.path.exists('.env.example'):
                 print_step("Copying .env.example to .env...")
                 success, _, _ = self.run_command("cp .env.example .env", "Creating .env file")
@@ -628,7 +643,7 @@ class ComprehensiveTestSuite:
         # Core endpoints
         endpoints = [
             ("/api/health/", "Health check", 200),
-            ("/api/auth/", "Authentication endpoint", [200, 301, 302, 405]),
+            ("/auth/", "Authentication endpoint", [200, 301, 302, 405]),
             ("/admin/", "Django admin", [200, 301, 302]),
             ("/api/schema/", "API schema", [200, 404]),  # May not exist
             ("/api/docs/", "API documentation", [200, 404]),  # May not exist

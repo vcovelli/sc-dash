@@ -235,7 +235,7 @@ def ensure_org_database_enterprise(org_id: int):
                 cur.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(db_name)))
                 
                 # Set database-specific configurations for enterprise
-                cur.execute(f"ALTER DATABASE {db_name} SET shared_preload_libraries = 'pg_stat_statements'")
+                #cur.execute(f"ALTER DATABASE {db_name} SET shared_preload_libraries = 'pg_stat_statements'")
                 cur.execute(f"ALTER DATABASE {db_name} SET log_statement = 'all'")
                 
             else:

@@ -13,9 +13,9 @@ from unittest.mock import patch
 import concurrent.futures
 
 # Add Django settings
-BASE_DIR = Path(__file__).resolve().parent
-sys.path.append(str(BASE_DIR))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.test_settings')
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR / "backend"))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 # Setup Django
 django.setup()
@@ -227,7 +227,7 @@ class EnterpriseMultiTenantTests:
             self.assert_test(not invalid_access, "Cross-org access blocked")
             
             # Test admin access (should work for any org)
-            admin_user = CustomUser.objects.create_user(
+            admin_user = CustomUser.objects.get_or_create(
                 username="admin", 
                 email="admin@test.com",
                 password="admin123"

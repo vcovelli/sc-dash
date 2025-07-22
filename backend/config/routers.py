@@ -153,25 +153,34 @@ class EnterpriseOrgDatabaseRouter:
 
     def allow_relation(self, obj1, obj2, **hints):
         """Enhanced relation checking with security validation"""
-        db1 = getattr(obj1._state, 'db', 'default')
-        db2 = getattr(obj2._state, 'db', 'default')
-        
+        attr_name = 'db'
+
+        if not isinstance(attr_name, str):
+            raise TypeError(f"Invalid attribute name: {attr_name}")
+
+        try:
+            db1 = getattr(getattr(obj1, '_state', None), attr_name, 'default')
+            db2 = getattr(getattr(obj2, '_state', None), attr_name, 'default')
+        except Exception as e:
+            logger.error(f"allow_relation failed to access db state: {e}")
+            return None
+
         # Same database relations are always allowed
         if db1 == db2:
             return True
-        
+
         # Cross-org database relations need validation
         if db1.startswith('orgdata_') and db2.startswith('orgdata_'):
             org1_id = db1.replace('orgdata_', '')
             org2_id = db2.replace('orgdata_', '')
-            
+
             # Only allow if same organization
             if org1_id == org2_id:
                 return True
             else:
                 logger.warning(f"Blocked cross-org relation attempt: {org1_id} -> {org2_id}")
                 return False
-        
+
         return None
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):

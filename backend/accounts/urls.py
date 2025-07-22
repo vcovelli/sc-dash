@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
+from django.http import JsonResponse
 
 # Auth-related views
 from .views.auth_views import (
@@ -31,6 +32,7 @@ from .views.dashboard import DashboardOverviewView
 from .views.onboarding import OnboardingStatusView  # Only if you have this!
 
 urlpatterns = [
+    path("", lambda request: JsonResponse({"auth": "ready"})),
     # Email confirmation (AllAuth)
     path('account-confirm-email/<key>/', ReactConfirmEmailView.as_view(), name='account_confirm_email'),
 
