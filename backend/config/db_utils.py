@@ -9,9 +9,7 @@ def ensure_org_database(org_id: int):
     db_key = f'orgdata_{org_id}'
     db_name = db_key
 
-    # Always check existence/creation with psycopg2 directly
-    created = False
-    # --------- FIX: set autocommit on connect and don't use 'with' here ---------
+    # Step 1: Ensure the PostgreSQL database exists
     default_conn = psycopg2.connect(
         dbname='postgres',
         user=settings.APP_DB_USER,
@@ -19,6 +17,7 @@ def ensure_org_database(org_id: int):
         host=settings.PG_HOST,
         port=settings.PG_PORT,
     )
+
     try:
         default_conn.set_session(autocommit=True)
         with default_conn.cursor() as cur:
@@ -26,14 +25,12 @@ def ensure_org_database(org_id: int):
             if not cur.fetchone():
                 print(f"🛠️  Creating missing database: {db_name}")
                 cur.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(db_name)))
-                created = True
             else:
                 print(f"✔️ Database {db_name} already exists.")
     finally:
         default_conn.close()
-    # -------------------------------------------------------------------------
 
-    # Inject into Django connections if not already present
+    # Step 2: Inject database config into Django
     if db_key not in connections.databases:
         connections.databases[db_key] = {
             'ENGINE': 'django.db.backends.postgresql',
@@ -44,16 +41,17 @@ def ensure_org_database(org_id: int):
             'PORT': settings.PG_PORT,
             'AUTOCOMMIT': True,
             'ATOMIC_REQUESTS': True,
-            'CONN_HEALTH_CHECKS': False,
+            'CONN_HEALTH_CHECKS': True,
             'CONN_MAX_AGE': 60,
             'OPTIONS': {},
-            'TIME_ZONE': settings.TIME_ZONE,
+            'TIME_ZONE': getattr(settings, 'TIME_ZONE', 'UTC'),
         }
 
-    # Always run migrations (safe for new or existing DB)
+    # Step 3: Apply migrations
     print(f"🚀 Running migrations for {db_key}...")
     call_command('migrate', database=db_key, run_syncdb=True, interactive=False)
 
+    # Step 4: Sync org row into the new DB
     replicate_org_to_org_db(org_id, db_key)
 
 def replicate_org_to_org_db(org_id: int, db_key: str):
