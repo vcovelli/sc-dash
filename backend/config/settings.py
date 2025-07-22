@@ -261,10 +261,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 if os.getenv("INCLUDE_ORG_DATABASES", "false").lower() == "true":
     from django.core.exceptions import ImproperlyConfigured
-    try:
-        import psycopg2
-        import psycopg2.extras
+    import psycopg2
+    import psycopg2.extras
 
+    try:
         conn = psycopg2.connect(
             dbname=os.getenv("APP_DB_NAME"),
             user=APP_DB_USER,
@@ -273,20 +273,35 @@ if os.getenv("INCLUDE_ORG_DATABASES", "false").lower() == "true":
             port=PG_PORT
         )
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT id FROM accounts_organization")
-        org_ids = [row["id"] for row in cursor.fetchall()]
+
+        # Check if accounts_organization table exists before querying it
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+                AND table_name = 'accounts_organization'
+            )
+        """)
+        if cursor.fetchone()[0]:
+            cursor.execute("SELECT id FROM accounts_organization")
+            org_ids = [row["id"] for row in cursor.fetchall()]
+
+            for org_id in org_ids:
+                alias = f"orgdata_{org_id}"
+                DATABASES[alias] = {
+                    "ENGINE": "django.db.backends.postgresql",
+                    "NAME": alias,
+                    "USER": APP_DB_USER,
+                    "PASSWORD": APP_DB_PASSWORD,
+                    "HOST": PG_HOST,
+                    "PORT": PG_PORT,
+                }
+        else:
+            print("⚠️  Skipping org DB configuration: 'accounts_organization' table not found.")
+
         cursor.close()
         conn.close()
 
-        for org_id in org_ids:
-            alias = f"orgdata_{org_id}"
-            DATABASES[alias] = {
-                "ENGINE": "django.db.backends.postgresql",
-                "NAME": alias,
-                "USER": APP_DB_USER,
-                "PASSWORD": APP_DB_PASSWORD,
-                "HOST": PG_HOST,
-                "PORT": PG_PORT,
-            }
     except Exception as e:
-        raise ImproperlyConfigured(f"Could not dynamically configure org databases: {e}")
+        print(f"⚠️  Org DB dynamic setup failed: {e}")
