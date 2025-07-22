@@ -27,6 +27,29 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    command: >
+      sh -c "
+        if [ -n \"$$REDIS_PASSWORD\" ]; then
+          redis-server --requirepass $$REDIS_PASSWORD --appendonly yes
+        else
+          redis-server --appendonly yes
+        fi
+      "
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 
   frontend:
     build:
@@ -65,6 +88,7 @@ services:
     depends_on:
       - postgres
       - mongo
+      - redis
     env_file:
       - .env
     healthcheck:
@@ -222,3 +246,4 @@ volumes:
   #spark-data:
   minio_data:
   ai_data:
+  redis_data:
