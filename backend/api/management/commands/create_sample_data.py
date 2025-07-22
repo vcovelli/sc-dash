@@ -57,18 +57,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.org_name = options['org']
 
-        # Get org object from default DB
+        # Always get/create using default DB (safe for central table)
         org_obj, created = Organization.objects.using('default').get_or_create(
             name=self.org_name,
             defaults={'slug': self.org_name.lower().replace(' ', '-')}
         )
-        self.org = org_obj
 
-        # 🔧 Ensure DB config for this org exists
-        ensure_org_database(self.org.id)
+        # 🔧 Ensure org DB exists and migrations applied
+        ensure_org_database(org_obj.id)
 
-        # ✅ Set org DB routing context
-        set_org_context(self.org.id)
+        # ✅ Set routing context *before* using routed DB
+        set_org_context(org_obj.id)
+
+        # Re-fetch from routed DB to use in ForeignKey relations
+        self.org = Organization.objects.using(f"orgdata_{org_obj.id}").get(id=org_obj.id)
         try:
             if options['clean']:
                 self.clean_existing_data()
