@@ -35,9 +35,16 @@ class EnterpriseSecurityManager:
             return True
             
         # Check if user belongs to the organization
-        if user.org_id() != org_id:
-            logger.warning(f"User {user.email} attempted access to org {org_id} but belongs to {user.org_id()}")
-            return False
+        try:
+            user_org_id = user.org_id() if callable(user.org_id) else user.org_id
+            if user_org_id != org_id:
+                logger.warning(f"User {user.email} attempted access to org {org_id} but belongs to {user_org_id}")
+                return False
+        except (AttributeError, TypeError):
+            # Fallback to check org field
+            user_org_id = getattr(user, 'org_id', None)
+            if user_org_id != org_id:
+                return False
             
         return True
     

@@ -79,6 +79,7 @@ class EnterpriseOrgDatabaseRouter:
         db_alias = self._get_org_db_alias(org_id)
         start_time = time.time()
 
+        # Check cache first (with read lock)
         with _cache_lock:
             if db_alias in _db_config_cache:
                 self._track_performance(org_id, 'config_cache_hit', time.time() - start_time)
@@ -86,6 +87,12 @@ class EnterpriseOrgDatabaseRouter:
 
         # Enhanced database configuration with connection pooling
         try:
+            # Check if org exists first to avoid creating databases for non-existent orgs
+            from accounts.models import Organization
+            if not Organization.objects.filter(id=org_id).exists():
+                logger.error(f"Organization {org_id} does not exist")
+                return None
+                
             from config.db_utils import ensure_org_database_enterprise
             ensure_org_database_enterprise(org_id)
             
