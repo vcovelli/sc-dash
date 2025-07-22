@@ -5,9 +5,6 @@ from datetime import timedelta
 
 load_dotenv()
 
-# ======================
-# Core Django Settings
-# ======================
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
@@ -17,11 +14,7 @@ APPEND_SLASH = False
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# ======================
-# Installed Applications
-# ======================
 INSTALLED_APPS = [
-    # Django core
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -29,8 +22,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-
-    # Third-party
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -45,8 +36,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
-
-    # Project apps
     "api",
     "accounts",
     "ai",
@@ -56,9 +45,6 @@ INSTALLED_APPS = [
     "helpers",
 ]
 
-# ======================
-# Middleware
-# ======================
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -72,9 +58,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# ======================
-# Templates
-# ======================
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -91,15 +74,9 @@ TEMPLATES = [
     },
 ]
 
-# ======================
-# URL and WSGI
-# ======================
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
 
-# ======================
-# Authentication / Allauth
-# ======================
 AUTH_USER_MODEL = 'accounts.CustomUser'
 LOGIN_REDIRECT_URL = "/dashboard/"
 ACCOUNT_EMAIL_REQUIRED = True
@@ -125,9 +102,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# ======================
-# REST / JWT
-# ======================
 REST_USE_JWT = True
 DJANGO_REST_AUTH_SERIALIZERS = {
     'TOKEN_SERIALIZER': 'dj_rest_auth.jwt_auth.JWTCookieSerializer',
@@ -152,43 +126,33 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
 
-# ======================
-# Database
-# ======================
-
-# Multi-tenant database connection base settings
 APP_DB_USER = os.getenv("APP_DB_USER", "app_user")
 APP_DB_PASSWORD = os.getenv("APP_DB_PASSWORD", "app_pass")
 PG_HOST = os.getenv("PG_HOST", "postgres")
 PG_PORT = os.getenv("PG_PORT", "5432")
 
-# Use SQLite for development, PostgreSQL for production
 if os.getenv("APP_DB_NAME"):
-    # PostgreSQL configuration when environment variables are set
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.getenv('APP_DB_NAME'),
-            'USER': os.getenv('APP_DB_USER'),
-            'PASSWORD': os.getenv('APP_DB_PASSWORD'),
-            'HOST': os.getenv('PG_HOST', 'postgres'),
-            'PORT': os.getenv('PG_PORT', '5432'),
+            'USER': APP_DB_USER,
+            'PASSWORD': APP_DB_PASSWORD,
+            'HOST': PG_HOST,
+            'PORT': PG_PORT,
         }
     }
 
-    # Optional: allow CLI access to orgdata_1 for migrations/debugging
     if os.getenv("INCLUDE_ORGDATA_1", "false").lower() == "true":
         DATABASES["orgdata_1"] = {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": "orgdata_1",
-            "USER": os.getenv("APP_DB_USER"),
-            "PASSWORD": os.getenv("APP_DB_PASSWORD"),
-            "HOST": os.getenv("PG_HOST", "postgres"),
-            "PORT": os.getenv("PG_PORT", "5432"),
+            "USER": APP_DB_USER,
+            "PASSWORD": APP_DB_PASSWORD,
+            "HOST": PG_HOST,
+            "PORT": PG_PORT,
         }
-
 else:
-    # SQLite configuration for development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -196,12 +160,8 @@ else:
         }
     }
 
-# Database routing for multi-tenant organization databases
 DATABASE_ROUTERS = ['config.routers.OrgDatabaseRouter']
 
-# ======================
-# Password Validation
-# ======================
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -209,28 +169,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# ======================
-# Email
-# ======================
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-# Optional SMTP setup:
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# EMAIL_HOST = "smtp.sendgrid.net"
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = "<your-username>"
-# EMAIL_HOST_PASSWORD = "<your-password>"
-# DEFAULT_FROM_EMAIL = "noreply@yourdomain.com"
 
-# ======================
-# Static Files
-# ======================
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
-# ======================
-# CORS / CSRF / Security
-# ======================
 CORS_ALLOWED_ORIGINS = [
     "https://supplywise.ai",
     "http://localhost:3000",
@@ -248,9 +191,6 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_DOMAIN = ".supplywise.ai"
 SESSION_COOKIE_DOMAIN = ".supplywise.ai"
 
-# ======================
-# Logging
-# ======================
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -307,17 +247,11 @@ LOGGING = {
     },
 }
 
-# ======================
-# Custom Dataset Paths
-# ======================
 CSV_FILE_PATH = os.getenv('CSV_FILE_PATH', str(BASE_DIR / "datasets" / "sample_orders.csv"))
 DATASET_DIR = os.getenv('DATASET_DIR', str(BASE_DIR / "datasets"))
 ARCHIVE_DIR = os.getenv('ARCHIVE_DIR', str(BASE_DIR / "datasets" / "archive"))
 SCHEMA_DIR = Path(os.getenv('SCHEMA_DIR', BASE_DIR / "user_schemas"))
 
-# ======================
-# MinIO (Object Storage)
-# ======================
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
 MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER")
 MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD")
@@ -325,23 +259,18 @@ MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ======================
-# Dynamic Org Database Injection
-# ======================
-
 if os.getenv("INCLUDE_ORG_DATABASES", "false").lower() == "true":
     from django.core.exceptions import ImproperlyConfigured
-
     try:
         import psycopg2
         import psycopg2.extras
 
         conn = psycopg2.connect(
             dbname=os.getenv("APP_DB_NAME"),
-            user=os.getenv("APP_DB_USER"),
-            password=os.getenv("APP_DB_PASSWORD"),
-            host=os.getenv("PG_HOST", "postgres"),
-            port=os.getenv("PG_PORT", "5432")
+            user=APP_DB_USER,
+            password=APP_DB_PASSWORD,
+            host=PG_HOST,
+            port=PG_PORT
         )
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute("SELECT id FROM accounts_organization")
@@ -359,6 +288,5 @@ if os.getenv("INCLUDE_ORG_DATABASES", "false").lower() == "true":
                 "HOST": PG_HOST,
                 "PORT": PG_PORT,
             }
-
     except Exception as e:
         raise ImproperlyConfigured(f"Could not dynamically configure org databases: {e}")

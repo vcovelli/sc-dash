@@ -7,6 +7,7 @@ from psycopg2.extras import RealDictCursor
 import os
 from datetime import datetime, timedelta
 import random
+from config.routers import ensure_org_database
 
 User = get_user_model()
 
@@ -71,7 +72,10 @@ class Command(BaseCommand):
             defaults={'verified': True, 'primary': True}
         )
 
-        # Get organization database connection
+        # Ensure the org database exists
+        ensure_org_database(org.id)
+
+        # Now connect to the org database
         org_db_name = f"orgdata_{org.id}"
         connection = self.get_org_db_connection(org_db_name)
         
