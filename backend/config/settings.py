@@ -160,7 +160,7 @@ else:
         }
     }
 
-DATABASE_ROUTERS = ['config.routers.OrgDatabaseRouter']
+# DATABASE_ROUTERS = ['config.routers.OrgDatabaseRouter']
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
