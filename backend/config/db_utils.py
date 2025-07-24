@@ -257,15 +257,14 @@ class EnterpriseOrgDatabaseManager:
             }
 
 def ensure_org_database_enterprise(org_id: int):
-    """Enhanced organization database creation with enterprise features and comprehensive logging"""
+    """Enhanced organization database creation with enterprise features and strategic logging"""
     manager = EnterpriseOrgDatabaseManager()
     db_key = f'orgdata_{org_id}'
     db_name = db_key
 
-    logger.info(f"🚀 DB_ENTERPRISE: Starting database creation/verification for org {org_id} (db: {db_name})")
+    logger.info(f"🚀 DB_SETUP: Starting setup for org {org_id}")
 
     # Step 1: Ensure the PostgreSQL database exists
-    logger.debug(f"🔌 DB_ENTERPRISE: Connecting to postgres database to check/create {db_name}")
     default_conn = psycopg2.connect(
         dbname='postgres',
         user=settings.APP_DB_USER,
@@ -276,36 +275,29 @@ def ensure_org_database_enterprise(org_id: int):
 
     try:
         default_conn.set_session(autocommit=True)
-        logger.debug(f"🔧 DB_ENTERPRISE: Set autocommit mode for database operations")
         
         with default_conn.cursor() as cur:
-            logger.debug(f"🔍 DB_ENTERPRISE: Checking if database {db_name} exists")
             cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", [db_name])
             exists = cur.fetchone()
             
             if not exists:
-                logger.info(f"🛠️  DB_ENTERPRISE: Creating missing database: {db_name}")
+                logger.info(f"🛠️  DB_SETUP: Creating database {db_name}")
                 cur.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(db_name)))
-                logger.info(f"✅ DB_ENTERPRISE: Database {db_name} created successfully")
                 
                 # Set database-specific configurations for enterprise
-                logger.debug(f"⚙️  DB_ENTERPRISE: Setting database configurations for {db_name}")
-                #cur.execute(f"ALTER DATABASE {db_name} SET shared_preload_libraries = 'pg_stat_statements'")
                 cur.execute(f"ALTER DATABASE {db_name} SET log_statement = 'all'")
-                logger.debug(f"✅ DB_ENTERPRISE: Database configurations set for {db_name}")
-                
+                logger.info(f"✅ DB_SETUP: Created {db_name}")
             else:
-                logger.debug(f"✔️ DB_ENTERPRISE: Database {db_name} already exists")
+                logger.debug(f"✔️ DB_SETUP: Database {db_name} exists")
     except Exception as e:
-        logger.error(f"💥 DB_ENTERPRISE: Error during database creation for {db_name}: {e}")
+        logger.error(f"💥 DB_SETUP: Error creating {db_name}: {e}")
         raise
     finally:
         default_conn.close()
-        logger.debug(f"🔌 DB_ENTERPRISE: Closed connection to postgres database")
 
     # Step 2: Enhanced Django database configuration
     if db_key not in connections.databases:
-        logger.info(f"🔧 DB_ENTERPRISE: Configuring Django database connection for {db_key}")
+        logger.debug(f"🔧 DB_SETUP: Configuring Django connection for {db_key}")
         connections.databases[db_key] = {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': db_name,
@@ -324,60 +316,46 @@ def ensure_org_database_enterprise(org_id: int):
             },
             'TIME_ZONE': getattr(settings, 'TIME_ZONE', 'UTC'),
         }
-        logger.info(f"✅ DB_ENTERPRISE: Django database configuration added for {db_key}")
+        logger.debug(f"✅ DB_SETUP: Django configuration added for {db_key}")
     else:
-        logger.debug(f"✔️ DB_ENTERPRISE: Django database configuration already exists for {db_key}")
+        logger.debug(f"✔️ DB_SETUP: Django configuration exists for {db_key}")
 
     # Step 3: Apply migrations with retry logic
-    logger.info(f"🔄 DB_ENTERPRISE: Starting migration process for {db_key}")
+    logger.info(f"🔄 DB_SETUP: Running migrations for {db_key}")
     for attempt in range(3):
         try:
-            logger.debug(f"🚀 DB_ENTERPRISE: Running migrations for {db_key} (attempt {attempt + 1}/3)")
             call_command('migrate', database=db_key, run_syncdb=True, interactive=False)
-            logger.info(f"✅ DB_ENTERPRISE: Migrations completed successfully for {db_key}")
+            logger.info(f"✅ DB_SETUP: Migrations completed for {db_key}")
             break
         except Exception as e:
             if attempt == 2:  # Last attempt
-                logger.error(f"💥 DB_ENTERPRISE: Failed to migrate {db_key} after 3 attempts: {e}")
+                logger.error(f"💥 DB_SETUP: Failed migrations for {db_key} after 3 attempts: {e}")
                 raise
             else:
-                logger.warning(f"⚠️  DB_ENTERPRISE: Migration attempt {attempt + 1} failed for {db_key}, retrying: {e}")
+                logger.warning(f"⚠️  DB_SETUP: Migration attempt {attempt + 1} failed, retrying: {e}")
                 time.sleep(2)
 
     # Step 4: Sync organization data
-    logger.debug(f"📋 DB_ENTERPRISE: Starting organization data replication for {db_key}")
     replicate_org_to_org_db(org_id, db_key)
-    logger.debug(f"✅ DB_ENTERPRISE: Organization data replication completed for {db_key}")
     
     # Step 5: Validate schema
-    logger.debug(f"🔍 DB_ENTERPRISE: Starting schema validation for {db_key}")
     validation_result = manager.validate_database_schema(org_id)
     if not validation_result["valid"]:
-        logger.error(f"💥 DB_ENTERPRISE: Schema validation failed for {db_name}: {validation_result['message']}")
-    else:
-        logger.debug(f"✅ DB_ENTERPRISE: Schema validation passed for {db_name}")
+        logger.warning(f"⚠️  DB_SETUP: Schema validation failed for {db_name}: {validation_result['message']}")
     
     # Step 6: Initialize connection pool
-    logger.debug(f"🏊 DB_ENTERPRISE: Initializing connection pool for {db_key}")
     pool = manager.get_connection_pool(org_id)
-    if pool:
-        logger.debug(f"✅ DB_ENTERPRISE: Connection pool initialized for {db_key}")
-    else:
-        logger.warning(f"⚠️  DB_ENTERPRISE: Failed to initialize connection pool for {db_key}")
+    if not pool:
+        logger.warning(f"⚠️  DB_SETUP: Failed to initialize connection pool for {db_key}")
     
-    logger.info(f"🎉 DB_ENTERPRISE: Enterprise database setup complete for {db_name}")
+    logger.info(f"✅ DB_SETUP: Setup complete for {db_name}")
 
 def replicate_org_to_org_db(org_id: int, db_key: str):
-    """Enhanced organization replication with conflict resolution and detailed logging"""
-    logger.debug(f"📋 REPLICATE: Starting organization replication for org {org_id} to {db_key}")
-    
+    """Enhanced organization replication with conflict resolution and strategic logging"""
     try:
-        logger.debug(f"🔍 REPLICATE: Fetching organization {org_id} from default database")
         org = Organization.objects.using('default').get(id=org_id)
-        logger.debug(f"✅ REPLICATE: Found organization: {org.name} (slug: {org.slug})")
         
         # Use update_or_create with proper conflict handling
-        logger.debug(f"🔄 REPLICATE: Updating/creating organization {org_id} in {db_key}")
         org_replica, created = Organization.objects.using(db_key).update_or_create(
             id=org.id,
             defaults={
@@ -389,14 +367,13 @@ def replicate_org_to_org_db(org_id: int, db_key: str):
         )
         
         action = "created" if created else "updated"
-        logger.info(f"📦 REPLICATE: {action.capitalize()} Organization {org.id} ({org.name}) in {db_key}")
+        logger.debug(f"📦 REPLICATE: {action.capitalize()} org {org.id} in {db_key}")
         
     except Organization.DoesNotExist:
-        logger.error(f"💥 REPLICATE: Organization {org_id} not found in default database")
+        logger.error(f"💥 REPLICATE: Organization {org_id} not found")
         raise
     except Exception as e:
-        logger.error(f"💥 REPLICATE: Failed to replicate organization {org_id} to {db_key}: {e}")
-        logger.debug(f"💥 REPLICATE: Exception details:", exc_info=True)
+        logger.error(f"💥 REPLICATE: Failed to replicate org {org_id}: {e}")
         raise
 
 # Legacy function for backwards compatibility
