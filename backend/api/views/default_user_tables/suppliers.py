@@ -25,10 +25,14 @@ class SupplierViewSet(TenantScopedViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
 
-        serializer = self.get_serializer(page if page is not None else queryset, many=True)
-        data = serializer.data
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
+        serializer = self.get_serializer(queryset, many=True)
         return Response({
-            "columns": get_table_schema("suppliers"),
-            "rows": data,
+            "count": queryset.count(),
+            "next": None,
+            "previous": None,
+            "results": serializer.data,
         })

@@ -228,7 +228,6 @@ export default function SheetsPageInner() {
               __rowId: (typeof record.id === 'number' ? record.id : Math.floor(Math.random() * 10000))
             }))
           : [];
-        
         setRows(transformedRows);
       } catch (error) {
         console.error("Error setting up table structure:", error);
