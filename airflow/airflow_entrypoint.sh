@@ -28,7 +28,7 @@ airflow users create \
   --lastname User \
   --role Admin \
   --email admin@example.com \
-  --password admin || true
+  --password "${AIRFLOW_ADMIN_PASSWORD:?Set AIRFLOW_ADMIN_PASSWORD in .env}" || true
 
 # Start Airflow
 exec airflow webserver

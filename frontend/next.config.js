@@ -18,7 +18,6 @@ const nextConfig = {
   // If using Next.js 15+, you might want to add allowedDevOrigins:
   allowedDevOrigins: [
     "http://localhost:3000",
-    "http://192.0.2.7:3000",
     "https://supplywise.ai",
     "http://supplywise.ai",
   ]

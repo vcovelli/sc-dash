@@ -1,0 +1,20 @@
+title = "Repository credential protection"
+[extend]
+useDefault = true
+
+[[rules]]
+id = "local-environment-file"
+description = "Runtime environment files belong outside version control"
+path = '''(^|/)\.env(\.(local|production|development|staging|test))?$'''
+regex = '''.+'''
+
+[[rules]]
+id = "workstation-credential-file"
+description = "Private workstation credentials must not be committed"
+path = '''(^|/)(\.ssh/|\.config/gh/hosts\.yml$|\.git-credentials$|\.bash_history$|\.zsh_history$)'''
+regex = '''.+'''
+
+[[rules]]
+id = "django-development-key"
+description = "Django signing keys must come from the environment"
+regex = '''django-insecure-[^\s"\x27]+'''

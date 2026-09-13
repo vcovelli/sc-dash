@@ -174,17 +174,8 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 STATIC_URL = "static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
-CORS_ALLOWED_ORIGINS = [
-    "https://supplywise.ai",
-    "http://localhost:3000",
-    "http://192.0.2.7:3000",
-]
-CSRF_TRUSTED_ORIGINS = [
-    "https://supplywise.ai",
-    "http://supplywise.ai",
-    "http://localhost:3000",
-    "http://192.0.2.7:3000"
-]
+CORS_ALLOWED_ORIGINS = [value.strip() for value in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if value.strip()]
+CSRF_TRUSTED_ORIGINS = [value.strip() for value in os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:3000").split(",") if value.strip()]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

@@ -1,3 +1,4 @@
+import os
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
 from langchain_community.agent_toolkits.sql.base import create_sql_agent
 from langchain_community.utilities import SQLDatabase
@@ -24,7 +25,7 @@ Please generate a valid SQL query to answer the following question:
     # Step 3: Initialize the Ollama LLM with SAFE options (avoids `mirostat` errors)
     llm = ChatOllama(
         model="llama3",
-        base_url="http://192.0.2.5:11434",  # Docker host IP for Ollama
+        base_url=os.getenv("OLLAMA_BASE_URL", "http://ai:11434"),  # Docker host IP for Ollama
         temperature=0.7,
         top_p=0.95,
         options={}

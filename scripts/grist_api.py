@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 GRIST_API_KEY = os.getenv("GRIST_API_KEY")
-GRIST_BASE_URL = os.getenv("GRIST_BASE_URL", "http://192.0.2.7:8484/api")
+GRIST_BASE_URL = os.getenv("GRIST_BASE_URL", "http://localhost:8484/api")
 
 # Grist-compatible directory and files
 def create_grist_file(output_path: str, schema: dict, sample_data: dict):

@@ -51,3 +51,17 @@ build/
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
+
+# Local credentials and workstation files
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+.ssh/
+.config/gh/
+.git-credentials
+.bash_history
+.zsh_history
+*.sqlite
+*.sqlite3
